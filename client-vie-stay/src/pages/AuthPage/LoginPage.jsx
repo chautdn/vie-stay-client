@@ -1,42 +1,45 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Input from "../components/authPageComponents/Input";
-import { Loader, Lock, Mail, User } from "lucide-react";
-import { useState } from "react";
+import { Mail, Lock, Loader } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import PasswordStrengthMeter from "../components/authPageComponents/PasswordStrengthMeter";
-import { useAuthStore } from "../store/authStore";
+import Input from "../../components/authPageComponents/Input";
+import { useAuthStore } from "../../store/authStore";
 import { GoogleLogin } from "@react-oauth/google";
 
-const SignUpPage = () => {
-  const [name, setName] = useState("");
+const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
   const navigate = useNavigate();
 
-  const { signup, error, isLoading, googleLogin } = useAuthStore();
+  const { login, isLoading, error, googleLogin, isAuthenticated } =
+    useAuthStore();
 
-  const handleSignUp = async (e) => {
+  useEffect(() => {
+    // Check if user is already authenticated
+    const token = localStorage.getItem("token");
+    if (token || isAuthenticated) {
+      navigate("/home");
+    }
+  }, [isAuthenticated, navigate]);
+
+  const handleLogin = async (e) => {
     e.preventDefault();
-
     try {
-      const response = await signup(name, email, password, phoneNumber);
-      // Assuming response contains userId for verification
-      navigate("/verify-email", {
-        state: {
-          userId: response.userId,
-          email: email,
-          phoneNumber: phoneNumber,
-        },
-      });
+      const response = await login(email, password);
+      if (response?.data?.user) {
+        navigate("/home");
+      }
     } catch (err) {
-      console.log(err);
+      console.error("Login error:", err);
     }
   };
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      await googleLogin(credentialResponse.credential);
+      const response = await googleLogin(credentialResponse.credential);
+      if (response?.data?.user) {
+        navigate("/home");
+      }
     } catch (error) {
       console.error("Google login failed", error);
     }
@@ -47,15 +50,14 @@ const SignUpPage = () => {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl 
-			overflow-hidden"
+      className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden"
     >
       <div className="p-8">
         <h2 className="text-3xl font-bold mb-6 text-center bg-gradient-to-r from-blue-400 to-cyan-500 text-transparent bg-clip-text">
-          Create Account
+          Welcome Back
         </h2>
 
-        <form onSubmit={handleSignUp}>
+        <form onSubmit={handleLogin}>
           <div className="w-full flex justify-center mb-4">
             <GoogleLogin
               onSuccess={handleGoogleLogin}
@@ -82,26 +84,13 @@ const SignUpPage = () => {
           </div>
 
           <Input
-            icon={User}
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-          <Input
             icon={Mail}
             type="email"
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
-          <Input
-            icon={Lock}
-            type="text"
-            placeholder="Phone Number"
-            value={phoneNumber}
-            onChange={(e) => setPhoneNumber(e.target.value)}
-          />
+
           <Input
             icon={Lock}
             type="password"
@@ -109,32 +98,37 @@ const SignUpPage = () => {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
-          {error && <p className="text-red-500 font-semibold mt-2">{error}</p>}
-          <PasswordStrengthMeter password={password} />
+
+          <div className="flex items-center mb-6">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-blue-400 hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          {error && <p className="text-red-500 font-semibold mb-2">{error}</p>}
 
           <motion.button
-            className="mt-5 w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white 
-						font-bold rounded-lg shadow-lg hover:from-blue-600
-						hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-						 focus:ring-offset-gray-900 transition duration-200"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
+            className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-600 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200"
             type="submit"
             disabled={isLoading}
           >
             {isLoading ? (
-              <Loader className="animate-spin mx-auto" size={24} />
+              <Loader className="w-6 h-6 animate-spin mx-auto" />
             ) : (
-              "Sign Up"
+              "Login"
             )}
           </motion.button>
         </form>
       </div>
       <div className="px-8 py-4 bg-gray-900 bg-opacity-50 flex justify-center">
         <p className="text-sm text-gray-400">
-          Already have an account?{" "}
-          <Link to={"/login"} className="text-blue-400 hover:underline">
-            Login
+          Don&apos;t have an account?{" "}
+          <Link to="/signup" className="text-blue-400 hover:underline">
+            Sign up
           </Link>
         </p>
       </div>
@@ -142,4 +136,4 @@ const SignUpPage = () => {
   );
 };
 
-export default SignUpPage;
+export default LoginPage;

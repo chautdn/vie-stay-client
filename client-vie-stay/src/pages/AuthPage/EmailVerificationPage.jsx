@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { useAuthStore } from "../store/authStore";
+import { useAuthStore } from "../../store/authStore";
 import toast from "react-hot-toast";
 
 const EmailVerificationPage = () => {
@@ -156,8 +156,8 @@ const EmailVerificationPage = () => {
               {actionLoading === "resending"
                 ? "Sending..."
                 : canResend
-                  ? "Resend verification code"
-                  : `Resend code in ${resendTimer}s`}
+                ? "Resend verification code"
+                : `Resend code in ${resendTimer}s`}
             </button>
           </div>
         </form>

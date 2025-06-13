@@ -11,45 +11,16 @@ export const useAuthStore = create((set) => ({
   isCheckingAuth: true,
   message: null,
 
-  checkAuth: async () => {
-    set({ isCheckingAuth: true });
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        set({ isCheckingAuth: false, isAuthenticated: false });
-        return;
-      }
-
-      const response = await axiosInstance.get(`${API_URL}/check-auth`);
-
-      set({
-        isAuthenticated: true,
-        user: response.data.data.user,
-        isCheckingAuth: false,
-      });
-    } catch (error) {
-      // Token is invalid, clear it
-      localStorage.removeItem("token");
-      set({
-        isAuthenticated: false,
-        user: null,
-        isCheckingAuth: false,
-      });
-    }
-  },
-
-  signup: async (name, email, password, phoneNumber) => {
+  signup: async (name, email, password) => {
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.post(`${API_URL}/signup`, {
         name,
         email,
         password,
-        phoneNumber,
       });
 
       const user = response.data.data?.user || null;
-
       set({
         user: user,
         isAuthenticated: false, // Still need email verification
@@ -117,33 +88,43 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.post(`${API_URL}/login`, {
-        email: email.toLowerCase(), // Normalize email on frontend too
+        email,
         password,
       });
 
-      const { user, token } = response.data.data;
+      const user = response.data?.data?.user || null;
+      const token =
+        response.data?.jwt ||
+        response.data?.data?.token ||
+        response.data?.token ||
+        null;
 
       if (user && token) {
-        // Store token
-        localStorage.setItem("token", token);
-
-        // Update state
         set({
           isAuthenticated: true,
           user,
           isLoading: false,
-          error: null,
         });
 
-        return { success: true, user };
+        // Store token in localStorage after successful login
+        localStorage.setItem("token", token);
+        console.log("Login successful, token saved:", token);
       } else {
-        throw new Error("Invalid response from server");
+        set({
+          isLoading: false,
+          error: "Login failed. Please check your credentials and try again.",
+        });
       }
+
+      return response.data;
     } catch (error) {
+      console.error("Login error:", error.response?.data);
       const errorMessage =
-        error.response?.data?.message || error.displayMessage || "Login failed";
-      useErrorStore.getState().setError(errorMessage);
-      set({ isLoading: false, error: errorMessage });
+        error.response?.data?.message || "Login failed. Please try again.";
+      set({
+        isLoading: false,
+        error: errorMessage,
+      });
       throw error;
     }
   },

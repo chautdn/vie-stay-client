@@ -1,39 +1,36 @@
 import { create } from "zustand";
-import axiosInstance from "../components/utils/AxiosInstance";
-import useErrorStore from "./errorStore";
+import axiosInstance from "../utils/AxiosInstance";
+import { BASE_URL } from "../utils/Constant";
 const API_URL = "/user";
 
 export const useAuthStore = create((set) => ({
-  user: null,
-  isAuthenticated: false,
-  error: null,
+  user: JSON.parse(sessionStorage.getItem("user")) || null,
+  isAuthenticated: !!sessionStorage.getItem("token"),
   isLoading: false,
+  error: null,
   isCheckingAuth: true,
   message: null,
 
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${API_URL}/signup`, {
+      const response = await axiosInstance.post(`${BASE_URL}/user/signup`, {
         name,
         email,
         password,
       });
-
-      const user = response.data.data?.user || null;
       set({
-        user: user,
-        isAuthenticated: false, // Still need email verification
+        user: response.data.data.user,
+        isAuthenticated: false, // User not verified yet
         isLoading: false,
-        message:
-          response.data.message ||
-          "Signup successful. Please verify your email.",
+        message: "Signup successful. Please verify your email.",
       });
-
       return response.data;
     } catch (error) {
-      useErrorStore.getState().setError(error.displayMessage);
-      set({ isLoading: false });
+      set({
+        error: error.response?.data?.message || "Error signing up",
+        isLoading: false,
+      });
       throw error;
     }
   },
@@ -87,67 +84,64 @@ export const useAuthStore = create((set) => ({
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${API_URL}/login`, {
+      const response = await axiosInstance.post(`${BASE_URL}/user/login`, {
         email,
         password,
       });
 
-      const user = response.data?.data?.user || null;
-      const token =
-        response.data?.jwt ||
-        response.data?.data?.token ||
-        response.data?.token ||
-        null;
+      const userData = response.data.data.user;
+      const token = response.data.token;
 
-      if (user && token) {
-        set({
-          isAuthenticated: true,
-          user,
-          isLoading: false,
-        });
-
-        // Store token in localStorage after successful login
-        localStorage.setItem("token", token);
-        console.log("Login successful, token saved:", token);
-      } else {
-        set({
-          isLoading: false,
-          error: "Login failed. Please check your credentials and try again.",
-        });
+      // Store both token AND user data in sessionStorage
+      if (token) {
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("user", JSON.stringify(userData));
       }
+
+      // Update state
+      set({
+        isAuthenticated: true,
+        user: userData,
+        error: null,
+        isLoading: false,
+      });
 
       return response.data;
     } catch (error) {
-      console.error("Login error:", error.response?.data);
-      const errorMessage =
-        error.response?.data?.message || "Login failed. Please try again.";
       set({
+        error: error.response?.data?.message || "Error logging in",
         isLoading: false,
-        error: errorMessage,
       });
       throw error;
     }
   },
 
-  // Google login
   googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${API_URL}/google-login`, {
-        credential,
-      });
+      const response = await axiosInstance.post(
+        `${BASE_URL}/user/google-login`,
+        {
+          credential,
+        }
+      );
 
-      // Store user data and token
+      const userData = response.data.data.user;
+      const token = response.data.token;
+
+      // Store both token AND user data in sessionStorage
+      if (token) {
+        sessionStorage.setItem("token", token);
+        sessionStorage.setItem("user", JSON.stringify(userData));
+      }
+
+      // Update state
       set({
         isAuthenticated: true,
-        user: response.data.data.user,
+        user: userData,
         error: null,
         isLoading: false,
       });
-
-      if (response.data.data.token) {
-        localStorage.setItem("token", response.data.data.token);
-      }
 
       return response.data;
     } catch (error) {
@@ -162,9 +156,12 @@ export const useAuthStore = create((set) => ({
   logout: async () => {
     set({ isLoading: true, error: null });
     try {
-      await axiosInstance.post(`${API_URL}/logout`);
-      // Clear token from localStorage
-      localStorage.removeItem("token");
+      await axiosInstance.post(`${BASE_URL}/user/logout`);
+      // Clear token from sessionStorage
+
+      sessionStorage.removeItem("user");
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("payment_link");
       set({
         user: null,
         isAuthenticated: false,
@@ -183,9 +180,12 @@ export const useAuthStore = create((set) => ({
   forgotPassword: async (email) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${API_URL}/forgot-password`, {
-        email,
-      });
+      const response = await axiosInstance.post(
+        `${BASE_URL}/user/forgot-password`,
+        {
+          email,
+        }
+      );
       set({
         message: response.data.message,
         isLoading: false,
@@ -205,7 +205,7 @@ export const useAuthStore = create((set) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.patch(
-        `${API_URL}/reset-password/${token}`,
+        `${BASE_URL}/user/reset-password/${token}`,
         {
           password,
         }

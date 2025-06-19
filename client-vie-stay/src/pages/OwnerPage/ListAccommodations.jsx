@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom"
 import { Plus, RefreshCw, Building2, SlidersHorizontal, X, AlertCircle } from "lucide-react"
 import AccommodationCard from "../../components/ownerComponents/AccommodationCard"
 import Pagination from "../../components/ownerComponents/Pagination"
-import { ACCOMMODATION_ROUTES, apiClient } from "../../store/apiRoutes/accommodationRoutes"
+import { ACCOMMODATION_ROUTES, apiClient } from "../../store/apiRoutes/accommodationStore"
 
 function ListAccommodations() {
   const [accommodations, setAccommodations] = useState([])
@@ -308,7 +308,7 @@ function ListAccommodations() {
             </select>
 
             {/* Active Status */}
-            <select
+            {/* <select
               value={filters.isActive}
               onChange={(e) => handleFilterChange("isActive", e.target.value)}
               className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
@@ -316,7 +316,7 @@ function ListAccommodations() {
               <option value="">Tất cả</option>
               <option value="true">Đang hiển thị</option>
               <option value="false">Đã ẩn</option>
-            </select>
+            </select> */}
 
             {/* Amenities */}
             <input

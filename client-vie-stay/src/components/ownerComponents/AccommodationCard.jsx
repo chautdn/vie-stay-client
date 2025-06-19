@@ -121,7 +121,7 @@ function AccommodationCard({ acc, onView, onEdit, onToggleActive }) {
             >
               <Edit className="h-4 w-4 text-white" />
             </button>
-            <button
+            {/* <button
               onClick={(e) => {
                 e.stopPropagation()
                 onToggleActive && onToggleActive(acc)
@@ -132,7 +132,7 @@ function AccommodationCard({ acc, onView, onEdit, onToggleActive }) {
               title={acc.isActive ? "Ẩn nhà trọ" : "Hiện nhà trọ"}
             >
               {acc.isActive ? <EyeOff className="h-4 w-4 text-white" /> : <Eye className="h-4 w-4 text-white" />}
-            </button>
+            </button> */}
           </div>
         </div>
 

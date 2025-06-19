@@ -9,6 +9,7 @@ import EmailVerificationPage from "./pages/AuthPage/EmailVerificationPage";
 import ForgotPasswordPage from "./pages/AuthPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/AuthPage/ResetPasswordPage";
 import HomePage from "./pages/HomePage/HomePage";
+import RoomManagement from "./components/onwerPageComponents/RooomManagement"
 
 function App() {
   return (
@@ -26,6 +27,11 @@ function App() {
         <Route path="/home" element={<HomePage />} />
       </Route>
      
+ <Route element={<MainLayout />}>
+  <Route path="/home" element={<HomePage />} />
+  <Route path="/rooms" element={<RoomManagement />} /> {/* Thêm dòng này */}
+ </Route>
+
       
 
     </Routes>

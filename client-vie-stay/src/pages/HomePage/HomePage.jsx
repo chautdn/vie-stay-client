@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore"; 
 import { LogOut } from "lucide-react"; 
+import Room from "../RoomPage/Room";
+
 
 const Homepage = () => {
   const logout = useAuthStore((state) => state.logout);
@@ -18,7 +20,8 @@ const Homepage = () => {
   };
 
   return (
-    <div className="p-8 flex flex-col items-end">
+  <div className="p-8">
+    <div className="flex justify-end mb-6">
       <button
         onClick={handleLogout}
         disabled={isLoading}
@@ -27,9 +30,12 @@ const Homepage = () => {
         <LogOut className="w-5 h-5" />
         {isLoading ? "Logging out..." : "Logout"}
       </button>
-      {/*code giao dien homepage*/}
     </div>
-  );
+
+    {/* Hiển thị danh sách phòng */}
+    <Room />
+  </div>
+);
 };
 
 export default Homepage;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Heart,
   Filter,
@@ -10,39 +10,24 @@ import {
   UserCog,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Navbar = () => {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [showDropdown, setShowDropdown] = useState(false);
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      const token = sessionStorage.getItem("token");
-      const storedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
-      const userId = storedUser._id || storedUser.id;
-      if (!token || !userId) return;
-
-      try {
-        const res = await fetch(`http://localhost:8080/user/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) throw new Error("Không thể lấy thông tin người dùng");
-        const data = await res.json();
-        setUser(data.user);
-      } catch (err) {
-        console.error("Lỗi khi fetch user từ DB:", err);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const handleLogout = () => {
     sessionStorage.removeItem("user");
     sessionStorage.removeItem("token");
     window.location.href = "/login";
+  };
+
+  const toggleDropdown = () => setShowDropdown((prev) => !prev);
+
+  const handleNavigate = (path) => {
+    setShowDropdown(false);
+    navigate(path);
   };
 
   return (
@@ -81,64 +66,74 @@ const Navbar = () => {
 
         {/* Right section */}
         <div className="flex items-center gap-4 text-sm text-gray-700 relative">
-          <div className="flex items-center gap-1 cursor-pointer hover:text-orange-600">
+          <div
+            className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+            onClick={() => handleNavigate("/saved")}
+          >
             <Heart size={16} /> Tin đã lưu
           </div>
-          <div className="flex items-center gap-1 cursor-pointer hover:text-orange-600">
+          <div
+            className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+            onClick={() => handleNavigate("/dashboard")}
+          >
             <Folder size={16} /> Quản lý
           </div>
 
           {/* Account dropdown */}
           <div
             className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
-            onClick={() => setShowDropdown(!showDropdown)}
+            onClick={toggleDropdown}
           >
             <User size={16} />
             <span>{user?.name || "Tài khoản"}</span>
             <ChevronDown size={14} />
           </div>
 
-          <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full flex items-center gap-1 font-semibold">
+          <button
+            className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full flex items-center gap-1 font-semibold"
+            onClick={() => navigate("/create-post")}
+          >
             <Pencil size={14} /> Đăng tin
           </button>
 
-          {/* Dropdown content */}
+          {/* Dropdown */}
           {showDropdown && user && (
-          <div className="absolute right-0 top-14 bg-white rounded-2xl shadow-2xl w-80 border border-gray-200 z-50 animate-fadeIn">
-          <div className="flex items-center gap-4 p-4 border-b">
-            <img
-              src={
-                user.profileImage
-                  ? `http://localhost:8080${user.profileImage}`
-                  : "https://via.placeholder.com/80"
-              }
-              alt="avatar"
-              className="w-14 h-14 rounded-full object-cover border"
-            />
-            <div>
-              <p className="font-semibold text-base text-gray-800">{user.name}</p>
-              <p className="text-sm text-gray-500">{user.phoneNumber}</p>
-            </div>
-          </div>
+            <div className="absolute right-0 top-14 bg-white rounded-2xl shadow-2xl w-80 border border-gray-200 z-50 animate-fadeIn">
+              <div className="flex items-center gap-4 p-4 border-b">
+                <img
+                  src={
+                    user.profileImage
+                      ? `http://localhost:8080${user.profileImage}`
+                      : "https://via.placeholder.com/80"
+                  }
+                  alt="avatar"
+                  className="w-14 h-14 rounded-full object-cover border"
+                />
+                <div>
+                  <p className="font-semibold text-base text-gray-800">
+                    {user.name}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {user.phoneNumber || "Chưa có số điện thoại"}
+                  </p>
+                </div>
+              </div>
 
-          <div className="p-4 space-y-2 text-sm text-gray-700">
-            <button
-              onClick={() => {
-                setShowDropdown(false);
-                navigate("/profile");
-              }}
-              className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
-            >
-              <UserCog size={18} /> <span>Quản lý tài khoản</span>
-            </button>
+              <div className="p-4 space-y-2 text-sm text-gray-700">
+                <button
+                  onClick={() => handleNavigate("/profile")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <UserCog size={18} /> <span>Quản lý tài khoản</span>
+                </button>
 
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-red-50 text-red-600 transition"
-                  >
-                <LogOut size={18} /> <span>Đăng xuất</span>
-              </button>
-            </div>
+                <button
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-red-50 text-red-600 transition"
+                >
+                  <LogOut size={18} /> <span>Đăng xuất</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

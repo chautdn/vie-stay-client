@@ -5,11 +5,13 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/authPageComponents/Input";
 import { useAuthStore } from "../../store/authStore";
 import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { setUser } = useAuth(); // 👈 Thêm dòng này
 
   const { login, isLoading, error, googleLogin, isAuthenticated } =
     useAuthStore();
@@ -23,27 +25,33 @@ const LoginPage = () => {
   }, [isAuthenticated, navigate]);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await login(email, password);
-      if (response?.data?.user) {
-        navigate("/home");
-      }
-    } catch (err) {
-      console.error("Login error:", err);
+  e.preventDefault();
+  try {
+    const response = await login(email, password);
+    if (response?.data?.user) {
+      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      sessionStorage.setItem("token", response.data.token);
+      setUser(response.data.user); // 👈 cập nhật context để Navbar phản ứng
+      navigate("/home");
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err);
+  }
+};
 
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      const response = await googleLogin(credentialResponse.credential);
-      if (response?.data?.user) {
-        navigate("/home");
-      }
-    } catch (error) {
-      console.error("Google login failed", error);
+const handleGoogleLogin = async (credentialResponse) => {
+  try {
+    const response = await googleLogin(credentialResponse.credential);
+    if (response?.data?.user) {
+      sessionStorage.setItem("user", JSON.stringify(response.data.user));
+      sessionStorage.setItem("token", response.data.token);
+      setUser(response.data.user); // 👈 cập nhật context cho Navbar
+      navigate("/home");
     }
-  };
+  } catch (error) {
+    console.error("Google login failed", error);
+  }
+};
 
   return (
     <motion.div

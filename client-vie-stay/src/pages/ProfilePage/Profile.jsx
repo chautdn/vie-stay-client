@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
+  const { setUser } = useAuth();
+  const [user, setLocalUser] = useState(null);
   const [form, setForm] = useState({ name: "", phoneNumber: "" });
   const [avatarFile, setAvatarFile] = useState(null);
   const [message, setMessage] = useState("");
@@ -12,7 +14,6 @@ const Profile = () => {
   const storedUser = JSON.parse(sessionStorage.getItem("user") || "{}");
   const userId = storedUser?._id || storedUser?.id;
 
-  // Load user info
   useEffect(() => {
     const fetchUser = async () => {
       if (!token || !userId) return;
@@ -21,7 +22,7 @@ const Profile = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
-        setUser(data.user);
+        setLocalUser(data.user);
         setForm({
           name: data.user.name || "",
           phoneNumber: data.user.phoneNumber || "",
@@ -46,10 +47,11 @@ const Profile = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
+      const updatedUser = { ...storedUser };
+
       // Update name
-      await fetch(`http://localhost:8080/user/${userId}/name`, {
+      const resName = await fetch(`http://localhost:8080/user/${userId}/name`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -57,9 +59,10 @@ const Profile = () => {
         },
         body: JSON.stringify({ name: form.name }),
       });
+      if (resName.ok) updatedUser.name = form.name;
 
       // Update phone number
-      await fetch(`http://localhost:8080/user/${userId}/phone`, {
+      const resPhone = await fetch(`http://localhost:8080/user/${userId}/phone`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -67,17 +70,27 @@ const Profile = () => {
         },
         body: JSON.stringify({ phoneNumber: form.phoneNumber }),
       });
+      if (resPhone.ok) updatedUser.phoneNumber = form.phoneNumber;
 
       // Upload avatar
       if (avatarFile) {
         const formData = new FormData();
         formData.append("profileImage", avatarFile);
-        await fetch(`http://localhost:8080/user/${userId}/avatar`, {
+        const resAvatar = await fetch(`http://localhost:8080/user/${userId}/avatar`, {
           method: "PATCH",
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
         });
+
+        if (resAvatar.ok) {
+          const avatarData = await resAvatar.json();
+          updatedUser.profileImage = avatarData.user.profileImage;
+        }
       }
+
+      // ✅ Cập nhật local context và sessionStorage
+      sessionStorage.setItem("user", JSON.stringify(updatedUser));
+      setUser(updatedUser); // → trigger Navbar cập nhật
 
       setMessage("Cập nhật thành công!");
     } catch (err) {
@@ -152,7 +165,6 @@ const Profile = () => {
           )}
         </form>
 
-        {/* Link đổi mật khẩu */}
         <div className="text-center mt-6">
           <Link
             to="/change-password"

@@ -54,12 +54,14 @@ function CreateAccommodation() {
     // SECTION: DATA FETCHING FOR EDIT MODE
     // =================================================================
     useEffect(() => {
-        if (isEditMode) {
+        // Nếu có ID trên URL, chúng ta đang ở chế độ "Sửa"
+        if (id) {
             const fetchAccommodationData = async () => {
                 setPageLoading(true);
                 try {
                     const response = await apiClient.get(`http://localhost:8080/api/accommodations/${id}`);
-                    setForm(response.data);
+                    // Giả sử API trả về { data: accommodationObject }
+                    setForm(response.data); 
                     setImagePreviews(response.data.images || []);
                 } catch (error) {
                     setErrors({ submit: "Không thể tải dữ liệu để chỉnh sửa." });
@@ -68,8 +70,11 @@ function CreateAccommodation() {
                 }
             };
             fetchAccommodationData();
+        } else {
+            // Nếu không có ID, đây là chế độ "Tạo mới", gọi hàm reset form
+            resetForm();
         }
-    }, [id, isEditMode]);
+    }, [id]); // Hook này sẽ chạy lại mỗi khi `id` trên URL thay đổi
 
 
     // =================================================================
@@ -191,42 +196,81 @@ function CreateAccommodation() {
             const missingLabels = missingDocTypes.map((type) => documentTypes.find((dt) => dt.value === type)?.label || type).join(", ");
             newErrors.documents = `Thiếu các loại giấy tờ bắt buộc: ${missingLabels}`;
         }
+        const total = Number(form.totalRooms);
+    const available = Number(form.availableRooms);
+
+    if (total < 0) {
+        newErrors.totalRooms = "Số phòng không thể âm";
+    }
+    if (available < 0) {
+        newErrors.availableRooms = "Số phòng trống không thể âm";
+    }
+    
+    // **KIỂM TRA QUAN TRỌNG NHẤT**
+    if (available > total) {
+        newErrors.availableRooms = "Số phòng trống không thể lớn hơn tổng số phòng";
+    }
+
+        
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
+    };
+
+    const resetForm = () => {
+        setForm({
+            name: "", description: "", type: "", images: [], documents: [], amenities: [],
+            address: { street: "", ward: "", district: "", city: "Đà Nẵng", fullAddress: "" },
+            contactInfo: { phone: "", email: "", website: "" },
+            totalRooms: 0, availableRooms: 0,
+            policies: { checkInTime: "", checkOutTime: "", smokingAllowed: false, petsAllowed: false, partiesAllowed: false, quietHours: { start: "", end: "" }, additionalRules: [] },
+        });
+        setImageFiles([]);
+        setImagePreviews([]);
+        setDocumentUploadStatus({});
+        setErrors({});
+        setSuccess("");
+        setPageLoading(false); // Đặt lại loading của trang
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (!validateForm()) return;
+        
         setLoading(true);
-        setSuccess("");
         setErrors({});
-
+        // Xóa dòng setSuccess("") ở đây vì không cần nữa
+    
         try {
+            // Logic upload ảnh và chuẩn bị formData giữ nguyên
             const newImageUrls = imageFiles.length > 0 ? await Promise.all(imageFiles.map(uploadToCloudinary)) : [];
             const existingImageUrls = form.images;
             const finalImages = [...existingImageUrls, ...newImageUrls];
             const formData = { ...form, images: finalImages };
-
+    
+            // NEW: Chuẩn bị một biến để lưu thông báo thành công
+            let successMessage = "";
+    
             if (isEditMode) {
-                await apiClient.put(`http://localhost:8080/api/accommodations/${id}`, formData);
-                setSuccess("Cập nhật nhà trọ thành công!");
+                const response = await apiClient.put(`http://localhost:8080/api/accommodations/${id}`, formData);
+                successMessage = response.message; // Gán message động từ API
             } else {
                 const createData = { ...formData, ownerId: ownerId, approvalStatus: "pending", isActive: true };
                 await apiClient.post(ACCOMMODATION_ROUTES.CREATE, createData);
-                setSuccess("Tạo nhà trọ thành công! Đang chờ admin duyệt.");
+                successMessage = "Tạo nhà trọ thành công! Đang chờ admin duyệt."; // Gán message cho việc tạo mới
             }
-            setTimeout(() => navigate("/owner/accommodations"), 1500);
+            
+            // MODIFIED: Chuyển hướng ngay lập tức và gửi kèm message trong state
+            navigate("/owner/accommodations", {
+                state: { message: successMessage }
+            });
+    
         } catch (err) {
             setErrors({ submit: `Có lỗi xảy ra: ${err.message}` });
         } finally {
+            // Vẫn giữ lại setLoading(false) để tắt icon loading nếu có lỗi
             setLoading(false);
         }
     };
-
-    if (pageLoading) {
-        return <div className="text-center py-20">Đang tải dữ liệu...</div>;
-    }
 
     // ======================== GIAO DIỆN GỌN GÀNG MỚI ========================
     return (
@@ -242,6 +286,13 @@ function CreateAccommodation() {
                     </div>
                 </div>
             </div>
+            {isEditMode && form.approvalStatus === 'approved' && (
+              <StatusAlert
+                type="warning"
+                title="Lưu ý quan trọng khi cập nhật"
+                message="Các thay đổi đối với những thông tin quan trọng (Tên nhà trọ, Loại hình, Địa chỉ, Hình ảnh, Giấy tờ) sẽ yêu cầu Admin duyệt lại. Trong thời gian chờ duyệt, nhà trọ có thể sẽ tạm thời bị ẩn."
+              />
+            )}
 
             <StatusAlert type="success" message={success} />
             <StatusAlert type="error" message={errors.submit} />

@@ -1,11 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { Plus, RefreshCw, Building2, SlidersHorizontal, X, AlertCircle } from "lucide-react"
 import AccommodationCard from "../../components/ownerComponents/AccommodationCard"
 import Pagination from "../../components/ownerComponents/Pagination"
 import { ACCOMMODATION_ROUTES, apiClient } from "../../store/apiRoutes/accommodationStore"
+import StatusAlert from "../../components/ownerComponents/FormComponents/StatusAlert";
+
 
 function ListAccommodations() {
   const [accommodations, setAccommodations] = useState([])
@@ -29,10 +31,30 @@ function ListAccommodations() {
   })
 
   const navigate = useNavigate()
+  const location = useLocation(); 
 
   // Replace with actual owner ID from your auth system
   const ownerId = "675f7c5b4c57ca2d5e8b4567" // This should come from your authentication
 
+  // NEW: State để hiển thị thông báo thành công từ trang Create/Edit
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || "");
+
+  // NEW: useEffect để nhận và xử lý message
+  useEffect(() => {
+    if (location.state?.message) {
+      // Xóa state của location để message không hiển thị lại khi refresh
+      const { state } = location;
+      delete state.message;
+      navigate(location.pathname, { state, replace: true });
+      
+      // Tự động ẩn message sau 5 giây
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [location, navigate]);
   const fetchAccommodations = async () => {
     setLoading(true)
     setError("")
@@ -187,6 +209,9 @@ function ListAccommodations() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="mb-6">
+          <StatusAlert type="success" message={successMessage} />
+      </div>
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -307,18 +332,6 @@ function ListAccommodations() {
               <option value="rejected">Từ chối</option>
             </select>
 
-            {/* Active Status */}
-            {/* <select
-              value={filters.isActive}
-              onChange={(e) => handleFilterChange("isActive", e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-            >
-              <option value="">Tất cả</option>
-              <option value="true">Đang hiển thị</option>
-              <option value="false">Đã ẩn</option>
-            </select> */}
-
-            {/* Amenities */}
             <input
               type="text"
               placeholder="Tiện nghi (wifi,parking...)"

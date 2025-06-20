@@ -4,8 +4,9 @@ import { BASE_URL } from "../utils/Constant";
 const API_URL = "/user";
 
 export const useAuthStore = create((set) => ({
-  user: JSON.parse(sessionStorage.getItem("user")) || null,
-  isAuthenticated: !!sessionStorage.getItem("token"),
+  user: null,
+  token: null,
+  isAuthenticated: false,
   isLoading: false,
   error: null,
   isCheckingAuth: true,
@@ -154,26 +155,41 @@ export const useAuthStore = create((set) => ({
   },
 
   logout: async () => {
-    set({ isLoading: true, error: null });
+    set({ isLoading: true });
     try {
-      await axiosInstance.post(`${BASE_URL}/user/logout`);
-      // Clear token from sessionStorage
+      // Call backend logout endpoint
+      await axiosInstance.post(`${API_URL}/logout`);
 
-      sessionStorage.removeItem("user");
+      // Clear all authentication data
       sessionStorage.removeItem("token");
-      sessionStorage.removeItem("payment_link");
+      sessionStorage.removeItem("user");
+
+      // Reset store state
       set({
         user: null,
+        token: null,
         isAuthenticated: false,
-        error: null,
         isLoading: false,
       });
+
+      console.log("✅ Logout successful");
+      return { success: true };
     } catch (error) {
+      console.error("Logout error:", error);
+
+      // Even if backend fails, clear frontend data
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+
       set({
-        error: error.response?.data?.message || "Error logging out",
+        user: null,
+        token: null,
+        isAuthenticated: false,
         isLoading: false,
       });
-      throw error;
+
+      // Don't throw error, logout should always succeed on frontend
+      return { success: true };
     }
   },
 

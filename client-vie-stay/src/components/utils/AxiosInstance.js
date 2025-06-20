@@ -11,10 +11,15 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
-    const accessToken = localStorage.getItem("token");
+    // Lấy từ sessionStorage thay vì localStorage
+    const accessToken = sessionStorage.getItem("token");
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+    } else {
+      console.log("❌ No token in sessionStorage");
     }
+
     return config;
   },
   (error) => {
@@ -29,21 +34,20 @@ axiosInstance.interceptors.response.use(
     return response;
   },
   (error) => {
-    // Extract the error message from the backend response
-    const errorMessage = error.response?.data?.message || 
-                         "Something went wrong. Please try again.";
-    
-    // You can create a custom error object with the extracted message
-    const enhancedError = {
-      ...error,
-      displayMessage: errorMessage
-    };
-    
-    // If you're using a global error handling mechanism like a store or context,
-    // you can update it here
-    // Example: useErrorStore.getState().setError(errorMessage);
-    
-    return Promise.reject(enhancedError);
+    if (error.response?.status === 401) {
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
+    }
+
+    if (error.response?.data?.message) {
+      error.displayMessage = error.response.data.message;
+    }
+
+    return Promise.reject(error);
   }
 );
 

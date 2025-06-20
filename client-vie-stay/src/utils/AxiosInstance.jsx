@@ -1,5 +1,5 @@
-import { BASE_URL } from "./Constant";
 import axios from "axios";
+import { BASE_URL } from "./Constant";
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -11,10 +11,15 @@ const axiosInstance = axios.create({
 
 axiosInstance.interceptors.request.use(
   (config) => {
+    // Lấy từ sessionStorage thay vì localStorage
     const accessToken = sessionStorage.getItem("token");
+
     if (accessToken) {
       config.headers.Authorization = `Bearer ${accessToken}`;
+    } else {
+      console.log("❌ No token in sessionStorage");
     }
+
     return config;
   },
   (error) => {
@@ -22,23 +27,26 @@ axiosInstance.interceptors.request.use(
   }
 );
 
+// Add response interceptor to handle errors
 axiosInstance.interceptors.response.use(
   (response) => {
+    // Return successful response as is
     return response;
   },
   (error) => {
-    // Handle 401 or 403 errors (unauthorized or forbidden)
-    if (
-      error.response &&
-      (error.response.status === 401 || error.response.status === 403)
-    ) {
-      // Clear token and user data
+    if (error.response?.status === 401) {
       sessionStorage.removeItem("token");
       sessionStorage.removeItem("user");
 
-      // Redirect to login page
-      window.location.href = "/";
+      if (!window.location.pathname.includes("/login")) {
+        window.location.href = "/login";
+      }
     }
+
+    if (error.response?.data?.message) {
+      error.displayMessage = error.response.data.message;
+    }
+
     return Promise.reject(error);
   }
 );

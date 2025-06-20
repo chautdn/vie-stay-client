@@ -16,9 +16,18 @@ const LoginPage = () => {
 
   useEffect(() => {
     // Check if user is already authenticated
-    const token = localStorage.getItem("token");
-    if (token || isAuthenticated) {
-      navigate("/home");
+    const token = sessionStorage.getItem("token"); // ✅ sessionStorage
+    const user = JSON.parse(sessionStorage.getItem("user") || "null");
+
+    if (token && user) {
+      // Navigate based on user role
+      if (Array.isArray(user?.role) && user.role.includes("landlord")) {
+        navigate("/owner/dashboard");
+      } else if (user?.role === "landlord") {
+        navigate("/owner/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     }
   }, [isAuthenticated, navigate]);
 
@@ -26,8 +35,19 @@ const LoginPage = () => {
     e.preventDefault();
     try {
       const response = await login(email, password);
+      console.log("Login response:", response); // Debug
+
       if (response?.data?.user) {
-        navigate("/home");
+        // Navigate based on user role
+        const userRole = response.data.user.role;
+
+        if (Array.isArray(userRole) && userRole.includes("landlord")) {
+          navigate("/owner/dashboard"); // ✅ Đúng route cho landlord
+        } else if (userRole === "landlord" || userRole.includes("landlord")) {
+          navigate("/owner/dashboard"); // ✅ Đúng route cho landlord
+        } else {
+          navigate("/dashboard"); // Route cho user thường
+        }
       }
     } catch (err) {
       console.error("Login error:", err);

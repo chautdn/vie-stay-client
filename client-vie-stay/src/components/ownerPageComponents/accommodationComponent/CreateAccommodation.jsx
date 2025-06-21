@@ -28,7 +28,7 @@ function CreateAccommodation() {
     // SECTION: STATE MANAGEMENT
     // =================================================================
     const [pageLoading, setPageLoading] = useState(isEditMode);
-    const [isSubmitting, setIsSubmitting] = useState(false); // ✅ THÊM: Missing state
+    const [isSubmitting, setIsSubmitting] = useState(false); // ✅ SỬA: Rename loading to isSubmitting
     const [errors, setErrors] = useState({});
     const [success, setSuccess] = useState("");
     const [imageFiles, setImageFiles] = useState([]);
@@ -67,11 +67,10 @@ function CreateAccommodation() {
     });
     
     // =================================================================
-    // SECTION: CONFIG & CONSTANTS (ownerId removed)
+    // SECTION: CONFIG & CONSTANTS
     // =================================================================
     const CLOUD_NAME = "dvltsiopl";
     const UPLOAD_PRESET = "viestay_unsigned";
-    // ✅ REMOVED: ownerId hardcode - AxiosInstance sẽ tự động lấy từ token
 
     // =================================================================
     // SECTION: DATA FETCHING FOR EDIT MODE
@@ -289,6 +288,22 @@ function CreateAccommodation() {
             newErrors["contactInfo.phone"] = "Số điện thoại không hợp lệ (VD: 0123456789)";
         }
         
+        // ✅ SỬA: Validation cho totalRooms và availableRooms
+        const total = Number(form.totalRooms);
+        const available = Number(form.availableRooms);
+
+        if (total < 0) {
+            newErrors.totalRooms = "Số phòng không thể âm";
+        }
+        if (available < 0) {
+            newErrors.availableRooms = "Số phòng trống không thể âm";
+        }
+        
+        // **KIỂM TRA QUAN TRỌNG NHẤT**
+        if (available > total) {
+            newErrors.availableRooms = "Số phòng trống không thể lớn hơn tổng số phòng";
+        }
+        
         const missingDocTypes = requiredDocTypes.filter((type) => 
           !form.documents.find((doc) => doc.type === type)
         );
@@ -328,49 +343,36 @@ function CreateAccommodation() {
                 console.log("✅ Images uploaded:", newImageUrls);
             }
 
-            // ✅ SỬA: Prepare accommodation data (ownerId removed - backend sẽ lấy từ token)
+            // ✅ SỬA: Prepare accommodation data
             const accommodationData = {
                 ...form,
                 images: imageUrls,
-                // ownerId removed - AxiosInstance interceptor sẽ tự động thêm user info
             };
 
             console.log("📦 Final accommodation data:", accommodationData);
             
             let response;
+            let successMessage = "";
             
             if (isEditMode) {
                 // ✅ SỬA: Sử dụng relative URL với AxiosInstance
                 response = await apiClient.put(`/api/accommodations/${id}`, accommodationData);
                 console.log("✅ Update response:", response);
+                successMessage = response.data?.message || "Cập nhật nhà trọ thành công!";
             } else {
                 // ✅ SỬA: Sử dụng relative URL với AxiosInstance
                 response = await apiClient.post('/api/accommodations', accommodationData);
                 console.log("✅ Create response:", response);
+                successMessage = response.data?.message || "Tạo nhà trọ thành công! Đang chờ admin duyệt.";
             }
 
             // Handle success
             setErrors({});
-            setSuccess(isEditMode ? "Cập nhật nhà trọ thành công!" : "Tạo nhà trọ thành công!");
             
-            // Clear form if create mode
-            if (!isEditMode) {
-                setForm({
-                    name: "", description: "", type: "", images: [], documents: [], amenities: [],
-                    address: { street: "", ward: "", district: "", city: "Đà Nẵng", fullAddress: "" },
-                    contactInfo: { phone: "", email: "", website: "" },
-                    totalRooms: 0, availableRooms: 0,
-                    policies: { checkInTime: "", checkOutTime: "", smokingAllowed: false, petsAllowed: false, partiesAllowed: false, quietHours: { start: "", end: "" }, additionalRules: [] },
-                });
-                setImageFiles([]);
-                setImagePreviews([]);
-                setDocumentUploadStatus({});
-            }
-            
-            // Navigate back to list after delay
-            setTimeout(() => {
-                navigate("/owner/accommodations");
-            }, 1500);
+            // ✅ SỬA: Chuyển hướng ngay lập tức và gửi kèm message trong state
+            navigate("/owner/accommodations", {
+                state: { message: successMessage }
+            });
             
         } catch (error) {
             console.error("❌ Submit error:", error);
@@ -426,6 +428,15 @@ function CreateAccommodation() {
                     </div>
                 </div>
             </div>
+
+            {/* ✅ SỬA: Warning alert cho edit mode */}
+            {isEditMode && form.approvalStatus === 'approved' && (
+              <StatusAlert
+                type="warning"
+                title="Lưu ý quan trọng khi cập nhật"
+                message="Các thay đổi đối với những thông tin quan trọng (Tên nhà trọ, Loại hình, Địa chỉ, Hình ảnh, Giấy tờ) sẽ yêu cầu Admin duyệt lại. Trong thời gian chờ duyệt, nhà trọ có thể sẽ tạm thời bị ẩn."
+              />
+            )}
 
             <StatusAlert type="success" message={success} />
             <StatusAlert type="error" message={errors.submit} />

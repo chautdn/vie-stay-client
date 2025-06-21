@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useLocation } from "react-router-dom" // ✅ SỬA: Fix duplicate import
 import { Plus, RefreshCw, Building2, SlidersHorizontal, X, AlertCircle } from "lucide-react"
 import AccommodationCard from "./AccommodationCard"
 import AccommodationDetailModal from "./AccommodationDetailModal"
 import Pagination from "./Pagination"
 import { ACCOMMODATION_ROUTES, apiClient } from "../../../store/owner/accommodationRoutes"
+import StatusAlert from './FormComponents/StatusAlert' // ✅ SỬA: Fix import path
 
 function ListAccommodations() {
   const [accommodations, setAccommodations] = useState([])
@@ -34,6 +35,25 @@ function ListAccommodations() {
   })
 
   const navigate = useNavigate()
+  const location = useLocation()
+
+  // ✅ SỬA: State để hiển thị thông báo thành công từ trang Create/Edit
+  const [successMessage, setSuccessMessage] = useState(location.state?.message || "")
+
+  // ✅ SỬA: useEffect để nhận và xử lý message
+  useEffect(() => {
+    if (location.state?.message) {
+      // Xóa state của location để message không hiển thị lại khi refresh
+      navigate(location.pathname, { replace: true })
+      
+      // Tự động ẩn message sau 5 giây
+      const timer = setTimeout(() => {
+        setSuccessMessage("")
+      }, 5000)
+
+      return () => clearTimeout(timer)
+    }
+  }, [location, navigate])
 
   // Sử dụng endpoint /me thay vì query với ownerId
   const fetchAccommodations = async () => {
@@ -41,22 +61,14 @@ function ListAccommodations() {
     setError("")
 
     try {
-     
-      
       const response = await apiClient.get('/api/accommodations/me')
-      
-
       
       let accommodationsData = []
       
       if (response.data) {
-       
         if (Array.isArray(response.data)) {
           accommodationsData = response.data
-        }
-       
-        else if (response.data && typeof response.data === 'object') {
-          
+        } else if (response.data && typeof response.data === 'object') {
           accommodationsData = response.data.accommodations || 
                                response.data.results || 
                                response.data.items || 
@@ -65,14 +77,12 @@ function ListAccommodations() {
         }
       }
       
-     
-     
       if (!Array.isArray(accommodationsData)) {
         console.warn("⚠️ accommodationsData is not array:", accommodationsData)
         accommodationsData = []
       }
 
-      
+      // Apply filters
       let filteredData = accommodationsData
 
       if (filters.keyword) {
@@ -112,21 +122,15 @@ function ListAccommodations() {
         )
       }
 
-     
-
       // Apply pagination
       const startIndex = (page - 1) * limit
       const endIndex = startIndex + limit
       const paginatedData = filteredData.slice(startIndex, endIndex)
 
-     
-
       setAccommodations(paginatedData)
       setTotal(filteredData.length)
       
     } catch (err) {
-    
-
       if (err.displayMessage) {
         setError(err.displayMessage)
       } else if (err.response?.data?.message) {
@@ -154,7 +158,7 @@ function ListAccommodations() {
       if (page === 1) {
         fetchAccommodations()
       } else {
-        setPage(1) // This will trigger fetchAccommodations via the page useEffect
+        setPage(1)
       }
     }, 500)
 
@@ -262,6 +266,13 @@ function ListAccommodations() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* ✅ SỬA: Success Message Alert */}
+      {successMessage && (
+        <div className="mb-6">
+          <StatusAlert type="success" message={successMessage} />
+        </div>
+      )}
+
       {/* Header */}
       <div className="mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -448,7 +459,7 @@ function ListAccommodations() {
                   onView={handleView}
                   onEdit={handleEdit}
                   onToggleActive={handleToggleActive}
-                  onManageRooms={handleManageRooms} // ✅ THÊM: Pass handleManageRooms
+                  onManageRooms={handleManageRooms}
                 />
               ))}
             </div>

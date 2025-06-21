@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Navbar from "../Navbar/Navbar";
+import Footer from "../Navbar/Footer";
 
 const ChangePassword = () => {
   const [form, setForm] = useState({
@@ -56,67 +58,73 @@ const ChangePassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
-      <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
-        <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
-          🔒 Đổi mật khẩu
-        </h2>
+    <>
+      <Navbar />
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mật khẩu hiện tại
-            </label>
-            <input
-              type="password"
-              name="currentPassword"
-              value={form.currentPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
-              placeholder="Nhập mật khẩu hiện tại"
-            />
-          </div>
+      <div className="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
+        <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
+          <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
+            🔒 Đổi mật khẩu
+          </h2>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mật khẩu mới
-            </label>
-            <input
-              type="password"
-              name="newPassword"
-              value={form.newPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
-              placeholder="Nhập mật khẩu mới"
-            />
-          </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mật khẩu hiện tại
+              </label>
+              <input
+                type="password"
+                name="currentPassword"
+                value={form.currentPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                placeholder="Nhập mật khẩu hiện tại"
+              />
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Xác nhận mật khẩu mới
-            </label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={form.confirmPassword}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
-              placeholder="Xác nhận lại mật khẩu"
-            />
-          </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Mật khẩu mới
+              </label>
+              <input
+                type="password"
+                name="newPassword"
+                value={form.newPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                placeholder="Nhập mật khẩu mới"
+              />
+            </div>
 
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          {message && <p className="text-green-600 text-sm">{message}</p>}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Xác nhận mật khẩu mới
+              </label>
+              <input
+                type="password"
+                name="confirmPassword"
+                value={form.confirmPassword}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded-md px-4 py-2 focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                placeholder="Xác nhận lại mật khẩu"
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md font-semibold transition duration-200"
-          >
-            Cập nhật mật khẩu
-          </button>
-        </form>
+            {error && <p className="text-red-500 text-sm">{error}</p>}
+            {message && <p className="text-green-600 text-sm">{message}</p>}
+
+            <button
+              type="submit"
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-md font-semibold transition duration-200"
+            >
+              Cập nhật mật khẩu
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+
+      <Footer />
+    </>
   );
 };
 

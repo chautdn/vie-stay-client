@@ -1,4 +1,4 @@
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
@@ -15,25 +15,11 @@ import RoomDetail from "./pages/RoomPage/RoomDetail";
 import Profile from "./pages/ProfilePage/Profile";
 import ChangePassword from "./pages/ProfilePage/ChangePassword";
 
-import Navbar from "./pages/Navbar/Navbar";
-import Footer from "./pages/Navbar/Footer";
-
 import { AuthProvider } from "./pages/contexts/AuthContext";
 
 function App() {
-  const location = useLocation();
-
-  // Những route không cần hiển thị Navbar/Footer (trang auth)
-  const isAuthRoute = location.pathname.startsWith("/login") ||
-                      location.pathname.startsWith("/signup") ||
-                      location.pathname.startsWith("/forgot-password") ||
-                      location.pathname.startsWith("/reset-password") ||
-                      location.pathname.startsWith("/verify-email");
-
   return (
     <AuthProvider>
-      {!isAuthRoute && <Navbar />}
-
       <Routes>
         {/* Auth pages */}
         <Route element={<AuthLayout />}>
@@ -54,8 +40,6 @@ function App() {
           <Route path="/change-password" element={<ChangePassword />} />
         </Route>
       </Routes>
-
-      {!isAuthRoute && <Footer />}
     </AuthProvider>
   );
 }

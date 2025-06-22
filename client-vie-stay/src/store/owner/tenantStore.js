@@ -6,7 +6,7 @@ export const useTenantStore = create((set, get) => ({
   tenantsByRoom: {}, // State để lưu tenant theo room
   isLoading: false,
 
-  // Lấy danh sách tenant theo roomId
+  // Lấy danh sách tenant theo roomId từ currentTenant
   getMyTenantsByRoomId: async (roomId) => {
     set({ isLoading: true });
     try {
@@ -14,33 +14,26 @@ export const useTenantStore = create((set, get) => ({
 
       let tenants = [];
 
-      // Backend trả về format: {tenant: {...}, contract: {...}}
-      if (response && response.tenant && response.contract) {
-        // Combine tenant và contract data thành 1 object
-        const combinedTenantData = {
-          // Tenant basic info
-          _id: response.tenant._id,
-          name: response.tenant.name,
-          email: response.tenant.email,
-          phoneNumber: response.tenant.phoneNumber,
-          profileImage: response.tenant.profileImage,
+      // Backend trả về format: {room: {...}, tenants: [...]}
+      if (response && response.tenants && Array.isArray(response.tenants)) {
+        tenants = response.tenants.map((tenant) => ({
+          // Basic tenant info
+          _id: tenant._id,
+          name: tenant.name,
+          email: tenant.email,
+          phoneNumber: tenant.phoneNumber,
+          profileImage: tenant.profileImage,
+          nationalIdImage: tenant.nationalIdImage,
+          role: tenant.role,
+          joinedAt: tenant.joinedAt,
 
-          // Contract info
-          agreementId: response.contract._id,
-          moveInDate: response.contract.startDate,
-          contractEndDate: response.contract.endDate,
-          monthlyRent: response.contract.monthlyRent,
-          deposit: response.contract.deposit,
-          totalMonthlyCost: response.contract.totalMonthlyCost,
-          remainingDays: response.contract.remainingDays,
-          status: response.contract.status,
-          contractDuration: response.contract.contractDuration,
-          utilityRates: response.contract.utilityRates,
-          additionalFees: response.contract.additionalFees,
-          notes: response.contract.notes,
-        };
+          // Tenant type flags
+          isPrimaryTenant: tenant.isPrimaryTenant,
+          isCoTenant: tenant.isCoTenant,
 
-        tenants = [combinedTenantData]; // Array với 1 tenant
+          // Room info from response
+          roomInfo: response.room,
+        }));
       }
 
       // Lưu vào tenantsByRoom
@@ -52,7 +45,7 @@ export const useTenantStore = create((set, get) => ({
         isLoading: false,
       }));
 
-      return { data: tenants };
+      return { data: tenants, roomInfo: response.room };
     } catch (error) {
       // Nếu 404 (không có tenant) thì không phải error
       if (error.response?.status === 404) {
@@ -63,7 +56,7 @@ export const useTenantStore = create((set, get) => ({
           },
           isLoading: false,
         }));
-        return { data: [] };
+        return { data: [], roomInfo: null };
       }
 
       // Error thật sự
@@ -82,6 +75,21 @@ export const useTenantStore = create((set, get) => ({
         },
         isLoading: false,
       }));
+      throw error;
+    }
+  },
+
+  // Lấy chi tiết tenant
+  getTenantDetails: async (tenantId) => {
+    try {
+      const response = await tenantService.getTenantDetails(tenantId);
+      return response.data;
+    } catch (error) {
+      useErrorStore
+        .getState()
+        .setError(
+          error.response?.data?.message || "Lỗi khi tải thông tin người thuê"
+        );
       throw error;
     }
   },

@@ -3,7 +3,7 @@ import axiosInstance from "../utils/AxiosInstance";
 import { BASE_URL } from "../utils/Constant";
 const API_URL = "/user";
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
   user: null,
   token: null,
   isAuthenticated: false,
@@ -11,6 +11,54 @@ export const useAuthStore = create((set) => ({
   error: null,
   isCheckingAuth: true,
   message: null,
+
+  initializeAuth: () => {
+    try {
+      const token = sessionStorage.getItem("token");
+      const storedUser = sessionStorage.getItem("user");
+
+      if (
+        token &&
+        storedUser &&
+        storedUser !== "undefined" &&
+        storedUser !== "null"
+      ) {
+        try {
+          const user = JSON.parse(storedUser);
+          if (user && typeof user === "object" && user._id) {
+            set({
+              user,
+              token,
+              isAuthenticated: true,
+              isCheckingAuth: false,
+            });
+            return;
+          }
+        } catch (parseError) {
+          console.error("Error parsing stored user:", parseError);
+          sessionStorage.removeItem("token");
+          sessionStorage.removeItem("user");
+        }
+      }
+
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isCheckingAuth: false,
+      });
+    } catch (error) {
+      console.error("Error initializing auth:", error);
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem("user");
+      set({
+        user: null,
+        token: null,
+        isAuthenticated: false,
+        isCheckingAuth: false,
+      });
+    }
+  },
 
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });

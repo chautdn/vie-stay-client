@@ -24,6 +24,7 @@ export const useAccommodationStore = create((set, get) => ({
         isLoading: false,
         error: null,
       });
+      console.log("Accommodations loaded:", accommodations);
 
       return accommodations;
     } catch (error) {

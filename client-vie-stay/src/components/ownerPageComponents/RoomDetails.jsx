@@ -21,6 +21,7 @@ import {
 
 const RoomDetails = ({ room, onClose, onEdit }) => {
   const [activeTab, setActiveTab] = useState('info');
+  const [roomInfo, setRoomInfo] = useState(null);
   
   const {
     tenantsByRoom,
@@ -31,9 +32,15 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
   useEffect(() => {
     if (room?._id) {
       // Load tenants for this specific room
-      getMyTenantsByRoomId(room._id).catch(error => {
-        console.error('Failed to load tenants:', error);
-      });
+      getMyTenantsByRoomId(room._id)
+        .then(result => {
+          if (result.roomInfo) {
+            setRoomInfo(result.roomInfo);
+          }
+        })
+        .catch(error => {
+          console.error('Failed to load tenants:', error);
+        });
     }
   }, [room?._id, getMyTenantsByRoomId]);
 
@@ -106,7 +113,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                 {room.name || `Phòng ${room.roomNumber}`}
               </h2>
               <p className="text-sm text-gray-500">
-                {room.type && room.type.charAt(0).toUpperCase() + room.type.slice(1)}
+                Sức chứa: {roomInfo?.currentTenantCount || roomTenants.length}/{roomInfo?.capacity || room.capacity} người
               </p>
             </div>
           </div>
@@ -135,7 +142,11 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           <nav className="flex space-x-8">
             {[{
               id: 'info', label: 'Thông tin phòng', icon: Home },
-              { id: 'tenants', label: `Người thuê (${roomTenants.length})`, icon: Users },
+              { 
+                id: 'tenants', 
+                label: `Người thuê (${roomTenants.length}/${roomInfo?.capacity || room.capacity})`, 
+                icon: Users 
+              },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -159,7 +170,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Người đang thuê ({roomTenants.length})
+                  Người đang thuê ({roomTenants.length}/{roomInfo?.capacity || room.capacity})
                 </h3>
                 {tenantsLoading && (
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
@@ -179,7 +190,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               ) : (
                 <div className="space-y-4">
                   {roomTenants.map((tenant, index) => (
-                    <div key={tenant._id || tenant.agreementId || index} className="border rounded-lg p-6 bg-white shadow-sm">
+                    <div key={tenant._id || index} className="border rounded-lg p-6 bg-white shadow-sm">
                       
                       {/* Tenant Header */}
                       <div className="flex items-start justify-between mb-4">
@@ -201,16 +212,20 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                               <h4 className="text-lg font-semibold text-gray-900">
                                 {tenant.name || 'Tên không xác định'}
                               </h4>
+                              
+                              {/* Tenant Type Badge */}
                               <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                tenant.status === 'active' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-gray-100 text-gray-800'
+                                tenant.isPrimaryTenant
+                                  ? 'bg-blue-100 text-blue-800' 
+                                  : 'bg-green-100 text-green-800'
                               }`}>
-                                {tenant.status === 'active' ? 'Đang thuê' : tenant.status}
+                                {tenant.isPrimaryTenant ? 'Người thuê chính' : 'Người ở chung'}
                               </span>
-                              {tenant.remainingDays && tenant.remainingDays <= 30 && tenant.remainingDays > 0 && (
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
-                                  Sắp hết hạn ({tenant.remainingDays} ngày)
+                              
+                              {/* Role Badge */}
+                              {tenant.role && tenant.role.length > 0 && (
+                                <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs font-medium">
+                                  {tenant.role.join(', ')}
                                 </span>
                               )}
                             </div>
@@ -228,122 +243,26 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                                   <span>{tenant.phoneNumber}</span>
                                 </div>
                               )}
+                              {tenant.joinedAt && (
+                                <div className="flex items-center gap-2">
+                                  <Calendar size={14} />
+                                  <span>Tham gia: {formatDate(tenant.joinedAt)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
                       </div>
 
-                      {/* Contract Information */}
-                      {(tenant.moveInDate || tenant.contractEndDate) && (
+                      {/* National ID Image */}
+                      {tenant.nationalIdImage && (
                         <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-3">Thông tin hợp đồng</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                            {tenant.moveInDate && (
-                              <div>
-                                <span className="text-gray-500 block">Ngày bắt đầu:</span>
-                                <p className="font-medium">{formatDate(tenant.moveInDate)}</p>
-                              </div>
-                            )}
-                            {tenant.contractEndDate && (
-                              <div>
-                                <span className="text-gray-500 block">Ngày kết thúc:</span>
-                                <p className="font-medium">{formatDate(tenant.contractEndDate)}</p>
-                              </div>
-                            )}
-                            {tenant.contractDuration && (
-                              <div>
-                                <span className="text-gray-500 block">Thời hạn:</span>
-                                <p className="font-medium">{tenant.contractDuration} tháng</p>
-                              </div>
-                            )}
-                            {tenant.remainingDays && (
-                              <div>
-                                <span className="text-gray-500 block">Còn lại:</span>
-                                <p className="font-medium text-blue-600">{tenant.remainingDays} ngày</p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Financial Information */}
-                      {(tenant.monthlyRent || tenant.deposit || tenant.totalMonthlyCost) && (
-                        <div className="bg-blue-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-3">Thông tin tài chính</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            {tenant.monthlyRent && (
-                              <div>
-                                <span className="text-gray-500 block">Giá thuê/tháng:</span>
-                                <p className="font-semibold text-blue-600 text-lg">
-                                  {formatPrice(tenant.monthlyRent)}
-                                </p>
-                              </div>
-                            )}
-                            {tenant.deposit && (
-                              <div>
-                                <span className="text-gray-500 block">Tiền cọc:</span>
-                                <p className="font-semibold">{formatPrice(tenant.deposit)}</p>
-                              </div>
-                            )}
-                            {tenant.totalMonthlyCost && (
-                              <div>
-                                <span className="text-gray-500 block">Tổng chi phí/tháng:</span>
-                                <p className="font-semibold text-green-600">
-                                  {formatPrice(tenant.totalMonthlyCost)}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Additional Fees */}
-                      {tenant.additionalFees && tenant.additionalFees.length > 0 && (
-                        <div className="bg-yellow-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-3">Phí bổ sung</h5>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {tenant.additionalFees.map((fee, feeIndex) => (
-                              <div key={feeIndex} className="flex justify-between items-center">
-                                <div>
-                                  <span className="font-medium">{fee.name}</span>
-                                  {fee.description && (
-                                    <p className="text-xs text-gray-500">{fee.description}</p>
-                                  )}
-                                </div>
-                                <span className="font-semibold text-yellow-700">
-                                  {formatPrice(fee.amount)}/{fee.type === 'monthly' ? 'tháng' : 'lần'}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Utility Rates */}
-                      {tenant.utilityRates && Object.keys(tenant.utilityRates).length > 0 && (
-                        <div className="bg-green-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-3">Phí tiện ích</h5>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            {Object.entries(tenant.utilityRates).map(([utility, data]) => (
-                              <div key={utility} className="text-center">
-                                <span className="block text-gray-500 capitalize">{utility}:</span>
-                                <span className="font-medium">
-                                  {data.rate ? formatPrice(data.rate) : 'Bao gồm'}
-                                </span>
-                                {data.unit && (
-                                  <span className="text-xs text-gray-400">/{data.unit}</span>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Notes */}
-                      {tenant.notes && (
-                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-2">Ghi chú</h5>
-                          <p className="text-sm text-gray-700">{tenant.notes}</p>
+                          <h5 className="font-medium text-gray-900 mb-3">CCCD/CMND</h5>
+                          <img 
+                            src={tenant.nationalIdImage} 
+                            alt="CCCD"
+                            className="max-w-xs h-32 object-cover rounded border"
+                          />
                         </div>
                       )}
 
@@ -352,12 +271,11 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                         <button className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
                           Xem chi tiết
                         </button>
-                        <button className="px-4 py-2 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                          Gia hạn hợp đồng
-                        </button>
-                        <button className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                          Kết thúc hợp đồng
-                        </button>
+                        {tenant.isCoTenant && (
+                          <button className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                            Xóa khỏi phòng
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

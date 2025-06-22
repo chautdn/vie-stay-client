@@ -5,11 +5,13 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/authPageComponents/Input";
 import { useAuthStore } from "../../store/authStore";
 import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
+  const { setUser } = useAuth(); // 👈 Thêm dòng này
 
   const {
     login,
@@ -66,7 +68,10 @@ const LoginPage = () => {
     } catch (err) {
       console.error("Login error:", err);
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err);
+  }
+};
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
@@ -80,7 +85,10 @@ const LoginPage = () => {
     } catch (error) {
       console.error("Google login failed", error);
     }
-  };
+  } catch (error) {
+    console.error("Google login failed", error);
+  }
+
 
   // Show loading spinner while checking auth
   if (isCheckingAuth) {

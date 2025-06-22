@@ -11,43 +11,57 @@ const LoginPage = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
-  const { login, isLoading, error, googleLogin, isAuthenticated } =
-    useAuthStore();
+  const {
+    login,
+    isLoading,
+    error,
+    googleLogin,
+    isAuthenticated,
+    user,
+    initializeAuth,
+    isCheckingAuth,
+  } = useAuthStore();
 
   useEffect(() => {
-    // Check if user is already authenticated
-    const token = sessionStorage.getItem("token"); // ✅ sessionStorage
-    const user = JSON.parse(sessionStorage.getItem("user") || "null");
+    // Initialize auth state from localStorage
+    initializeAuth();
+  }, [initializeAuth]);
 
-    if (token && user) {
+  useEffect(() => {
+    // Redirect if already authenticated
+    if (isAuthenticated && user && !isCheckingAuth) {
+      console.log("User authenticated, redirecting...", user);
+
       // Navigate based on user role
-      if (Array.isArray(user?.role) && user.role.includes("landlord")) {
+      const userRole = user.role;
+
+      if (Array.isArray(userRole) && userRole.includes("landlord")) {
         navigate("/owner/dashboard");
-      } else if (user?.role === "landlord") {
+      } else if (
+        userRole === "landlord" ||
+        (typeof userRole === "string" && userRole.includes("landlord"))
+      ) {
         navigate("/owner/dashboard");
       } else {
-        navigate("/dashboard");
+        navigate("/home");
       }
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, user, isCheckingAuth, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
+
+    if (!email || !password) {
+      return;
+    }
+
     try {
       const response = await login(email, password);
-      console.log("Login response:", response); // Debug
+      console.log("Login response:", response);
 
       if (response?.data?.user) {
-        // Navigate based on user role
-        const userRole = response.data.user.role;
-
-        if (Array.isArray(userRole) && userRole.includes("landlord")) {
-          navigate("/owner/dashboard"); // ✅ Đúng route cho landlord
-        } else if (userRole === "landlord" || userRole.includes("landlord")) {
-          navigate("/owner/dashboard"); // ✅ Đúng route cho landlord
-        } else {
-          navigate("/dashboard"); // Route cho user thường
-        }
+        // Navigation will be handled by useEffect above
+        console.log("Login successful, user data:", response.data.user);
       }
     } catch (err) {
       console.error("Login error:", err);
@@ -57,13 +71,27 @@ const LoginPage = () => {
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       const response = await googleLogin(credentialResponse.credential);
+      console.log("Google login response:", response);
+
       if (response?.data?.user) {
-        navigate("/home");
+        // Navigation will be handled by useEffect above
+        console.log("Google login successful");
       }
     } catch (error) {
       console.error("Google login failed", error);
     }
   };
+
+  // Show loading spinner while checking auth
+  if (isCheckingAuth) {
+    return (
+      <div className="max-w-md w-full bg-gray-800 bg-opacity-50 backdrop-filter backdrop-blur-xl rounded-2xl shadow-xl overflow-hidden">
+        <div className="p-8 flex justify-center items-center">
+          <Loader className="w-8 h-8 animate-spin text-blue-400" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <motion.div
@@ -109,6 +137,7 @@ const LoginPage = () => {
             placeholder="Email Address"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            required
           />
 
           <Input
@@ -117,6 +146,7 @@ const LoginPage = () => {
             placeholder="Password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            required
           />
 
           <div className="flex items-center mb-6">
@@ -127,14 +157,19 @@ const LoginPage = () => {
               Forgot password?
             </Link>
           </div>
-          {error && <p className="text-red-500 font-semibold mb-2">{error}</p>}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
+              <p className="text-red-400 text-sm">{error}</p>
+            </div>
+          )}
 
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-600 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200"
+            className="w-full py-3 px-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white font-bold rounded-lg shadow-lg hover:from-blue-600 hover:to-cyan-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || !email || !password}
           >
             {isLoading ? (
               <Loader className="w-6 h-6 animate-spin mx-auto" />

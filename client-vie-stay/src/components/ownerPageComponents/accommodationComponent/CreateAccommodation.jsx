@@ -90,6 +90,7 @@ function CreateAccommodation() {
                     setImagePreviews(accommodationData.images || []);
                     
                 } catch (error) {
+                    console.log("❌ Error fetching accommodation data:", error);
                     console.error("❌ Error fetching accommodation data:", error);
                     setErrors({ 
                         submit: error.displayMessage || 

@@ -1,25 +1,26 @@
-import axios from "axios";
-import { BASE_URL } from "./Constant";
+import axios from 'axios';
+import { BASE_URL } from './Constant';
 
+// Create axios instance
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
   timeout: 10000,
   headers: {
-    "Content-Type": "application/json", //Dữ liệu gửi đi dạng JSON
+    'Content-Type': 'application/json',
   },
 });
 
+// Request interceptor to add token to every request
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Lấy từ sessionStorage thay vì localStorage
-    const accessToken = sessionStorage.getItem("token");
-
-    if (accessToken) {
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    } else {
-      console.log("❌ No token in sessionStorage");
+    // Get token from localStorage
+    const token = localStorage.getItem('token');
+    
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
     }
-
+    
     return config;
   },
   (error) => {
@@ -27,26 +28,25 @@ axiosInstance.interceptors.request.use(
   }
 );
 
-// Add response interceptor to handle errors
+// Response interceptor to handle errors
 axiosInstance.interceptors.response.use(
   (response) => {
-    // Return successful response as is
     return response;
   },
   (error) => {
+    // Handle 401 errors
     if (error.response?.status === 401) {
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-
-      if (!window.location.pathname.includes("/login")) {
-        window.location.href = "/login";
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Redirect only if not already on login page
+      if (typeof window !== 'undefined' && 
+          !window.location.pathname.includes('/login') && 
+          !window.location.pathname.includes('/signup')) {
+        window.location.href = '/login';
       }
     }
-
-    if (error.response?.data?.message) {
-      error.displayMessage = error.response.data.message;
-    }
-
+    
     return Promise.reject(error);
   }
 );

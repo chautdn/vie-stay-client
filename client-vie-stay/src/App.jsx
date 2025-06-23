@@ -5,6 +5,7 @@ import { useAuthStore } from "./store/authStore";
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import OwnerLayout from "./layouts/OwnerLayout";
+import AdminLayout from "./layouts/AdminLayout"; // Add this import
 
 // Import Auth pages
 import SignUpPage from "./pages/AuthPage/SignUpPage";
@@ -25,6 +26,12 @@ import OwnerDashboard from "./components/ownerPageComponents/Dashboard";
 import RoomManagement from "./pages/OwnerPage/RoomManagement";
 import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
 import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
+
+// Import Admin pages
+import AdminDashboard from "./pages/Dashboard/AdminDashboard";
+import AdminAccommodationManagement from "./pages/AccommodationManagementPage/AccommodationManagement";
+import AdminUserManagement from "./pages/UserManagementPage/UserManagement";
+import AdminRevenueReports from "./pages/AdminRevenueReports/RevenueReports";
 
 // Import Tenant Agreement Pages
 import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/AgreementConfirmationPage";
@@ -78,13 +85,12 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/home" element={<HomePage />} />
           <Route path="/rooms" element={<Room />} />
-          <Route path="/detail/:id" element={<RoomDetail />} />
+          <Route path="/room/:id" element={<RoomDetail />} />
         </Route>
 
         {/* Tenant-specific Routes */}
         <Route element={<ProtectedRoute allowedRoles={["tenant"]} />}>
           <Route element={<MainLayout />}>
-            <Route path="/profile" element={<Profile />} />
             <Route path="/change-password" element={<ChangePassword />} />
             <Route
               path="/agreement/confirm/:token"
@@ -136,18 +142,18 @@ function App() {
 
         {/* Admin-specific Routes */}
         <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route element={<OwnerLayout />}>
-            <Route
-              path="/admin/dashboard"
-              element={<div className="p-6">Admin Dashboard</div>}
-            />
-            <Route
-              path="/admin/users"
-              element={<div className="p-6">User Management</div>}
-            />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route
               path="/admin/accommodations"
-              element={<div className="p-6">Accommodation Approval</div>}
+              element={<AdminAccommodationManagement />}
+            />
+            <Route path="/admin/users" element={<AdminUserManagement />} />
+            <Route path="/admin/reports" element={<AdminRevenueReports />} />
+            <Route
+              path="/admin/settings"
+              element={<div className="p-6">Admin Settings Page</div>}
             />
           </Route>
         </Route>

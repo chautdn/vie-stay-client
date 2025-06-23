@@ -11,7 +11,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
-  const { setUser } = useAuth(); // 👈 Thêm dòng này
+  const { saveUser } = useAuth(); // Get saveUser from React Context
 
   const {
     login,
@@ -34,6 +34,14 @@ const LoginPage = () => {
     if (isAuthenticated && user && !isCheckingAuth) {
       console.log("User authenticated, redirecting...", user);
 
+      // Also update React Context when Zustand store has user data
+      if (user) {
+        const token = localStorage.getItem("token");
+        if (token) {
+          saveUser(user, token);
+        }
+      }
+
       // Navigate based on user role
       const userRole = user.role;
 
@@ -44,11 +52,15 @@ const LoginPage = () => {
         (typeof userRole === "string" && userRole.includes("landlord"))
       ) {
         navigate("/owner/dashboard");
+      } else if (Array.isArray(userRole) && userRole.includes("admin")) {
+        navigate("/admin/dashboard");
+      } else if (userRole === "admin") {
+        navigate("/admin/dashboard");
       } else {
         navigate("/home");
       }
     }
-  }, [isAuthenticated, user, isCheckingAuth, navigate]);
+  }, [isAuthenticated, user, isCheckingAuth, navigate, saveUser]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -61,34 +73,52 @@ const LoginPage = () => {
       const response = await login(email, password);
       console.log("Login response:", response);
 
-      if (response?.data?.user) {
-        // Navigation will be handled by useEffect above
-        console.log("Login successful, user data:", response.data.user);
+      if (response?.data?.user || response?.user) {
+        const userData = response?.data?.user || response?.user;
+        const token = response?.token || localStorage.getItem("token");
+        
+        // Update React Context immediately after successful login
+        if (userData && token) {
+          saveUser(userData, token);
+          
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new CustomEvent('userLoggedIn', {
+            detail: { user: userData, token: token }
+          }));
+          
+          console.log("Login successful, user data:", userData);
+        }
       }
     } catch (err) {
       console.error("Login error:", err);
     }
-  } catch (err) {
-    console.error("Login error:", err);
-  }
-};
+  };
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       const response = await googleLogin(credentialResponse.credential);
       console.log("Google login response:", response);
 
-      if (response?.data?.user) {
-        // Navigation will be handled by useEffect above
-        console.log("Google login successful");
+      if (response?.data?.user || response?.user) {
+        const userData = response?.data?.user || response?.user;
+        const token = response?.token || localStorage.getItem("token");
+        
+        // Update React Context immediately after successful Google login
+        if (userData && token) {
+          saveUser(userData, token);
+          
+          // Dispatch custom event to notify other components
+          window.dispatchEvent(new CustomEvent('userLoggedIn', {
+            detail: { user: userData, token: token }
+          }));
+          
+          console.log("Google login successful");
+        }
       }
     } catch (error) {
       console.error("Google login failed", error);
     }
-  } catch (error) {
-    console.error("Google login failed", error);
-  }
-
+  };
 
   // Show loading spinner while checking auth
   if (isCheckingAuth) {

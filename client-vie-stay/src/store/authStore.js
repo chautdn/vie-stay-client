@@ -164,6 +164,9 @@ export const useAuthStore = create((set, get) => ({
   },
 
   // Fixed login function in authStore.js
+  // Add this to your Zustand store after the login function
+
+  // In your useAuthStore, add this to the login function after successful login:
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
@@ -176,72 +179,18 @@ export const useAuthStore = create((set, get) => ({
 
       console.log("✅ [AUTH STORE] Login response received:", response.data);
 
-      // Check the response structure
       const userData = response.data.data?.user || response.data.user;
       const token = response.data.token;
 
-      console.log("🔍 [AUTH STORE] Extracting data:", {
-        hasUserData: !!userData,
-        hasToken: !!token,
-        tokenLength: token?.length || 0,
-        tokenPreview: token ? token.substring(0, 20) + "..." : "none",
-        userEmail: userData?.email || "unknown",
-      });
-
-      if (!token) {
-        console.error("❌ [AUTH STORE] No token in response:", response.data);
-        throw new Error("No token received from server");
+      if (!token || !userData) {
+        throw new Error("No token or user data received from server");
       }
 
-      if (!userData) {
-        console.error(
-          "❌ [AUTH STORE] No user data in response:",
-          response.data
-        );
-        throw new Error("No user data received from server");
-      }
+      // Store in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData));
 
-      console.log("💾 [AUTH STORE] Storing auth data in localStorage...");
-
-      try {
-        // Store in localStorage with error handling
-        localStorage.setItem("token", token);
-        localStorage.setItem("user", JSON.stringify(userData));
-
-        // Immediately verify storage
-        const verifyToken = localStorage.getItem("token");
-        const verifyUser = localStorage.getItem("user");
-
-        console.log("🔍 [AUTH STORE] Storage verification:", {
-          tokenStored: !!verifyToken,
-          userStored: !!verifyUser,
-          tokenMatches: verifyToken === token,
-          tokenLength: verifyToken?.length || 0,
-          canParseUser:
-            !!verifyUser &&
-            (() => {
-              try {
-                JSON.parse(verifyUser);
-                return true;
-              } catch {
-                return false;
-              }
-            })(),
-        });
-
-        if (!verifyToken || verifyToken !== token) {
-          throw new Error("Failed to store token in localStorage");
-        }
-
-        if (!verifyUser) {
-          throw new Error("Failed to store user data in localStorage");
-        }
-      } catch (storageError) {
-        console.error("❌ [AUTH STORE] localStorage error:", storageError);
-        throw new Error(`Storage failed: ${storageError.message}`);
-      }
-
-      // Update Zustand state AFTER successful localStorage storage
+      // Update Zustand state
       set({
         isAuthenticated: true,
         user: userData,
@@ -250,35 +199,18 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
       });
 
-      console.log(
-        "✅ [AUTH STORE] Login successful - user:",
-        userData.email,
-        "role:",
-        userData.role
+      // 🔥 NEW: Dispatch event to notify React Context
+      window.dispatchEvent(
+        new CustomEvent("userLoggedIn", {
+          detail: { user: userData, token: token },
+        })
       );
 
-      // Final verification that everything is working
-      setTimeout(() => {
-        const finalToken = localStorage.getItem("token");
-        const finalUser = localStorage.getItem("user");
-        console.log("🏁 [AUTH STORE] Final state check:", {
-          localStorageToken: !!finalToken,
-          localStorageUser: !!finalUser,
-          storeIsAuthenticated: get().isAuthenticated,
-          storeHasUser: !!get().user,
-          storeHasToken: !!get().token,
-        });
-      }, 100);
+      console.log("✅ [AUTH STORE] Login successful - user:", userData.email);
 
       return response.data;
     } catch (error) {
-      console.error("❌ [AUTH STORE] Login failed:", {
-        message: error.message,
-        responseData: error.response?.data,
-        responseStatus: error.response?.status,
-        isNetworkError: !error.response,
-      });
-
+      console.error("❌ [AUTH STORE] Login failed:", error);
       set({
         error:
           error.response?.data?.message || error.message || "Error logging in",
@@ -288,6 +220,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // And update the googleLogin function similarly:
   googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
@@ -302,10 +235,11 @@ export const useAuthStore = create((set, get) => ({
         throw new Error("Invalid response: missing token or user data");
       }
 
-      // Store in localStorage FIRST
+      // Store in localStorage
       localStorage.setItem("token", token);
       localStorage.setItem("user", JSON.stringify(userData));
 
+      // Update Zustand state
       set({
         isAuthenticated: true,
         user: userData,
@@ -313,6 +247,13 @@ export const useAuthStore = create((set, get) => ({
         error: null,
         isLoading: false,
       });
+
+      // 🔥 NEW: Dispatch event to notify React Context
+      window.dispatchEvent(
+        new CustomEvent("userLoggedIn", {
+          detail: { user: userData, token: token },
+        })
+      );
 
       return response.data;
     } catch (error) {
@@ -324,6 +265,7 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // And update the logout function:
   logout: async () => {
     console.log("🚪 Logging out...");
     set({ isLoading: true });
@@ -337,8 +279,8 @@ export const useAuthStore = create((set, get) => ({
     // Clear localStorage
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    console.log("🗑️ Cleared localStorage");
 
+    // Update Zustand state
     set({
       user: null,
       token: null,
@@ -347,6 +289,9 @@ export const useAuthStore = create((set, get) => ({
       error: null,
       message: null,
     });
+
+    // 🔥 NEW: Dispatch event to notify React Context
+    window.dispatchEvent(new CustomEvent("userLogout"));
 
     console.log("✅ Logout completed");
   },

@@ -7,8 +7,8 @@ const Footer = () => {
         {/* Cột 1: Thông tin logo */}
         <div>
           <h2 className="text-lg font-bold text-gray-800 mb-2">
-            <span className="text-blue-600">PHONGTRO</span>
-            <span className="text-orange-500">TOT</span>
+            <span className="text-blue-600">VIE</span>
+            <span className="text-orange-500">STAY</span>
             <span className="text-gray-500">.COM</span>
           </h2>
           <p className="text-sm">
@@ -33,10 +33,10 @@ const Footer = () => {
           <div className="md:text-right">
             <p className="font-medium text-gray-700">Hỗ trợ khách hàng</p>
             <p>Hotline: <a href="tel:19001234" className="text-orange-600 font-semibold">1900 1234</a></p>
-            <p>Email: support@phongtrotot.com</p>
+            <p>Email: support@viestay.com</p>
           </div>
           <p className="mt-6 md:mt-0 md:text-right text-gray-400 text-xs">
-            © {new Date().getFullYear()} PhongTroTot. All rights reserved.
+            © {new Date().getFullYear()} VieStay. All rights reserved.
           </p>
         </div>
       </div>

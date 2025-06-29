@@ -30,7 +30,6 @@ export const roomService = {
   getRoomById: async (roomId) => {
     try {
       const response = await axiosInstance.get(`${API_URL}/${roomId}`);
-      console.log("Response from getRoomById:", response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -41,7 +40,7 @@ export const roomService = {
   createRoom: async (roomData, accommodationId) => {
     try {
       const response = await axiosInstance.post(
-        `${API_URL}/${accommodationId}`,
+        `${API_URL}/${accommodationId}/create`,
         roomData
       );
       return response.data;

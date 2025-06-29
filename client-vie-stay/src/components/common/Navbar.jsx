@@ -40,7 +40,7 @@ const Navbar = () => {
         >
           <div className="flex items-center text-xl font-extrabold">
             <span className="text-blue-600">PHONGTRO</span>
-            <span className="text-orange-500">TOT</span>
+            <span className="text-orange-500">STAY</span>
             <span className="text-gray-400">.COM</span>
           </div>
           <span className="text-xs text-gray-500 hidden sm:inline ml-1">

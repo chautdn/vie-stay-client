@@ -1,11 +1,11 @@
 import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
-import { useAuthStore } from "./store/authStore"; // ✅ THÊM: Import AuthStore
+import { useAuthStore } from "./store/authStore";
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import OwnerLayout from "./layouts/OwnerLayout";
-import OwnerRoute from "./components/common/OwnerRoute"; // ✅ THÊM: Import OwnerRoute
+import OwnerRoute from "./components/common/OwnerRoute";
 
 // Import pages
 import SignUpPage from "./pages/AuthPage/SignUpPage";
@@ -13,7 +13,10 @@ import LoginPage from "./pages/AuthPage/LoginPage";
 import EmailVerificationPage from "./pages/AuthPage/EmailVerificationPage";
 import ForgotPasswordPage from "./pages/AuthPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/AuthPage/ResetPasswordPage";
-import HomePage from "./pages/HomePage/HomePage";
+import Home from "./pages/HomePage/Public/Home";
+import HomePage from "./pages/HomePage/Public/HomePage";
+import List from "./pages/HomePage/Public/List";
+import SearchPage from "./pages/HomePage/Public/SearchPage"; // ✅ THÊM: Import SearchPage
 import OwnerDashboard from "./components/ownerPageComponents/Dashboard";
 import RoomManagement from "./pages/OwnerPage/RoomManagement";
 import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
@@ -26,16 +29,15 @@ import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/Agreemen
 import PaymentPage from "./pages/TenantPage/AgreementPage/PaymentPage";
 import PaymentSuccess from "./pages/TenantPage/AgreementPage/PaymentSuccess";
 import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
+import SavedPosts from "./pages/HomePage/Public/SavedPosts";
 
 function App() {
-  // ✅ THÊM: Initialize auth
   const { initializeAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
 
-  // ✅ THÊM: Loading screen
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -55,12 +57,22 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
 
-
       <Route element={<MainLayout />}>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/home" element={<HomePage />} />
+        {/* ✅ SỬA: Home layout với nested routes */}
+        <Route path="/" element={<Home />}>
+          <Route index element={<HomePage />} />
+          <Route path="saved" element={<SavedPosts />} />
+          <Route path="search" element={<SearchPage />} /> {/* ✅ SỬA: Thay List bằng SearchPage */}
+          <Route path="list" element={<List />} />
+          <Route path="*" element={<HomePage />} />
+        </Route>
+        
+        {/* ✅ THÊM: Direct routes không qua Home layout */}
         <Route path="/rooms" element={<Room />} />
         <Route path="/detail/:id" element={<RoomDetail/>} />
+        
+        {/* ✅ SỬA: Thêm chi tiết phòng route */}
+        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail/>} />
         
         <Route path="/agreement/confirm/:token" element={<AgreementConfirmationPage />} />
         <Route path="/tenant/payment/:confirmationId" element={<PaymentPage />} />
@@ -69,7 +81,7 @@ function App() {
         <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
       </Route>
 
-      {/* Owner Routes - CHỈ LANDLORD MỚI VÀO ĐƯỢC */}
+      {/* Owner Routes */}
       <Route element={<OwnerLayout />}>
         <Route 
           path="/owner" 

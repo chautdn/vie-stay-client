@@ -9,26 +9,40 @@ export const useRoomStore = create((set, get) => ({
   searchResults: [],
 
   // Lấy tất cả phòng
-  getAllRooms: async (params = {}) => {
+  getAllRooms: async () => {
     set({ isLoading: true });
     try {
-      const response = await roomService.getAllRooms(params);
-      // Xử lý response data từ backend
-      const rooms = response.data || response.rooms || response || [];
+      const response = await roomService.getAllRooms();
+
+      let roomsData = [];
+
+      // ✅ SỬA: Xử lý response structure
+      if (response?.status === "success" && response?.data?.rooms) {
+        roomsData = response.data.rooms;
+      } else if (response?.data?.rooms) {
+        roomsData = response.data.rooms;
+      } else if (Array.isArray(response)) {
+        roomsData = response;
+      } else if (response?.rooms) {
+        roomsData = response.rooms;
+      }
+
       set({
-        rooms: Array.isArray(rooms) ? rooms : [],
+        rooms: Array.isArray(roomsData) ? roomsData : [],
         isLoading: false,
       });
-      return response;
+
+      return roomsData;
     } catch (error) {
+      console.error("❌ Error fetching rooms:", error);
       useErrorStore
         .getState()
         .setError(
           error.response?.data?.message ||
-            error.displayMessage ||
+            error.message ||
             "Lỗi khi tải danh sách phòng"
         );
-      set({ isLoading: false });
+      set({ isLoading: false, rooms: [] });
       throw error;
     }
   },
@@ -239,26 +253,55 @@ export const useRoomStore = create((set, get) => ({
     }
   },
 
-  // Tìm kiếm phòng
+  // Tìm kiếm phòng với pagination
   searchRooms: async (searchParams) => {
     set({ isLoading: true });
     try {
-      const response = await roomService.searchRooms(searchParams);
-      const searchResults = response.data || response.rooms || response || [];
+      const cleanedParams = {};
+
+      Object.keys(searchParams).forEach((key) => {
+        const value = searchParams[key];
+        if (value !== null && value !== undefined && value !== "") {
+          cleanedParams[key] = value;
+        }
+      });
+
+      const response = await roomService.searchRooms(cleanedParams);
+
+      let searchResults = [];
+      let totalResults = 0;
+
+      if (response?.status === "success" && response?.data) {
+        searchResults = response.data.rooms || [];
+        totalResults = response.results || searchResults.length;
+      } else if (response?.rooms) {
+        searchResults = response.rooms;
+        totalResults = response.results || searchResults.length;
+      } else if (Array.isArray(response)) {
+        searchResults = response;
+        totalResults = response.length;
+      }
+
       set({
         searchResults: Array.isArray(searchResults) ? searchResults : [],
         isLoading: false,
       });
-      return response;
+
+      return {
+        ...response,
+        results: totalResults,
+        data: { rooms: searchResults },
+      };
     } catch (error) {
+      console.error("❌ Search error:", error);
       useErrorStore
         .getState()
         .setError(
           error.response?.data?.message ||
-            error.displayMessage ||
+            error.message ||
             "Lỗi khi tìm kiếm phòng"
         );
-      set({ isLoading: false });
+      set({ isLoading: false, searchResults: [] });
       throw error;
     }
   },

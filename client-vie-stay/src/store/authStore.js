@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import axiosInstance from "../utils/AxiosInstance";
 import { BASE_URL } from "../utils/Constant";
+
 const API_URL = "/user";
 
 export const useAuthStore = create((set, get) => ({
@@ -12,50 +13,85 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
   message: null,
 
+  // Initialize auth state from localStorage
   initializeAuth: () => {
+    console.log("🔄 Initializing auth from localStorage...");
+    set({ isCheckingAuth: true });
+
     try {
-      const token = sessionStorage.getItem("token");
-      const storedUser = sessionStorage.getItem("user");
+      const token = localStorage.getItem("token");
+      const userData = localStorage.getItem("user");
 
-      if (
-        token &&
-        storedUser &&
-        storedUser !== "undefined" &&
-        storedUser !== "null"
-      ) {
-        try {
-          const user = JSON.parse(storedUser);
-          if (user && typeof user === "object" && user._id) {
-            set({
-              user,
-              token,
-              isAuthenticated: true,
-              isCheckingAuth: false,
-            });
-            return;
-          }
-        } catch (parseError) {
-          console.error("Error parsing stored user:", parseError);
-          sessionStorage.removeItem("token");
-          sessionStorage.removeItem("user");
-        }
-      }
-
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isCheckingAuth: false,
+      console.log("Debug localStorage:", {
+        token: token ? "exists" : "not found",
+        tokenLength: token?.length || 0,
+        user: userData ? "exists" : "not found",
       });
+
+      if (token && userData) {
+        const user = JSON.parse(userData);
+        console.log("✅ Auth data found in localStorage:", {
+          user: user.email,
+          role: user.role,
+          tokenPreview: token.substring(0, 20) + "...",
+        });
+
+        // Set auth state immediately without validation
+        // This prevents the login loop issue
+        set({
+          token,
+          user,
+          isAuthenticated: true,
+          isCheckingAuth: false,
+          error: null,
+        });
+
+        // Optional: Validate token in background (don't wait for it)
+        axiosInstance
+          .get("/user/profile")
+          .then((response) => {
+            console.log("✅ Background token validation successful");
+            // Token is valid, update user data if needed
+            const freshUser = response.data.data.user;
+            set({ user: freshUser });
+          })
+          .catch((error) => {
+            console.warn(
+              "⚠️ Background token validation failed:",
+              error.response?.status
+            );
+            // Only clear auth if it's a 401 (unauthorized)
+            if (error.response?.status === 401) {
+              console.log("🔄 Token expired, clearing auth...");
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              set({
+                isAuthenticated: false,
+                user: null,
+                token: null,
+                error: "Session expired. Please login again.",
+              });
+            }
+          });
+      } else {
+        console.log("❌ No valid auth data found in localStorage");
+        set({
+          isCheckingAuth: false,
+          isAuthenticated: false,
+          user: null,
+          token: null,
+        });
+      }
     } catch (error) {
-      console.error("Error initializing auth:", error);
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
+      console.error("❌ Error initializing auth:", error);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
       set({
+        isCheckingAuth: false,
+        isAuthenticated: false,
         user: null,
         token: null,
-        isAuthenticated: false,
-        isCheckingAuth: false,
+        error: "Failed to initialize authentication",
       });
     }
   },
@@ -63,14 +99,14 @@ export const useAuthStore = create((set, get) => ({
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${BASE_URL}/user/signup`, {
+      const response = await axiosInstance.post(`/user/signup`, {
         name,
         email,
         password,
       });
       set({
         user: response.data.data.user,
-        isAuthenticated: false, // User not verified yet
+        isAuthenticated: false,
         isLoading: false,
         message: "Signup successful. Please verify your email.",
       });
@@ -87,7 +123,7 @@ export const useAuthStore = create((set, get) => ({
   verifyEmail: async (email, otp) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${API_URL}/verify-email`, {
+      const response = await axiosInstance.post(`/user/verify-email`, {
         email,
         otp,
       });
@@ -109,12 +145,9 @@ export const useAuthStore = create((set, get) => ({
   resendVerification: async (email) => {
     set({ isLoading: true, error: null, message: null });
     try {
-      const response = await axiosInstance.post(
-        `${API_URL}/resend-verification`,
-        {
-          email,
-        }
-      );
+      const response = await axiosInstance.post(`/user/resend-verification`, {
+        email,
+      });
       set({
         isLoading: false,
         message: "Verification code resent successfully",
@@ -130,67 +163,97 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // Fixed login function in authStore.js
+  // Add this to your Zustand store after the login function
+
+  // In your useAuthStore, add this to the login function after successful login:
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`${BASE_URL}/user/login`, {
+      console.log("🔐 [AUTH STORE] Attempting login for:", email);
+
+      const response = await axiosInstance.post(`/user/login`, {
         email,
         password,
       });
 
-      const userData = response.data.data.user;
+      console.log("✅ [AUTH STORE] Login response received:", response.data);
+
+      const userData = response.data.data?.user || response.data.user;
       const token = response.data.token;
 
-      // Store both token AND user data in sessionStorage
-      if (token) {
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem("user", JSON.stringify(userData));
+      if (!token || !userData) {
+        throw new Error("No token or user data received from server");
       }
 
-      // Update state
+      // Store in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Update Zustand state
       set({
         isAuthenticated: true,
         user: userData,
+        token: token,
         error: null,
         isLoading: false,
       });
 
+      // 🔥 NEW: Dispatch event to notify React Context
+      window.dispatchEvent(
+        new CustomEvent("userLoggedIn", {
+          detail: { user: userData, token: token },
+        })
+      );
+
+      console.log("✅ [AUTH STORE] Login successful - user:", userData.email);
+
       return response.data;
     } catch (error) {
+      console.error("❌ [AUTH STORE] Login failed:", error);
       set({
-        error: error.response?.data?.message || "Error logging in",
+        error:
+          error.response?.data?.message || error.message || "Error logging in",
         isLoading: false,
       });
       throw error;
     }
   },
 
+  // And update the googleLogin function similarly:
   googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(
-        `${BASE_URL}/user/google-login`,
-        {
-          credential,
-        }
-      );
+      const response = await axiosInstance.post(`/user/google-login`, {
+        credential,
+      });
 
       const userData = response.data.data.user;
       const token = response.data.token;
 
-      // Store both token AND user data in sessionStorage
-      if (token) {
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem("user", JSON.stringify(userData));
+      if (!token || !userData) {
+        throw new Error("Invalid response: missing token or user data");
       }
 
-      // Update state
+      // Store in localStorage
+      localStorage.setItem("token", token);
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Update Zustand state
       set({
         isAuthenticated: true,
         user: userData,
+        token: token,
         error: null,
         isLoading: false,
       });
+
+      // 🔥 NEW: Dispatch event to notify React Context
+      window.dispatchEvent(
+        new CustomEvent("userLoggedIn", {
+          detail: { user: userData, token: token },
+        })
+      );
 
       return response.data;
     } catch (error) {
@@ -202,54 +265,43 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
+  // And update the logout function:
   logout: async () => {
+    console.log("🚪 Logging out...");
     set({ isLoading: true });
+
     try {
-      // Call backend logout endpoint
-      await axiosInstance.post(`${API_URL}/logout`);
-
-      // Clear all authentication data
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-
-      // Reset store state
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-
-      console.log("✅ Logout successful");
-      return { success: true };
+      await axiosInstance.post(`/user/logout`);
     } catch (error) {
-      console.error("Logout error:", error);
-
-      // Even if backend fails, clear frontend data
-      sessionStorage.removeItem("token");
-      sessionStorage.removeItem("user");
-
-      set({
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      });
-
-      // Don't throw error, logout should always succeed on frontend
-      return { success: true };
+      console.error("Backend logout error:", error);
     }
+
+    // Clear localStorage
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+
+    // Update Zustand state
+    set({
+      user: null,
+      token: null,
+      isAuthenticated: false,
+      isLoading: false,
+      error: null,
+      message: null,
+    });
+
+    // 🔥 NEW: Dispatch event to notify React Context
+    window.dispatchEvent(new CustomEvent("userLogout"));
+
+    console.log("✅ Logout completed");
   },
 
   forgotPassword: async (email) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(
-        `${BASE_URL}/user/forgot-password`,
-        {
-          email,
-        }
-      );
+      const response = await axiosInstance.post(`/user/forgot-password`, {
+        email,
+      });
       set({
         message: response.data.message,
         isLoading: false,
@@ -269,7 +321,7 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.patch(
-        `${BASE_URL}/user/reset-password/${token}`,
+        `/user/reset-password/${token}`,
         {
           password,
         }
@@ -284,6 +336,28 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
         error: error.response?.data?.message || "Error resetting password",
       });
+      throw error;
+    }
+  },
+
+  clearError: () => set({ error: null }),
+  clearMessage: () => set({ message: null }),
+
+  // Helper function to refresh user data
+  refreshUser: async () => {
+    try {
+      const response = await axiosInstance.get("/user/profile");
+      const userData = response.data.data.user;
+
+      // Update localStorage
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Update store
+      set({ user: userData });
+
+      return userData;
+    } catch (error) {
+      console.error("Failed to refresh user data:", error);
       throw error;
     }
   },

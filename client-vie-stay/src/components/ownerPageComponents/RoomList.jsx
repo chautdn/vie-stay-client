@@ -32,7 +32,7 @@ const RoomList = ({
   const getStatusColor = (room) => {
     if (!room.isAvailable) return 'bg-red-100 text-red-800 border-red-200';
     
-    const hasCurrentTenant = room.currentTenantCount > 0;
+    const hasCurrentTenant = room.currentTenant?.length > 0;
     if (hasCurrentTenant) return 'bg-blue-100 text-blue-800 border-blue-200';
     
     return 'bg-green-100 text-green-800 border-green-200';
@@ -41,7 +41,7 @@ const RoomList = ({
   const getStatusText = (room) => {
     if (!room.isAvailable) return 'Không khả dụng';
     
-    const hasCurrentTenant = room.currentTenantCount > 0;
+    const hasCurrentTenant = room.currentTenant?.length > 0;
     if (hasCurrentTenant) return 'Đã có người thuê';
     
     return 'Phòng trống';
@@ -50,7 +50,7 @@ const RoomList = ({
   const getStatusIcon = (room) => {
     if (!room.isAvailable) return <XCircle size={16} />;
     
-    const hasCurrentTenant = room.currentTenantCount > 0;
+    const hasCurrentTenant = room.currentTenant?.length > 0;
     if (hasCurrentTenant) return <User size={16} />;
     
     return <CheckCircle size={16} />;
@@ -147,16 +147,16 @@ const RoomList = ({
                 <div className="flex items-center gap-1">
                   <User size={14} />
                   <span className="font-medium">
-                    {room.currentTenantCount || 0}/{room.capacity}
+                    {room.currentTenant?.length || 0}/{room.capacity}
                     <span className="text-gray-500 ml-1">người thuê</span>
                   </span>
                 </div>
               </div>
 
-              {room.area && (
+              {room.size && (
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-600">Diện tích:</span>
-                  <span className="font-medium">{room.area} m²</span>
+                  <span className="font-medium">{room.size} m²</span>
                 </div>
               )}
             </div>
@@ -188,7 +188,7 @@ const RoomList = ({
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
                 title={room.isAvailable ? "Vô hiệu hóa phòng" : "Kích hoạt phòng"}
-                disabled={room.currentTenant} // ✅ THÊM: Disable nếu có tenant
+                disabled={room.currentTenant?.length>0} // ✅ THÊM: Disable nếu có tenant
               >
                 {room.isAvailable ? (
                   <>
@@ -207,14 +207,14 @@ const RoomList = ({
                 onClick={() => onDelete(room)}
                 className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                 title="Xóa phòng"
-                disabled={room.currentTenant} // ✅ THÊM: Disable nếu có tenant
+                disabled={room.currentTenant?.length>0} // ✅ THÊM: Disable nếu có tenant
               >
                 <Trash2 size={16} />
               </button>
             </div>
 
             {/* ✅ THÊM: Warning message nếu có tenant */}
-            {room.currentTenant && (
+            {room.currentTenant?.length>0 && (
               <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
                 ⚠️ Không thể ẩn/xóa phòng đang có người thuê
               </div>

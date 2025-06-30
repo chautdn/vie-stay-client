@@ -60,11 +60,6 @@ const RoomManagement = () => {
   // ✅ SỬA: Toggle availability handler
   const handleToggleAvailability = async (room) => {
     try {
-      if (room.currentTenant) {
-        alert('Không thể thay đổi trạng thái phòng đang có người thuê');
-        return;
-      }
-
       if (room.isAvailable) {
         await deactivateRoom(room._id);
       } else {
@@ -75,21 +70,21 @@ const RoomManagement = () => {
       await getRoomsByAccommodationId(accommodationId);
     } catch (error) {
       console.error('Error toggling room availability:', error);
+      // ✅ THÊM: Handle backend error nếu cần
+      alert(error.message || 'Có lỗi xảy ra khi thay đổi trạng thái phòng');
     }
   };
 
+  // ✅ SỬA: Tương tự cho handleDeleteRoom
   const handleDeleteRoom = async (room) => {
-    if (room.currentTenant) {
-      alert('Không thể xóa phòng đang có người thuê');
-      return;
-    }
-
     if (window.confirm('Bạn có chắc chắn muốn xóa phòng này?')) {
       try {
         // Implement delete functionality
         console.log('Delete room:', room._id);
       } catch (error) {
         console.error('Error deleting room:', error);
+        // ✅ THÊM: Handle backend error
+        alert(error.message || 'Có lỗi xảy ra khi xóa phòng');
       }
     }
   };

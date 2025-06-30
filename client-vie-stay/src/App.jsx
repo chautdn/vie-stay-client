@@ -1,11 +1,13 @@
+import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
-import { useEffect, useState } from "react";
 import { useAuthStore } from "./store/authStore";
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import OwnerLayout from "./layouts/OwnerLayout";
-import AdminLayout from "./layouts/AdminLayout"; // Add this import
+import OwnerRoute from "./components/common/OwnerRoute";
+import AdminLayout from "./layouts/AdminLayout";
+import AdminRoute from "./components/common/AdminRoute";
 
 // Import Auth pages
 import SignUpPage from "./pages/AuthPage/SignUpPage";
@@ -13,163 +15,200 @@ import LoginPage from "./pages/AuthPage/LoginPage";
 import EmailVerificationPage from "./pages/AuthPage/EmailVerificationPage";
 import ForgotPasswordPage from "./pages/AuthPage/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/AuthPage/ResetPasswordPage";
-
-// Import Main pages
-import HomePage from "./pages/HomePage/HomePage";
-import Room from "./pages/RoomPage/Room";
-import RoomDetail from "./pages/RoomPage/RoomDetail";
-import Profile from "./pages/ProfilePage/Profile";
-import ChangePassword from "./pages/ProfilePage/ChangePassword";
-
-// Import Owner pages
+import Home from "./pages/HomePage/Public/Home";
+import HomePage from "./pages/HomePage/Public/HomePage";
+import List from "./pages/HomePage/Public/List";
+import SearchPage from "./pages/HomePage/Public/SearchPage"; // ✅ THÊM: Import SearchPage
 import OwnerDashboard from "./components/ownerPageComponents/Dashboard";
 import RoomManagement from "./pages/OwnerPage/RoomManagement";
 import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
-import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
-
-// Import Admin pages
-import AdminDashboard from "./pages/Dashboard/AdminDashboard";
-import AdminAccommodationManagement from "./pages/AccommodationManagementPage/AccommodationManagement";
-import AdminUserManagement from "./pages/UserManagementPage/UserManagement";
-import AdminRevenueReports from "./pages/AdminRevenueReports/RevenueReports";
+import CoTenantsRequest from "./pages/OwnerPage/Co-tenantsRequest";
+import Room from "./pages/HomePage/RoomPage/Room";
+import RoomDetail from "./pages/HomePage/RoomPage/RoomDetail";
 
 // Import Tenant Agreement Pages
 import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/AgreementConfirmationPage";
 import PaymentPage from "./pages/TenantPage/AgreementPage/PaymentPage";
 import PaymentSuccess from "./pages/TenantPage/AgreementPage/PaymentSuccess";
+import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
+import SavedPosts from "./pages/HomePage/Public/SavedPosts";
 
-// Import ProtectedRoute
-import ProtectedRoute from "./components/authRoutes/ProtectedRoute";
-import { AuthProvider } from "./pages/contexts/AuthContext";
+// Import Admin Pages
+import AdminDashboard from "./pages/AdminPage/AdminDashboard";
+import UserManagement from "./pages/AdminPage/UserManagement";
+import RevenueReports from "./pages/AdminPage/RevenueReports";
 
 function App() {
-  const { user, isAuthenticated } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const { initializeAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
-    // Check for existing token and validate it
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    initializeAuth();
+  }, [initializeAuth]);
 
-    if (token) {
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 800);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
-
-  // Show loading state while checking authentication
-  if (isLoading) {
+  if (isCheckingAuth) {
     return (
-      <div className="fixed inset-0 flex justify-center items-center bg-white bg-opacity-80 z-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-500"></div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <span className="ml-3 text-lg text-gray-600">Đang tải...</span>
       </div>
     );
   }
 
   return (
-    <AuthProvider>
-      <Routes>
-        {/* Public Auth Routes */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/verify-email" element={<EmailVerificationPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+    <Routes>
+      <Route element={<AuthLayout />}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/verify-email" element={<EmailVerificationPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+      </Route>
+
+      <Route element={<MainLayout />}>
+        {/* ✅ SỬA: Home layout với nested routes */}
+        <Route path="/" element={<Home />}>
+          <Route index element={<HomePage />} />
+          <Route path="saved" element={<SavedPosts />} />
+          <Route path="search" element={<SearchPage />} />{" "}
+          {/* ✅ SỬA: Thay List bằng SearchPage */}
+          <Route path="list" element={<List />} />
+          <Route path="*" element={<HomePage />} />
         </Route>
 
-        {/* Public Pages (accessible to everyone) */}
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/home" element={<HomePage />} />
-          <Route path="/rooms" element={<Room />} />
-          <Route path="/room/:id" element={<RoomDetail />} />
-        </Route>
+        {/* ✅ THÊM: Direct routes không qua Home layout */}
+        <Route path="/rooms" element={<Room />} />
+        <Route path="/detail/:id" element={<RoomDetail />} />
 
-        {/* Tenant-specific Routes */}
-        <Route element={<ProtectedRoute allowedRoles={["tenant"]} />}>
-          <Route element={<MainLayout />}>
-            <Route path="/change-password" element={<ChangePassword />} />
-            <Route
-              path="/agreement/confirm/:token"
-              element={<AgreementConfirmationPage />}
-            />
-            <Route
-              path="/tenant/payment/:confirmationId"
-              element={<PaymentPage />}
-            />
-            <Route path="/payment/success" element={<PaymentSuccess />} />
-            <Route path="/payment/failure" element={<PaymentSuccess />} />
-            <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
-          </Route>
-        </Route>
+        {/* ✅ SỬA: Thêm chi tiết phòng route */}
+        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
 
-        {/* Landlord-specific Routes */}
-        <Route element={<ProtectedRoute allowedRoles={["landlord"]} />}>
-          <Route element={<OwnerLayout />}>
-            <Route path="/owner" element={<OwnerDashboard />} />
-            <Route path="/owner/dashboard" element={<OwnerDashboard />} />
-            <Route
-              path="/owner/rooms/:accommodationId"
-              element={<RoomManagement />}
-            />
-            <Route
-              path="/owner/rental-requests"
-              element={<RentalRequestManagement />}
-            />
-            <Route
-              path="/owner/accommodations"
-              element={<AccommodationManagement />}
-            />
-            <Route path="/owner/create" element={<AccommodationManagement />} />
-            <Route path="/owner/edit/:id" element={<AccommodationManagement />} />
-            <Route
-              path="/owner/tenants"
-              element={<div className="p-6">Tenants Page</div>}
-            />
-            <Route
-              path="/owner/reports"
-              element={<div className="p-6">Reports Page</div>}
-            />
-            <Route
-              path="/owner/settings"
-              element={<div className="p-6">Settings Page</div>}
-            />
-          </Route>
-        </Route>
+        <Route
+          path="/agreement/confirm/:token"
+          element={<AgreementConfirmationPage />}
+        />
+        <Route
+          path="/tenant/payment/:confirmationId"
+          element={<PaymentPage />}
+        />
+        <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failure" element={<PaymentSuccess />} />
+        <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
+      </Route>
 
-        {/* Admin-specific Routes */}
-        <Route element={<ProtectedRoute allowedRoles={["admin"]} />}>
-          <Route element={<AdminLayout />}>
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin/dashboard" element={<AdminDashboard />} />
-            <Route
-              path="/admin/accommodations"
-              element={<AdminAccommodationManagement />}
-            />
-            <Route path="/admin/users" element={<AdminUserManagement />} />
-            <Route path="/admin/reports" element={<AdminRevenueReports />} />
-            <Route
-              path="/admin/settings"
-              element={<div className="p-6">Admin Settings Page</div>}
-            />
-          </Route>
-        </Route>
+      {/* Owner Routes */}
+      <Route element={<OwnerLayout />}>
+        <Route
+          path="/owner"
+          element={
+            <OwnerRoute>
+              <OwnerDashboard />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/dashboard"
+          element={
+            <OwnerRoute>
+              <OwnerDashboard />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/rooms/:accommodationId"
+          element={
+            <OwnerRoute>
+              <RoomManagement />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/rental-requests"
+          element={
+            <OwnerRoute>
+              <RentalRequestManagement />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/accommodations"
+          element={
+            <OwnerRoute>
+              <AccommodationManagement />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/create"
+          element={
+            <OwnerRoute>
+              <AccommodationManagement />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/edit/:id"
+          element={
+            <OwnerRoute>
+              <AccommodationManagement />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/co-tenants"
+          element={
+            <OwnerRoute>
+              <CoTenantsRequest />
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/reports"
+          element={
+            <OwnerRoute>
+              <div className="p-6">Reports Page</div>
+            </OwnerRoute>
+          }
+        />
+        <Route
+          path="/owner/settings"
+          element={
+            <OwnerRoute>
+              <div className="p-6">Settings Page</div>
+            </OwnerRoute>
+          }
+        />
+      </Route>
 
-        {/* Multi-role Routes (accessible to both landlord and tenant) */}
-        <Route element={<ProtectedRoute allowedRoles={["landlord", "tenant"]} />}>
-          <Route element={<MainLayout />}>
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/change-password" element={<ChangePassword />} />
-          </Route>
-        </Route>
+      {/* Admin Routes */}
+      <Route element={<AdminLayout />}>
+        <Route
+          path="/admin/dashboard"
+          element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <AdminRoute>
+              <UserManagement />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <AdminRoute>
+              <RevenueReports />
+            </AdminRoute>
+          }
+        />
+      </Route>
 
-        {/* Catch-all route */}
-        <Route path="*" element={<LoginPage />} />
-      </Routes>
-    </AuthProvider>
+      <Route path="*" element={<HomePage />} />
+    </Routes>
   );
 }
 

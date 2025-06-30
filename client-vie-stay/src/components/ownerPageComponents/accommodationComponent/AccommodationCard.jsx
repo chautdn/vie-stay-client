@@ -31,7 +31,7 @@ function AccommodationCard({ acc, onView, onEdit, onToggleActive, onManageRooms 
     };
     return typeMap[type] || type;
   };
-
+  
   const getStatusText = (status) => {
     switch (status) {
       case "approved":

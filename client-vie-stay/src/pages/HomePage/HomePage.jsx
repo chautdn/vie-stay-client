@@ -1,23 +1,10 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore"; 
-import { LogOut } from "lucide-react"; 
-import Room from "../RoomPage/Room";
+import Room from "./RoomPage/Room";
 
 
 const Homepage = () => {
-  const logout = useAuthStore((state) => state.logout);
-  const isLoading = useAuthStore((state) => state.isLoading);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate("/login");
-    } catch (err) {
-      alert("Error logging out. Please try again.");
-    }
-  };
 
   return (
   <div className="p-8">

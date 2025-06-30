@@ -5,7 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import Input from "../../components/authPageComponents/Input";
 import { useAuthStore } from "../../store/authStore";
 import { GoogleLogin } from "@react-oauth/google";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");

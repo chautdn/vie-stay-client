@@ -13,10 +13,10 @@ import {
 } from "lucide-react";
 
 // Import the real data components
-import AdminDashboard from "../pages/Dashboard/AdminDashboard";
-import AccommodationManagement from "../pages/AccommodationManagementPage/AccommodationManagement";
-import UserManagement from "../pages/UserManagementPage/UserManagement";
-import RevenueReports from "../pages/AdminRevenueReports/RevenueReports";
+import AdminDashboard from "../pages/AdminPage/AdminDashboard";
+import AccommodationManagement from "../pages/AdminPage/AccommodationManagement";
+import UserManagement from "../pages/AdminPage/UserManagement";
+import RevenueReports from "../pages/AdminPage/RevenueReports";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

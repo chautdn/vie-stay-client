@@ -19,7 +19,6 @@ const Search = () => {
     // Zustand store
     const { searchRooms, isLoading } = useRoomStore()
 
-    // ✅ SỬA: Sync với SearchPage
     const roomTypes = [
         { code: 'single', value: 'Phòng trọ đơn' },
         { code: 'double', value: 'Phòng trọ đôi' },
@@ -39,7 +38,6 @@ const Search = () => {
         { code: 'hoa-vang', value: 'Hoà Vang' }
     ]
 
-    // ✅ THÊM: Features/Amenities list
     const features = [
         { code: 'thang_may', value: 'Có thang máy' },
         { code: 'wifi', value: 'Wifi miễn phí' },
@@ -52,7 +50,7 @@ const Search = () => {
         { code: 'cho_de_xe', value: 'Chỗ để xe' },
     ]
 
-    // ✅ SỬA: Sync prices với SearchPage
+    // ✅ SỬA: Fix prices with proper min/max values
     const prices = [
         { code: 'price1', value: 'Dưới 1.5 triệu', min: 0, max: 1500000 },
         { code: 'price2', value: '1.5 - 2.5 triệu', min: 1500000, max: 2500000 },
@@ -62,7 +60,7 @@ const Search = () => {
         { code: 'price6', value: 'Trên 7 triệu', min: 7000000, max: null }
     ]
 
-    // ✅ SỬA: Sync areas với SearchPage
+    // ✅ SỬA: Fix areas with proper min/max values
     const areas = [
         { code: 'area1', value: 'Dưới 20m²', min: 0, max: 20 },
         { code: 'area2', value: '20 - 30m²', min: 20, max: 30 },
@@ -95,7 +93,6 @@ const Search = () => {
 
     const handleSearch = async () => {
         try {
-            // ✅ SỬA: Tạo search parameters giống SearchPage
             const searchParams = {}
 
             // Xử lý type (loại phòng)
@@ -106,7 +103,7 @@ const Search = () => {
                 }
             }
 
-            // ✅ THÊM: Xử lý features
+            // Xử lý features
             if (queries.feature && queries.feature !== 'Đặc điểm nổi bật') {
                 const selectedFeature = features.find(f => f.value === queries.feature)
                 if (selectedFeature) {
@@ -122,50 +119,39 @@ const Search = () => {
                 }
             }
 
-            // ✅ SỬA: Xử lý price range - chỉ dùng minRent/maxRent
+            // ✅ SỬA: Fix price range handling
             if (queries.price && queries.price !== 'Chọn giá') {
+                // Check if it's a predefined price range
                 const selectedPrice = prices.find(price => price.value === queries.price)
                 if (selectedPrice) {
                     if (selectedPrice.min !== undefined) searchParams.minRent = selectedPrice.min
                     if (selectedPrice.max !== null && selectedPrice.max !== undefined) searchParams.maxRent = selectedPrice.max
+                } else if (queries.priceNumber && Array.isArray(queries.priceNumber)) {
+                    // ✅ SỬA: Handle custom price from slider
+                    const [minTrieu, maxTrieu] = queries.priceNumber
+                    if (minTrieu > 0) searchParams.minRent = Math.round(minTrieu * 1000000)
+                    if (maxTrieu < 15) searchParams.maxRent = Math.round(maxTrieu * 1000000)
                 }
-            } else if (arrMinMax.priceArr && Array.isArray(arrMinMax.priceArr)) {
-                // Xử lý custom price từ Modal slider
-                const [minPercent, maxPercent] = arrMinMax.priceArr
-                const maxPrice = 15000000 // 15 triệu VND
-                const minPrice = 0
-
-                const actualMin = (minPercent / 100) * (maxPrice - minPrice) + minPrice
-                const actualMax = (maxPercent / 100) * (maxPrice - minPrice) + minPrice
-
-                if (minPercent > 0) searchParams.minRent = Math.round(actualMin)
-                if (maxPercent < 100) searchParams.maxRent = Math.round(actualMax)
             }
 
-            // ✅ SỬA: Xử lý area range - chỉ dùng minSize/maxSize
+            // ✅ SỬA: Fix area range handling
             if (queries.area && queries.area !== 'Chọn diện tích') {
+                // Check if it's a predefined area range
                 const selectedArea = areas.find(area => area.value === queries.area)
                 if (selectedArea) {
                     if (selectedArea.min !== undefined) searchParams.minSize = selectedArea.min
                     if (selectedArea.max !== null && selectedArea.max !== undefined) searchParams.maxSize = selectedArea.max
+                } else if (queries.areaNumber && Array.isArray(queries.areaNumber)) {
+                    // ✅ SỬA: Handle custom area from slider
+                    const [minM2, maxM2] = queries.areaNumber
+                    if (minM2 > 0) searchParams.minSize = Math.round(minM2)
+                    if (maxM2 < 90) searchParams.maxSize = Math.round(maxM2)
                 }
-            } else if (arrMinMax.areaArr && Array.isArray(arrMinMax.areaArr)) {
-                // Xử lý custom area từ Modal slider
-                const [minPercent, maxPercent] = arrMinMax.areaArr
-                const maxArea = 90 // 90m²
-                const minArea = 0
-
-                const actualMin = (minPercent / 100) * (maxArea - minArea) + minArea
-                const actualMax = (maxPercent / 100) * (maxArea - minArea) + minArea
-
-                if (minPercent > 0) searchParams.minSize = Math.round(actualMin)
-                if (maxPercent < 100) searchParams.maxSize = Math.round(actualMax)
             }
 
             // Mặc định chỉ tìm phòng available
             searchParams.isAvailable = true
 
-            console.log('Search params:', searchParams)
 
             // Navigate to search results page
             navigate({
@@ -180,7 +166,6 @@ const Search = () => {
 
     return (
         <>
-            {/* ✅ SỬA: Tăng width từ w-3/5 lên w-4/5 hoặc w-full */}
             <div className='p-[10px] w-3/5 my-3 bg-[#febb02] rounded-lg flex-col lg:flex-row flex items-center justify-around gap-2'>
                 <span 
                     onClick={() => handleShowModal(roomTypes, 'category', 'Tìm tất cả')} 
@@ -195,7 +180,6 @@ const Search = () => {
                     />
                 </span>
 
-                {/* ✅ THÊM: Features dropdown */}
                 <span 
                     onClick={() => handleShowModal(features, 'feature', 'Đặc điểm nổi bật')} 
                     className='cursor-pointer flex-1'

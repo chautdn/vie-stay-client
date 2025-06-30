@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { List, Pagination } from './index'
+import { List, NewestPosts, Pagination } from './index'
 import { text } from '../../../utils/Constant'
 import { ItemSidebar } from '../../../components/common'
 import { useSearchParams } from 'react-router-dom'
@@ -11,7 +11,7 @@ const HomePage = () => {
     const { getAllRooms, searchResults, rooms } = useRoomStore()
     
     const [currentPage, setCurrentPage] = useState(1)
-    const resultsPerPage = 3
+    const resultsPerPage = 5
     const prevFiltersRef = useRef({})
 
     // ✅ THÊM: Theo dõi thay đổi filter để quyết định có reset page không
@@ -126,6 +126,8 @@ const HomePage = () => {
 
                     {/* Right Sidebar */}
                     <div className='w-[30%] flex flex-col gap-4 justify-start items-center'>
+                        
+                        
                         <ItemSidebar 
                             content={categories} 
                             title='Danh sách cho thuê' 
@@ -146,6 +148,7 @@ const HomePage = () => {
                             title='Xem theo diện tích' 
                             isDouble={true} 
                         />
+                        <NewestPosts />
                     </div>
                 </div>
             </div>

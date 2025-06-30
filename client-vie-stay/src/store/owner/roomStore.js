@@ -47,6 +47,46 @@ export const useRoomStore = create((set, get) => ({
     }
   },
 
+  getNewestRoom: async () => {
+    set({ isLoading: true });
+    try {
+      const response = await roomService.getNewestRoom();
+      let newRooms = [];
+
+      // ✅ SỬA: Xử lý response structure đúng
+      if (response?.status === "success" && response?.data?.rooms) {
+        newRooms = response.data.rooms;
+      } else if (response?.data?.rooms) {
+        newRooms = response.data.rooms;
+      } else if (response?.rooms) {
+        newRooms = response.rooms;
+      } else if (Array.isArray(response?.data)) {
+        newRooms = response.data;
+      } else if (Array.isArray(response)) {
+        newRooms = response;
+      }
+
+      // ✅ SỬA: Update state với newest rooms, không ghi đè toàn bộ rooms
+      set({
+        rooms: Array.isArray(newRooms) ? newRooms : [],
+        isLoading: false,
+      });
+
+      return newRooms;
+    } catch (error) {
+      console.error("❌ Error fetching newest rooms:", error);
+      useErrorStore
+        .getState()
+        .setError(
+          error.response?.data?.message ||
+            error.message ||
+            "Lỗi khi tải danh sách phòng mới nhất"
+        );
+      set({ isLoading: false, rooms: [] });
+      throw error;
+    }
+  },
+
   // Sửa function này để xử lý đúng response structure
   getRoomsByAccommodationId: async (accommodationId) => {
     set({ isLoading: true });

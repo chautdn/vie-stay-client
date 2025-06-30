@@ -89,8 +89,6 @@ const SearchPage = () => {
                     }
                 }
 
-                console.log('Search params object:', searchParamsObject)
-
                 // ✅ Gọi API search với các params
                 if (Object.keys(searchParamsObject).length > 0) {
                     await searchRooms(searchParamsObject)

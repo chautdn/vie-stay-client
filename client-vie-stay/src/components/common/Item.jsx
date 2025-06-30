@@ -1,17 +1,16 @@
-import React, { memo, useState, useEffect } from 'react'
+import React, { memo, useState, useEffect, useCallback } from 'react'
 import icons from '../../utils/icons'
 import { useNavigate, Link } from 'react-router-dom'
 import { formatVietnameseToString } from '../../utils/Common/formatVietnameseToString'
+import { getSavedPosts, savePost, unsavePost, isPostSaved } from '../../utils/localStorage'
 
 const { MdOutlineStarPurple500, IoIosHeart, IoIosHeartEmpty, BsBookmarkStarFill } = icons
 
-// ✅ SỬA: Cập nhật props để nhận room object từ backend
 const Item = ({ room }) => {
     const [isHoverHeart, setIsHoverHeart] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
-    const navigate = useNavigate()
     
-    // ✅ SỬA: Extract data từ room object
+    // ✅ Extract data từ room object
     const {
         _id: id,
         name: title,
@@ -28,45 +27,63 @@ const Item = ({ room }) => {
         accommodation
     } = room || {}
 
-    // ✅ THÊM: Check xem tin đã được lưu chưa khi component mount
+    // ✅ Check saved status khi component mount và ID thay đổi
     useEffect(() => {
         if (id) {
-            const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]')
-            setIsSaved(savedPosts.includes(id))
+            const savedStatus = isPostSaved(id)
+            setIsSaved(savedStatus)
         }
     }, [id])
 
-    // ✅ THÊM: Function để toggle save/unsave
-    const handleToggleSave = (e) => {
+    // ✅ Listen for localStorage changes
+    useEffect(() => {
+        const handleSavedPostsChanged = (event) => {
+            if (event.detail?.key === 'savedPosts' && id) {
+                const newSavedStatus = isPostSaved(id)
+                setIsSaved(newSavedStatus)
+            }
+        }
+
+        window.addEventListener('savedPostsChanged', handleSavedPostsChanged)
+        
+        return () => {
+            window.removeEventListener('savedPostsChanged', handleSavedPostsChanged)
+        }
+    }, [id])
+
+    // ✅ Function để toggle save/unsave
+    const handleToggleSave = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
         
         if (!id) return
-        
-        const savedPosts = JSON.parse(localStorage.getItem('savedPosts') || '[]')
-        
-        if (isSaved) {
-            const updatedPosts = savedPosts.filter(postId => postId !== id)
-            localStorage.setItem('savedPosts', JSON.stringify(updatedPosts))
-            setIsSaved(false)
-            console.log('Đã xóa tin khỏi danh sách đã lưu')
-        } else {
-            const updatedPosts = [...savedPosts, id]
-            localStorage.setItem('savedPosts', JSON.stringify(updatedPosts))
-            setIsSaved(true)
-            console.log('Đã lưu tin')
-        }
-    }
-    
-    // ✅ SỬA: Xử lý images an toàn
-    const displayImages = Array.isArray(images) && images.length > 0 
-        ? images.slice(0, 4) 
-        : ['https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg']
 
-    const handleStar = (starCount) => {
-        let stars = []
-        for (let i = 1; i <= +starCount; i++) {
-            stars.push(
+        const currentSavedStatus = isPostSaved(id)
+        
+        if (currentSavedStatus) {
+            const success = unsavePost(id)
+            if (success) {
+                setIsSaved(false)
+            }
+        } else {
+            const success = savePost(id)
+            if (success) {
+                setIsSaved(true)
+            }
+        }
+    }, [id])
+    
+    // ✅ Memoize các computed values
+    const displayImages = React.useMemo(() => {
+        return Array.isArray(images) && images.length > 0 
+            ? images.slice(0, 4) 
+            : ['https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg']
+    }, [images])
+
+    const stars = React.useMemo(() => {
+        const starArray = []
+        for (let i = 1; i <= +star; i++) {
+            starArray.push(
                 <MdOutlineStarPurple500 
                     key={i}
                     className='star-item' 
@@ -75,36 +92,58 @@ const Item = ({ room }) => {
                 />
             )
         }
-        return stars
-    }
+        return starArray
+    }, [star])
 
-    // ✅ SỬA: Format địa chỉ từ backend data
-    const formatAddress = () => {
-        if (fullAddress) {
-            return fullAddress
-        }
+    const formattedAddress = React.useMemo(() => {
+        if (fullAddress) return fullAddress
         
-        // Fallback format nếu không có fullAddress
         const addressParts = []
         if (ward) addressParts.push(ward)
         if (district) addressParts.push(district)
         if (city) addressParts.push(city)
         
         return addressParts.length > 0 ? addressParts.join(', ') : 'Địa chỉ đang cập nhật'
-    }
+    }, [fullAddress, ward, district, city])
 
-    // ✅ SỬA: Format price
-    const formatPrice = () => {
+    const formattedPrice = React.useMemo(() => {
         if (!baseRent) return '0 đ'
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
         }).format(baseRent)
-    }
+    }, [baseRent])
 
-    // ✅ SỬA: Format size
-    const formatSize = () => {
+    const formattedSize = React.useMemo(() => {
         return size ? `${size}m²` : '0m²'
+    }, [size])
+
+    // ✅ Event handlers
+    const handlePhoneCall = useCallback((e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (user?.phone) {
+            window.open(`tel:${user.phone}`)
+        }
+    }, [user?.phone])
+
+    const handleZaloChat = useCallback((e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        // TODO: Implement Zalo integration
+    }, [user?.phone])
+
+    const handleImageError = useCallback((e) => {
+        e.target.src = 'https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg'
+    }, [])
+
+    const handleAvatarError = useCallback((e) => {
+        e.target.src = "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"
+    }, [])
+
+    // ✅ Early return nếu không có room data
+    if (!room || !id) {
+        return null
     }
 
     return (
@@ -113,20 +152,18 @@ const Item = ({ room }) => {
                 to={`/chi-tiet/${formatVietnameseToString(title || 'phong-tro')}/${id}`} 
                 className='w-2/5 grid grid-cols-2 gap-0.5 items-center cursor-pointer relative'
             >
-                {/* ✅ SỬA: Hiển thị đủ 4 ảnh hoặc ảnh placeholder */}
                 {[0, 1, 2, 3].map((index) => (
                     <img 
                         key={index} 
                         src={displayImages[index] || displayImages[0]} 
                         alt={`Preview ${index + 1}`} 
                         className='w-full h-[140px] object-cover' 
-                        onError={(e) => {
-                            e.target.src = 'https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg'
-                        }}
+                        onError={handleImageError}
+                        loading="lazy"
                     />
                 ))}
 
-                {/* ✅ SỬA: Biểu tượng trái tim với save functionality */}
+                {/* Heart icon */}
                 <span
                     className='absolute right-1 bottom-1 z-10 cursor-pointer p-1 rounded-full bg-black bg-opacity-20 hover:bg-opacity-40 transition-all'
                     onMouseEnter={() => setIsHoverHeart(true)}
@@ -143,7 +180,6 @@ const Item = ({ room }) => {
                     )}
                 </span>
 
-                {/* Số lượng hình ảnh */}
                 <span className='bg-black bg-opacity-50 text-white px-2 py-1 rounded-md absolute left-1 bottom-1 text-xs'>
                     {`${images.length || 1} ảnh`}
                 </span>
@@ -153,7 +189,7 @@ const Item = ({ room }) => {
                 <div className='items-center gap-1'>
                     <div className='flex items-center justify-between'>
                         <div className='flex'>
-                            {handleStar(+star).map((starElement, number) => (
+                            {stars.map((starElement, number) => (
                                 <span key={number}>{starElement}</span>
                             ))}
                         </div>
@@ -168,13 +204,13 @@ const Item = ({ room }) => {
                     
                     <div className='my-2 flex items-center justify-between overflow-hidden'>
                         <span className='font-bold flex-3 text-green-500'>
-                            {formatPrice()}
+                            {formattedPrice}
                         </span>
                         <span className='flex-1'>
-                            {formatSize()}
+                            {formattedSize}
                         </span>
                         <span className='flex-3 whitespace-nowrap overflow-hidden text-ellipsis'>
-                            {formatAddress()}
+                            {formattedAddress}
                         </span>
                     </div>
                     
@@ -185,12 +221,11 @@ const Item = ({ room }) => {
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center my-3'>
                             <img 
-                                src={user?.avatar || "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"}
+                                src={user?.avatar || user?.profileImage || "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"}
                                 alt="avatar" 
                                 className='w-[30px] h-[30px] object-cover rounded-full'
-                                onError={(e) => {
-                                    e.target.src = "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"
-                                }}
+                                onError={handleAvatarError}
+                                loading="lazy"
                             />
                             <p className='ml-2'>{user?.name || 'Chủ trọ'}</p>
                         </div>
@@ -198,24 +233,17 @@ const Item = ({ room }) => {
                         <div className='flex items-center gap-1'>
                             <button
                                 type='button'
-                                className='bg-blue-500 text-white p-1 rounded-lg hover:bg-blue-600 transition-colors'
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    if (user?.phone) {
-                                        window.open(`tel:${user.phone}`)
-                                    }
-                                }}
+                                className='bg-blue-500 text-white p-1 rounded-lg hover:bg-blue-600 transition-colors text-xs'
+                                onClick={handlePhoneCall}
+                                disabled={!user?.phone}
                             >
-                                {`Gọi ${user?.phone || 'SĐT'}`}
+                                {user?.phone ? `Gọi ${user.phone}` : 'Chưa có SĐT'}
                             </button>
                             <button
                                 type='button'
-                                className='border border-blue-500 text-blue-500 p-1 rounded-lg hover:bg-blue-50 transition-colors'
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    // TODO: Implement Zalo integration
-                                    console.log('Zalo chat with:', user?.phone)
-                                }}
+                                className='border border-blue-500 text-blue-500 p-1 rounded-lg hover:bg-blue-50 transition-colors text-xs'
+                                onClick={handleZaloChat}
+                                disabled={!user?.phone}
                             >
                                 Nhắn zalo
                             </button>
@@ -227,4 +255,19 @@ const Item = ({ room }) => {
     )
 }
 
-export default memo(Item)
+// ✅ Improved comparison function
+const areEqual = (prevProps, nextProps) => {
+    const prevRoom = prevProps.room
+    const nextRoom = nextProps.room
+    
+    return (
+        prevRoom?._id === nextRoom?._id &&
+        prevRoom?.name === nextRoom?.name &&
+        prevRoom?.baseRent === nextRoom?.baseRent &&
+        prevRoom?.isAvailable === nextRoom?.isAvailable &&
+        prevRoom?.user?.phone === nextRoom?.user?.phone &&
+        JSON.stringify(prevRoom?.images) === JSON.stringify(nextRoom?.images)
+    )
+}
+
+export default memo(Item, areEqual)

@@ -32,6 +32,7 @@ import PaymentPage from "./pages/TenantPage/AgreementPage/PaymentPage";
 import PaymentSuccess from "./pages/TenantPage/AgreementPage/PaymentSuccess";
 import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
 import SavedPosts from "./pages/HomePage/Public/SavedPosts";
+import { ServicePrice } from "./pages/HomePage/Public";
 
 // Import Admin Pages
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
@@ -72,6 +73,7 @@ function App() {
           <Route path="search" element={<SearchPage />} />{" "}
           {/* ✅ SỬA: Thay List bằng SearchPage */}
           <Route path="list" element={<List />} />
+          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />  
           <Route path="*" element={<HomePage />} />
         </Route>
 

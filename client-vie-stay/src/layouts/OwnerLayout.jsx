@@ -1,39 +1,78 @@
-import React, { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore'; // ✅ THÊM: Import AuthStore
+import LogoutButton from '../components/common/LogOutButton';
 import { 
   LayoutDashboard, 
   Building, 
   Users, 
   FileText, 
   Settings, 
-  LogOut,
   Menu,
   X,
   Bell,
   User,
-  UserCheck  // Thêm icon mới
+  UserCheck
 } from 'lucide-react';
-import LogoutButton from '../components/common/LogoutButton';
+
 const OwnerLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [fadeOut, setFadeOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // ✅ THÊM: Get auth state
+  const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
+
+  // ✅ THÊM: Auto hide welcome message after 5 seconds with fade effect
+  useEffect(() => {
+    if (showWelcome && user?.name) {
+      const fadeTimer = setTimeout(() => {
+        setFadeOut(true);
+      }, 4500); // Start fading at 4.5s
+
+      const hideTimer = setTimeout(() => {
+        setShowWelcome(false);
+        setFadeOut(false);
+      }, 5000); // Completely hide at 5s
+
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, [showWelcome, user?.name]);
 
   const navigation = [
     { name: 'Dashboard', href: '/owner/dashboard', icon: LayoutDashboard, current: false },
     { name: 'Tòa nhà', href: '/owner/accommodations', icon: Building, current: false },
-    { name: 'Yêu cầu thuê', href: '/owner/rental-requests', icon: UserCheck, current: false }, // Thêm menu mới
-    { name: 'Người thuê', href: '/owner/tenants', icon: Users, current: false },
+    { name: 'Yêu cầu thuê', href: '/owner/rental-requests', icon: UserCheck, current: false },
+    { name: 'Yêu cầu bạn chung phòng', href: '/owner/co-tenants', icon: Users, current: false },
     { name: 'Báo cáo', href: '/owner/reports', icon: FileText, current: false },
     { name: 'Cài đặt', href: '/owner/settings', icon: Settings, current: false },
   ];
+
+  // ✅ THÊM: Loading state
+  if (isCheckingAuth) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-2 text-gray-600">Đang kiểm tra quyền truy cập...</span>
+      </div>
+    );
+  }
+
+  // ✅ SỬA: Role protection cho array role
+  if (!isAuthenticated || !user?.role?.includes('landlord')) {
+    return <Navigate to="/login" replace />;
+  }
 
   // Update current based on location
   const updatedNavigation = navigation.map(item => ({
     ...item,
     current: location.pathname === item.href || location.pathname.startsWith(item.href)
   }));
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -77,6 +116,30 @@ const OwnerLayout = () => {
               ))}
             </nav>
           </div>
+
+          {/* ✅ SỬA: Mobile user section với AuthStore */}
+          <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
+            <div className="flex items-center w-full">
+              <div className="flex-shrink-0">
+                {user?.profileImage ? (
+                  <img
+                    src={`http://localhost:8080${user.profileImage}`}
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                )}
+              </div>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-700">{user?.name || 'Chủ nhà'}</p>
+                <p className="text-xs text-gray-500">Chủ nhà</p>
+              </div>
+              <LogoutButton className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -107,21 +170,30 @@ const OwnerLayout = () => {
             </nav>
           </div>
 
-          {/* User section */}
+          {/* ✅ SỬA: Desktop user section với AuthStore */}
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
-            <div className="flex items-center">
+            <div className="flex items-center w-full">
               <div className="flex-shrink-0">
-                <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                  <User className="h-5 w-5 text-white" />
-                </div>
+                {user?.profileImage ? (
+                  <img
+                    src={`http://localhost:8080${user.profileImage}`}
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                )}
               </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">John Doe</p>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-gray-700">{user?.name || 'Chủ nhà'}</p>
                 <p className="text-xs text-gray-500">Chủ nhà</p>
+                {user?.email && (
+                  <p className="text-xs text-gray-400 truncate">{user.email}</p>
+                )}
               </div>
-              
-                <LogoutButton />
-              
+              <LogoutButton className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded text-xs" />
             </div>
           </div>
         </div>
@@ -129,7 +201,7 @@ const OwnerLayout = () => {
 
       {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
-        {/* Top bar */}
+        {/* ✅ SỬA: Top bar với user info */}
         <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
           <button
             type="button"
@@ -137,15 +209,40 @@ const OwnerLayout = () => {
             onClick={() => setSidebarOpen(true)}
           >
             <Menu className="h-6 w-6" />
-          </button>
-          
-          <div className="flex-1 px-4 flex justify-between items-center">
-            <div className="flex-1" />
+          </button>            <div className="flex-1 px-4 flex justify-between items-center">
+            <div className="flex-1">
+              {showWelcome && user?.name ? (
+                <h2 className={`text-lg font-semibold text-gray-900 hidden md:block transition-opacity duration-500 ease-in-out ${
+                  fadeOut ? 'opacity-0' : 'opacity-100'
+                }`}>
+                  Xin chào, {user.name}! 👋
+                </h2>
+              ) : (
+                <h2 className="text-lg font-semibold text-gray-900 hidden md:block transition-opacity duration-300 ease-in-out opacity-100">
+                  Dashboard
+                </h2>
+              )}
+            </div>
             
             <div className="ml-4 flex items-center md:ml-6">
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <Bell className="h-6 w-6" />
               </button>
+              
+              {/* ✅ THÊM: Mobile user info */}
+              <div className="ml-3 flex items-center md:hidden">
+                {user?.profileImage ? (
+                  <img
+                    src={`http://localhost:8080${user.profileImage}`}
+                    alt="Profile"
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
+                    <User className="h-5 w-5 text-white" />
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

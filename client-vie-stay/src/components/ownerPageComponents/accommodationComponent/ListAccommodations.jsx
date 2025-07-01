@@ -99,7 +99,7 @@ function ListAccommodations() {
       }
 
       if (filters.district) {
-        filteredData = filteredData.filter(acc => acc.district === filters.district)
+        filteredData = filteredData.filter(acc => acc.address.district === filters.district)
       }
 
       if (filters.approvalStatus) {
@@ -456,6 +456,7 @@ function ListAccommodations() {
                 <AccommodationCard
                   key={acc._id}
                   acc={acc}
+                  address={acc.address}
                   onView={handleView}
                   onEdit={handleEdit}
                   onToggleActive={handleToggleActive}

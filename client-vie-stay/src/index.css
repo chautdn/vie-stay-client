@@ -1,1 +1,101 @@
 @import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #F5F5F5;
+  --color-secondary1: #1266dd;
+  --color-secondary2: #F73859;
+  --color-overlay-10: rgba(0, 0, 0, 0.1);
+  --color-overlay-20: rgba(0, 0, 0, 0.2);
+  --color-overlay-30: rgba(0, 0, 0, 0.3);
+  --color-overlay-40: rgba(0, 0, 0, 0.4);
+  --color-overlay-50: rgba(0, 0, 0, 0.5);
+  --color-overlay-60: rgba(0, 0, 0, 0.6);
+}
+
+/* ✅ THÊM: Utility classes */
+@layer utilities {
+  .bg-primary { background-color: var(--color-primary); }
+  .bg-secondary1 { background-color: var(--color-secondary1); }
+  .bg-secondary2 { background-color: var(--color-secondary2); }
+  .text-secondary1 { color: var(--color-secondary1); }
+  .text-secondary2 { color: var(--color-secondary2); }
+  .border-secondary1 { border-color: var(--color-secondary1); }
+  .border-secondary2 { border-color: var(--color-secondary2); }
+}
+
+/* Range Input Styling */
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+
+input[type="range"]::-webkit-slider-runnable-track {
+    -webkit-appearance: none;
+    height: 5px;
+}
+
+input[type="range"]::-moz-range-track {
+    -moz-webkit-appearance: none;
+    
+    height: 5px;
+}
+
+input[type="range"]::-ms-track {
+    appearance: none;
+    height: 5px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 2rem;
+    height: 2rem;
+    background-color: white;
+    border: solid 1px #ccc;
+    border-radius: 1rem;
+    margin-top: -0.6rem;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb:active {
+    border: solid 1px rgb(144, 211, 255);
+}
+
+input[type="range"]::-moz-range-thumb {
+    -moz-appearance: none;
+    width: 2rem;
+    height: 2rem;
+    background-color: white;
+    border: solid 1px #ccc;
+    border-radius: 1rem;
+    margin-top: -0.6rem;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb:active {
+    border: solid 1px rgb(144, 211, 255);
+}
+
+input[type="range"]::-ms-thumb {
+    appearance: none;
+    width: 2rem;
+    height: 2rem;
+    background-color: white;
+    border: solid 1px #ccc;
+    border-radius: 1rem;
+    margin-top: -0.6rem;
+    pointer-events: auto;
+    cursor: pointer;
+}
+
+input[type="range"]::-ms-thumb:active {
+    border: solid 1px rgb(144, 211, 255);
+}

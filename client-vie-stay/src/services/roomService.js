@@ -13,12 +13,22 @@ export const roomService = {
     }
   },
 
+  getNewestRoom: async () => {
+    try {
+      const response = await axiosInstance.get(`${API_URL}/new-posts`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Lấy phòng theo accommodation ID
   getRoomsByAccommodationId: async (accommodationId) => {
     try {
       const response = await axiosInstance.get(
         `${API_URL}/accommodation/${accommodationId}`
       );
+      console.log("Response from getRoomsByAccommodationId:", response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -39,7 +49,7 @@ export const roomService = {
   createRoom: async (roomData, accommodationId) => {
     try {
       const response = await axiosInstance.post(
-        `${API_URL}/${accommodationId}`,
+        `${API_URL}/${accommodationId}/create`,
         roomData
       );
       return response.data;

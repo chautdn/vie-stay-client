@@ -8,7 +8,8 @@ const Navigation = () => {
         { name: 'Trang chủ', path: '/', code: 'home' },
         { name: 'Phòng trọ Đà Nẵng', path: '/search?city=da-nang', code: 'danang' },
         { name: 'Blog ', path: '/search?type=blog', code: 'blog' },
-        { name: 'Tìm người ở ghép', path: '/search?type=shared', code: 'shared' }
+        { name: 'Tìm người ở ghép', path: '/search?type=shared', code: 'shared' },
+        { name: 'Bảng giá dịch vụ', path: '/bang-gia-dich-vu', code: 'serviceprice' }
     ]
 
     const isActive = (item) => {

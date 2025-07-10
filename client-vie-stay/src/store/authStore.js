@@ -37,7 +37,6 @@ export const useAuthStore = create((set, get) => ({
         });
 
         // Set auth state immediately without validation
-        // This prevents the login loop issue
         set({
           token,
           user,
@@ -46,33 +45,8 @@ export const useAuthStore = create((set, get) => ({
           error: null,
         });
 
-        // Optional: Validate token in background (don't wait for it)
-        axiosInstance
-          .get("/user/profile")
-          .then((response) => {
-            console.log("✅ Background token validation successful");
-            // Token is valid, update user data if needed
-            const freshUser = response.data.data.user;
-            set({ user: freshUser });
-          })
-          .catch((error) => {
-            console.warn(
-              "⚠️ Background token validation failed:",
-              error.response?.status
-            );
-            // Only clear auth if it's a 401 (unauthorized)
-            if (error.response?.status === 401) {
-              console.log("🔄 Token expired, clearing auth...");
-              localStorage.removeItem("token");
-              localStorage.removeItem("user");
-              set({
-                isAuthenticated: false,
-                user: null,
-                token: null,
-                error: "Session expired. Please login again.",
-              });
-            }
-          });
+        // Note: Removed the background token validation since /user/profile doesn't exist
+        // If you want to validate tokens, create the appropriate endpoint first
       } else {
         console.log("❌ No valid auth data found in localStorage");
         set({
@@ -163,10 +137,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // Fixed login function in authStore.js
-  // Add this to your Zustand store after the login function
-
-  // In your useAuthStore, add this to the login function after successful login:
   login: async (email, password) => {
     set({ isLoading: true, error: null });
     try {
@@ -199,7 +169,7 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
       });
 
-      // 🔥 NEW: Dispatch event to notify React Context
+      // Dispatch event to notify React Context
       window.dispatchEvent(
         new CustomEvent("userLoggedIn", {
           detail: { user: userData, token: token },
@@ -220,7 +190,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // And update the googleLogin function similarly:
   googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
@@ -248,7 +217,7 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
       });
 
-      // 🔥 NEW: Dispatch event to notify React Context
+      // Dispatch event to notify React Context
       window.dispatchEvent(
         new CustomEvent("userLoggedIn", {
           detail: { user: userData, token: token },
@@ -265,7 +234,6 @@ export const useAuthStore = create((set, get) => ({
     }
   },
 
-  // And update the logout function:
   logout: async () => {
     console.log("🚪 Logging out...");
     set({ isLoading: true });
@@ -290,7 +258,7 @@ export const useAuthStore = create((set, get) => ({
       message: null,
     });
 
-    // 🔥 NEW: Dispatch event to notify React Context
+    // Dispatch event to notify React Context
     window.dispatchEvent(new CustomEvent("userLogout"));
 
     console.log("✅ Logout completed");
@@ -343,22 +311,45 @@ export const useAuthStore = create((set, get) => ({
   clearError: () => set({ error: null }),
   clearMessage: () => set({ message: null }),
 
-  // Helper function to refresh user data
-  refreshUser: async () => {
-    try {
-      const response = await axiosInstance.get("/user/profile");
-      const userData = response.data.data.user;
+  // NEW: Manual setter for user data
+  setUser: (userData) => {
+    console.log("🔄 Updating user data:", userData);
+    
+    // Update localStorage
+    localStorage.setItem("user", JSON.stringify(userData));
+    
+    // Update store
+    set({ user: userData });
+  },
 
-      // Update localStorage
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      // Update store
-      set({ user: userData });
-
-      return userData;
-    } catch (error) {
-      console.error("Failed to refresh user data:", error);
-      throw error;
+  // NEW: Update wallet balance specifically
+  updateWalletBalance: (newBalance) => {
+    const currentUser = get().user;
+    if (currentUser) {
+      const updatedUser = {
+        ...currentUser,
+        wallet: {
+          ...currentUser.wallet,
+          balance: newBalance
+        }
+      };
+      
+      // Update both localStorage and store
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      set({ user: updatedUser });
+      
+      console.log("💰 Wallet balance updated:", newBalance);
     }
+  },
+
+  // FIXED: Remove the problematic refreshUser function for now
+  // You can add this back when you create the appropriate backend endpoint
+  refreshUser: async () => {
+    console.log("⚠️ refreshUser called but /user/profile endpoint doesn't exist");
+    console.log("💡 Consider creating a user profile endpoint or removing this call");
+    
+    // For now, just return the current user data
+    const currentUser = get().user;
+    return currentUser;
   },
 }));

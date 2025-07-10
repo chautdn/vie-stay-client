@@ -18,7 +18,7 @@ import ResetPasswordPage from "./pages/AuthPage/ResetPasswordPage";
 import Home from "./pages/HomePage/Public/Home";
 import HomePage from "./pages/HomePage/Public/HomePage";
 import List from "./pages/HomePage/Public/List";
-import SearchPage from "./pages/HomePage/Public/SearchPage"; // ✅ THÊM: Import SearchPage
+import SearchPage from "./pages/HomePage/Public/SearchPage";
 import OwnerDashboard from "./components/ownerPageComponents/Dashboard";
 import RoomManagement from "./pages/OwnerPage/RoomManagement";
 import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
@@ -38,6 +38,14 @@ import { ServicePrice } from "./pages/HomePage/Public";
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
 import UserManagement from "./pages/AdminPage/UserManagement";
 import RevenueReports from "./pages/AdminPage/RevenueReports";
+
+// Import Profile Pages
+import Profile from "./pages/ProfilePage/Profile";
+import ChangePassword from "./pages/ProfilePage/ChangePassword";
+
+// Import TopUp Pages
+import TopUpSuccess from "./pages/TopUpPage/TopUpSuccess";
+import TopUpCancel from "./pages/TopUpPage/TopUpCancel";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -66,24 +74,26 @@ function App() {
       </Route>
 
       <Route element={<MainLayout />}>
-        {/* ✅ SỬA: Home layout với nested routes */}
+        {/* Home layout with nested routes */}
         <Route path="/" element={<Home />}>
           <Route index element={<HomePage />} />
           <Route path="saved" element={<SavedPosts />} />
-          <Route path="search" element={<SearchPage />} />{" "}
-          {/* ✅ SỬA: Thay List bằng SearchPage */}
+          <Route path="search" element={<SearchPage />} />
           <Route path="list" element={<List />} />
-          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />  
+          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
           <Route path="*" element={<HomePage />} />
         </Route>
 
-        {/* ✅ THÊM: Direct routes không qua Home layout */}
+        {/* Direct routes không qua Home layout */}
         <Route path="/rooms" element={<Room />} />
         <Route path="/detail/:id" element={<RoomDetail />} />
-
-        {/* ✅ SỬA: Thêm chi tiết phòng route */}
         <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
 
+        {/* TopUp Routes */}
+        <Route path="/topup-success" element={<TopUpSuccess />} />
+        <Route path="/topup-cancel" element={<TopUpCancel />} />
+
+        {/* Tenant Agreement Routes */}
         <Route
           path="/agreement/confirm/:token"
           element={<AgreementConfirmationPage />}
@@ -95,6 +105,10 @@ function App() {
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/failure" element={<PaymentSuccess />} />
         <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
+
+        {/* Profile Routes */}
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/change-password" element={<ChangePassword />} />
       </Route>
 
       {/* Owner Routes */}

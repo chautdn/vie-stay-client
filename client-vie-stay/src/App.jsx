@@ -26,6 +26,9 @@ import CoTenantsRequest from "./pages/OwnerPage/Co-tenantsRequest";
 import Room from "./pages/HomePage/RoomPage/Room";
 import RoomDetail from "./pages/HomePage/RoomPage/RoomDetail";
 
+// Import Profile Page
+import Profile from "./pages/ProfilePage/Profile";
+
 // Import Tenant Agreement Pages
 import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/AgreementConfirmationPage";
 import PaymentPage from "./pages/TenantPage/AgreementPage/PaymentPage";
@@ -83,6 +86,9 @@ function App() {
 
         {/* ✅ SỬA: Thêm chi tiết phòng route */}
         <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
+
+        {/* ✅ THÊM: Profile route */}
+        <Route path="/profile" element={<Profile />} />
 
         <Route
           path="/agreement/confirm/:token"

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore'; // ✅ THÊM: Import AuthStore
-import LogoutButton from '../components/common/LogOutButton';
+import LogoutButton from '../components/common/LogoutButton';
 import { 
   LayoutDashboard, 
   Building, 

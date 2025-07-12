@@ -1,356 +1,270 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import Navbar from "../Navbar/Navbar";
-import Footer from "../Navbar/Footer";
+import React, { useState, useEffect } from "react";
+import ProfileBasicInfo from "./components/ProfileBasicInfo";
+import ProfileAvatar from "./components/ProfileAvatar";
+import ProfileAddress from "./components/ProfileAddress";
+import ProfileNationalId from "./components/ProfileNationalId";
+import ProfileEmergencyContact from "./components/ProfileEmergencyContact";
+import Navbar from "../../components/common/Navbar";
+import axiosInstance from "../../components/utils/AxiosInstance";
+import { getOwnerId } from "../../components/utils/authUtils";
+import ChangePassword from "./ChangePassword";
 
-const Profile = () => {
-  const { user: authUser, setUser } = useAuth();
-  const [user, setLocalUser] = useState(null);
-  const [form, setForm] = useState({ name: "", phoneNumber: "" });
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const initialProfile = {
+  name: "",
+  email: "",
+  phoneNumber: "",
+  dateOfBirth: "",
+  profileImage: "",
+  nationalId: "",
+  nationalIdImage: "",
+  address: {
+    street: "",
+    ward: "",
+    district: "",
+    city: "",
+    fullAddress: "",
+  },
+  emergencyContact: {
+    name: "",
+    relationship: "",
+    phoneNumber: "",
+  },
+};
 
-  // Get token and user from both storage types
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-  const storedUser = JSON.parse(
-    localStorage.getItem("user") || sessionStorage.getItem("user") || "{}"
-  );
-  
-  // Try multiple ways to get user ID
-  const userId = authUser?._id || authUser?.id || storedUser?._id || storedUser?.id;
+// DOMAIN_BACKEND dùng cho ảnh
+const DOMAIN_BACKEND = "http://localhost:8080";
 
+function formatDate(dateStr) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  return d.toISOString().split("T")[0];
+}
+
+function formatNationalIdImage(value) {
+  if (!value) return "";
+  if (typeof value === "string" && value.startsWith("/uploads")) {
+    return DOMAIN_BACKEND + value;
+  }
+  return value;
+}
+
+export default function Profile() {
+  const [profile, setProfile] = useState(initialProfile);
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
+  const [apiError, setApiError] = useState("");
+  const [showChangePassword, setShowChangePassword] = useState(false);
+
+  // Fetch user mới nhất khi vào trang (KHÔNG update vào store)
   useEffect(() => {
     const fetchUser = async () => {
-      console.log("Token:", token);
-      console.log("User ID:", userId);
-      console.log("Stored User:", storedUser);
-      console.log("Auth User:", authUser);
-
-      // If we don't have token or userId, set loading to false
-      if (!token) {
-        setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
-        setLoading(false);
-        return;
-      }
-
-      if (!userId) {
-        setError("Không tìm thấy thông tin người dùng. Vui lòng đăng nhập lại.");
-        setLoading(false);
-        return;
-      }
-
-      // If we have user data in context/storage, use it directly and skip API call
-      if (authUser || Object.keys(storedUser).length > 0) {
-        const userData = authUser || storedUser;
-        console.log("Using stored user data:", userData);
-        setLocalUser(userData);
-        setForm({
-          name: userData.name || "",
-          phoneNumber: userData.phoneNumber || "",
-        });
-        setLoading(false);
-        return;
-      }
-
-      // Only try API call if we don't have user data
+      setLoading(true);
+      setApiError("");
       try {
-        console.log("Fetching user data from API...");
-        const res = await fetch(`http://localhost:8080/user/${userId}`, {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        });
-
-        console.log("Response status:", res.status);
-        
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-
-        const data = await res.json();
-        console.log("User data received:", data);
-
-        if (data.user) {
-          setLocalUser(data.user);
-          setForm({
-            name: data.user.name || "",
-            phoneNumber: data.user.phoneNumber || "",
-          });
-        }
+        const id = getOwnerId();
+        if (!id) throw new Error("Không tìm thấy userId");
+        const res = await axiosInstance.get(`/user/${id}`);
+        const data = res.data.data.user;
+        setProfile(prev => ({
+          ...prev,
+          ...data,
+          dateOfBirth: formatDate(data.dateOfBirth),
+          address: { ...prev.address, ...(data.address || {}) },
+          emergencyContact: { ...prev.emergencyContact, ...(data.emergencyContact || {}) }
+        }));
+        console.log('Profile sau khi fetch:', { ...data });
       } catch (err) {
-        console.error("Lỗi khi tải user từ API:", err);
-        console.log("API failed, but we have stored user data, so continuing...");
-        // Since API failed but we should have user data, this shouldn't happen
-        // but let's handle it gracefully
-        setError(`Không thể tải thông tin từ server, nhưng sẽ sử dụng dữ liệu đã lưu.`);
+        setApiError(err?.response?.data?.message || err.message || "Lỗi khi lấy thông tin user");
       } finally {
         setLoading(false);
       }
     };
-
     fetchUser();
-  }, [userId, token, authUser]);
+    // eslint-disable-next-line
+  }, []);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+  // Hàm cập nhật từng trường
+  const handleChange = (field, value) => {
+    // Đảm bảo chỉ cập nhật đúng trường, không ảnh hưởng emergencyContact
+    setProfile(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAvatarChange = (e) => {
-    setAvatarFile(e.target.files[0]);
+  // Hàm cập nhật cho address
+  const handleAddressChange = (field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      address: { ...prev.address, [field]: value },
+    }));
   };
 
-  const handleSubmit = async (e) => {
+  // Hàm cập nhật cho emergencyContact
+  const handleEmergencyChange = (field, value) => {
+    // Đảm bảo chỉ cập nhật emergencyContact, không ảnh hưởng profile.phoneNumber
+    setProfile(prev => ({
+      ...prev,
+      emergencyContact: { ...prev.emergencyContact, [field]: value },
+    }));
+  };
+
+  // Validation nâng cao
+  const validate = () => {
+    const newErrors = {};
+    if (!profile.name || profile.name.trim().length < 2) newErrors.name = "Họ tên không hợp lệ";
+    // Validate số điện thoại chính chủ
+    if (!/^(0|\+84)[0-9]{9,10}$/.test(profile.phoneNumber)) newErrors.phoneNumber = "Số điện thoại không hợp lệ";
+    if (profile.dateOfBirth && new Date(profile.dateOfBirth) > new Date()) newErrors.dateOfBirth = "Ngày sinh không hợp lệ";
+    if (profile.nationalId && profile.nationalId.length > 20) newErrors.nationalId = "Số CMND/CCCD tối đa 20 ký tự";
+    if (!profile.address.fullAddress) newErrors.fullAddress = "Địa chỉ đầy đủ không được để trống";
+    if (!profile.emergencyContact.name) newErrors.emergencyName = "Tên liên hệ không được để trống";
+    // Validate số điện thoại người liên hệ khẩn cấp
+    if (!profile.emergencyContact.phoneNumber || !/^(0|\+84)[0-9]{9,10}$/.test(profile.emergencyContact.phoneNumber)) {
+      newErrors.emergencyPhoneNumber = "Số điện thoại liên hệ không hợp lệ";
+    }
+    // Validate file (nếu là file mới)
+    if (profile.profileImage && typeof profile.profileImage === "object") {
+      if (!profile.profileImage.type.startsWith("image/")) newErrors.profileImage = "Chỉ chấp nhận file ảnh";
+      if (profile.profileImage.size > 5 * 1024 * 1024) newErrors.profileImage = "Ảnh đại diện tối đa 5MB";
+    }
+    if (profile.nationalIdImage && typeof profile.nationalIdImage === "object") {
+      if (!profile.nationalIdImage.type.startsWith("image/")) newErrors.nationalIdImage = "Chỉ chấp nhận file ảnh";
+      if (profile.nationalIdImage.size > 5 * 1024 * 1024) newErrors.nationalIdImage = "Ảnh CMND/CCCD tối đa 5MB";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Submit cập nhật profile (KHÔNG update vào store)
+  const handleSubmit = async e => {
     e.preventDefault();
-    setMessage("");
-    setError("");
-
+    setSuccessMsg("");
+    setApiError("");
+    if (!validate()) return;
+    setLoading(true);
     try {
-      const updatedUser = { ...(authUser || storedUser) };
-      let hasUpdates = false;
-
-      // Update name
-      if (form.name !== updatedUser.name) {
-        try {
-          const resName = await fetch(`http://localhost:8080/user/${userId}/name`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ name: form.name }),
-          });
-          
-          if (resName.ok) {
-            const nameData = await resName.json();
-            updatedUser.name = nameData.data.user.name;
-            hasUpdates = true;
-            console.log("Name updated successfully");
-          } else {
-            console.error("Failed to update name:", resName.status);
-            // Still update locally
-            updatedUser.name = form.name;
-            hasUpdates = true;
-          }
-        } catch (err) {
-          console.error("Error updating name:", err);
-          // Still update locally
-          updatedUser.name = form.name;
-          hasUpdates = true;
-        }
+      const id = getOwnerId();
+      if (!id) throw new Error("Không tìm thấy userId");
+      // 1. Nếu có file avatar mới, upload trước
+      if (profile.profileImage && typeof profile.profileImage === "object") {
+        const formData = new FormData();
+        formData.append("profileImage", profile.profileImage);
+        await axiosInstance.patch(`/user/${id}/avatar`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
-
-      // Update phone number
-      if (form.phoneNumber !== updatedUser.phoneNumber) {
-        try {
-          const resPhone = await fetch(`http://localhost:8080/user/${userId}/phone`, {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ phoneNumber: form.phoneNumber }),
-          });
-          
-          if (resPhone.ok) {
-            const phoneData = await resPhone.json();
-            updatedUser.phoneNumber = phoneData.data.user.phoneNumber;
-            hasUpdates = true;
-            console.log("Phone updated successfully");
-          } else {
-            console.error("Failed to update phone:", resPhone.status);
-            // Still update locally
-            updatedUser.phoneNumber = form.phoneNumber;
-            hasUpdates = true;
-          }
-        } catch (err) {
-          console.error("Error updating phone:", err);
-          // Still update locally
-          updatedUser.phoneNumber = form.phoneNumber;
-          hasUpdates = true;
-        }
+      // 2. Nếu có file CMND/CCCD mới, upload
+      if (profile.nationalIdImage && typeof profile.nationalIdImage === "object") {
+        const formData = new FormData();
+        formData.append("nationalIdImage", profile.nationalIdImage);
+        await axiosInstance.patch(`/user/${id}`, formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
       }
-
-      // Upload avatar
-      if (avatarFile) {
-        try {
-          const formData = new FormData();
-          formData.append("profileImage", avatarFile);
-          const resAvatar = await fetch(`http://localhost:8080/user/${userId}/avatar`, {
-            method: "PATCH",
-            headers: { Authorization: `Bearer ${token}` },
-            body: formData,
-          });
-
-          if (resAvatar.ok) {
-            const avatarData = await resAvatar.json();
-            updatedUser.profileImage = avatarData.data.user.profileImage;
-            hasUpdates = true;
-            console.log("Avatar updated successfully");
-          } else {
-            console.error("Failed to update avatar:", resAvatar.status);
-          }
-        } catch (err) {
-          console.error("Error updating avatar:", err);
-        }
-      }
-
-      // Update both storage types and context
-      if (hasUpdates) {
-        localStorage.setItem("user", JSON.stringify(updatedUser));
-        sessionStorage.setItem("user", JSON.stringify(updatedUser));
-        setUser(updatedUser);
-        setLocalUser(updatedUser);
-        setMessage("Cập nhật thành công!");
-      } else {
-        setMessage("Không có thay đổi nào để cập nhật.");
-      }
-      
+      // 3. Cập nhật các trường khác (gửi object lồng nhau, không phẳng hóa)
+      const updateData = { ...profile };
+      if (typeof updateData.profileImage === "object") delete updateData.profileImage;
+      if (typeof updateData.nationalIdImage === "object") delete updateData.nationalIdImage;
+      await axiosInstance.patch(`/user/${id}`, updateData, {
+        headers: { "Content-Type": "application/json" },
+      });
+      // 4. Lấy lại user mới nhất (KHÔNG update vào store)
+      const res = await axiosInstance.get(`/user/${id}`);
+      const data = res.data.data.user;
+      setProfile(prev => ({
+        ...prev,
+        ...data,
+        dateOfBirth: formatDate(data.dateOfBirth),
+        address: { ...prev.address, ...(data.address || {}) },
+        emergencyContact: { ...prev.emergencyContact, ...(data.emergencyContact || {}) }
+      }));
+      setSuccessMsg("Cập nhật thành công!");
+      setErrors({});
     } catch (err) {
-      console.error("Lỗi cập nhật:", err);
-      setError("Có lỗi xảy ra khi cập nhật.");
+      if (err.response?.data?.errors) {
+        setErrors(err.response.data.errors);
+        setApiError("Có lỗi ở một số trường, vui lòng kiểm tra lại!");
+      } else {
+        setApiError(err.response?.data?.message || err.message || "Lỗi khi cập nhật profile");
+      }
+    } finally {
+      setLoading(false);
     }
   };
-
-  if (loading) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Đang tải thông tin...</p>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  if (error && !user) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex justify-center items-center min-h-screen">
-          <div className="text-center max-w-md">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Lỗi tải thông tin</h2>
-            <p className="text-red-500 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()}
-              className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg"
-            >
-              Thử lại
-            </button>
-          </div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  const displayUser = user || authUser || storedUser;
 
   return (
     <>
       <Navbar />
-
-      <div className="px-6 py-10 bg-gray-50 min-h-screen">
-        <div className="max-w-3xl mx-auto bg-white shadow-md rounded-lg p-8">
-          <div className="flex items-center gap-4 mb-6">
-            <img
-              src={
-                displayUser?.profileImage
-                  ? `http://localhost:8080${displayUser.profileImage}`
-                  : displayUser?.avatar
-                  ? `http://localhost:8080${displayUser.avatar}`
-                  : "https://via.placeholder.com/80"
-              }
-              alt="avatar"
-              className="w-20 h-20 rounded-full object-cover border"
-              onError={(e) => {
-                e.target.src = "https://via.placeholder.com/80";
-              }}
-            />
-            <div>
-              <h2 className="text-xl font-bold text-gray-800">
-                {form.name || displayUser?.name || "Người dùng"}
-              </h2>
-              <p className="text-sm text-gray-500">
-                {form.phoneNumber || displayUser?.phoneNumber || displayUser?.email || "Chưa có thông tin liên hệ"}
-              </p>
-            </div>
+      <form
+        onSubmit={handleSubmit}
+        className="max-w-3xl mx-auto bg-white p-8 rounded-2xl shadow-2xl flex flex-col gap-10 mt-10 mb-10 border border-blue-100"
+      >
+        {loading && <div className="text-blue-600 font-semibold mb-2">Đang xử lý...</div>}
+        {successMsg && <div className="text-green-600 font-semibold mb-2">{successMsg}</div>}
+        {apiError && <div className="text-red-600 font-semibold mb-2">{apiError}</div>}
+        <div className="flex flex-col md:flex-row gap-10 items-stretch">
+          <div className="flex flex-col items-center justify-center w-full md:w-1/3 min-w-[180px] max-w-[220px]">
+            <ProfileAvatar value={profile.profileImage} onChange={file => handleChange("profileImage", file)} error={errors.profileImage} />
           </div>
-
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Họ tên</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="mt-1 w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Nhập họ tên"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
-              <input
-                type="text"
-                name="phoneNumber"
-                value={form.phoneNumber}
-                onChange={handleChange}
-                className="mt-1 w-full border border-gray-300 px-4 py-2 rounded-md focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                placeholder="Nhập số điện thoại"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Ảnh đại diện</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-md transition-colors"
-            >
-              Lưu thay đổi
-            </button>
-
-            {message && (
-              <p className="text-center text-green-600 font-medium mt-4">{message}</p>
-            )}
-
-            {error && (
-              <p className="text-center text-red-600 font-medium mt-4">{error}</p>
-            )}
-          </form>
-
-          <div className="text-center mt-6">
-            <Link
-              to="/change-password"
-              className="text-sm text-blue-600 font-medium hover:underline"
-            >
-              Thay đổi mật khẩu
-            </Link>
+          <div className="w-full md:w-2/3 flex-1">
+            <ProfileBasicInfo value={profile} onChange={handleChange} errors={errors} />
           </div>
         </div>
+        <ProfileAddress value={profile.address} onChange={handleAddressChange} errors={errors} />
+        <ProfileNationalId
+          value={{
+            ...profile,
+            nationalIdImage: formatNationalIdImage(profile.nationalIdImage),
+          }}
+          onChange={handleChange}
+          errors={errors}
+        />
+        <ProfileEmergencyContact
+          value={profile.emergencyContact}
+          onChange={handleEmergencyChange}
+          errors={{
+            name: errors.emergencyName,
+            relationship: errors.relationship,
+            phoneNumber: errors.emergencyPhoneNumber,
+          }}
+        />
+        <button
+          type="submit"
+          className="mt-6 px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold rounded-lg shadow-lg hover:from-blue-600 hover:to-purple-600 transition-all text-lg self-end disabled:opacity-60"
+          disabled={loading}
+        >
+          {loading ? "Đang lưu..." : "Lưu thay đổi"}
+        </button>
+      </form>
+      {/* Nút đổi mật khẩu */}
+      <div className="max-w-3xl mx-auto mb-10">
+        <button
+          type="button"
+          className="flex items-center gap-2 mt-4 mb-2 px-6 py-3 bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 text-white font-bold rounded-full shadow-lg hover:from-pink-600 hover:to-indigo-600 transition-all text-lg self-start focus:outline-none focus:ring-4 focus:ring-pink-200 animate-pulse"
+          onClick={() => setShowChangePassword(true)}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V7.5A4.5 4.5 0 008 7.5v3m8.25 0A2.25 2.25 0 0120.5 12.75v4.5A2.25 2.25 0 0118.25 19.5h-12A2.25 2.25 0 014 17.25v-4.5A2.25 2.25 0 016.25 10.5m11.25 0h-11.25" />
+          </svg>
+          Đổi mật khẩu
+        </button>
       </div>
-
-      <Footer />
+      {/* Modal popup đổi mật khẩu */}
+      {showChangePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="relative w-full max-w-md mx-auto">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 text-2xl font-bold z-10"
+              onClick={() => setShowChangePassword(false)}
+              aria-label="Đóng"
+            >
+              ×
+            </button>
+            <div className="bg-white rounded-xl shadow-lg p-0">
+              <ChangePassword />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
-};
-
-export default Profile;
+}

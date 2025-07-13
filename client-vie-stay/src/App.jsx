@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import { Route, Routes } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
+import { NotificationProvider } from "./components/common/NotificationSystem";
 
 import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
@@ -47,6 +48,10 @@ import ChangePassword from "./pages/ProfilePage/ChangePassword";
 import TopUpSuccess from "./pages/TopUpPage/TopUpSuccess";
 import TopUpCancel from "./pages/TopUpPage/TopUpCancel";
 
+// Import Post Management Pages
+import CreatePostPage from "./pages/PostPage/CreatePostPage";
+import PostManagementPage from "./pages/PostPage/PostManagementPage";
+
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
 
@@ -64,167 +69,173 @@ function App() {
   }
 
   return (
-    <Routes>
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      </Route>
-
-      <Route element={<MainLayout />}>
-        {/* Home layout with nested routes */}
-        <Route path="/" element={<Home />}>
-          <Route index element={<HomePage />} />
-          <Route path="saved" element={<SavedPosts />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="list" element={<List />} />
-          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
-          <Route path="*" element={<HomePage />} />
+    <NotificationProvider>
+      <Routes>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
         </Route>
 
-        {/* Direct routes không qua Home layout */}
-        <Route path="/rooms" element={<Room />} />
-        <Route path="/detail/:id" element={<RoomDetail />} />
-        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
+        <Route element={<MainLayout />}>
+          {/* Home layout with nested routes */}
+          <Route path="/" element={<Home />}>
+            <Route index element={<HomePage />} />
+            <Route path="saved" element={<SavedPosts />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="list" element={<List />} />
+            <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
+            <Route path="*" element={<HomePage />} />
 
-        {/* TopUp Routes */}
-        <Route path="/topup-success" element={<TopUpSuccess />} />
-        <Route path="/topup-cancel" element={<TopUpCancel />} />
+            <Route path="/posts" element={<PostManagementPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
+          </Route>
 
-        {/* Tenant Agreement Routes */}
-        <Route
-          path="/agreement/confirm/:token"
-          element={<AgreementConfirmationPage />}
-        />
-        <Route
-          path="/tenant/payment/:confirmationId"
-          element={<PaymentPage />}
-        />
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/failure" element={<PaymentSuccess />} />
-        <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
+          {/* Direct routes không qua Home layout */}
+          <Route path="/rooms" element={<Room />} />
+          <Route path="/detail/:id" element={<RoomDetail />} />
+          <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
 
-        {/* Profile Routes */}
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/profile/change-password" element={<ChangePassword />} />
-      </Route>
+          {/* TopUp Routes */}
+          <Route path="/topup-success" element={<TopUpSuccess />} />
+          <Route path="/topup-cancel" element={<TopUpCancel />} />
 
-      {/* Owner Routes */}
-      <Route element={<OwnerLayout />}>
-        <Route
-          path="/owner"
-          element={
-            <OwnerRoute>
-              <OwnerDashboard />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/dashboard"
-          element={
-            <OwnerRoute>
-              <OwnerDashboard />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/rooms/:accommodationId"
-          element={
-            <OwnerRoute>
-              <RoomManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/rental-requests"
-          element={
-            <OwnerRoute>
-              <RentalRequestManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/accommodations"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/create"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/edit/:id"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/co-tenants"
-          element={
-            <OwnerRoute>
-              <CoTenantsRequest />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/reports"
-          element={
-            <OwnerRoute>
-              <div className="p-6">Reports Page</div>
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/settings"
-          element={
-            <OwnerRoute>
-              <div className="p-6">Settings Page</div>
-            </OwnerRoute>
-          }
-        />
-      </Route>
+          {/* Tenant Agreement Routes */}
+          <Route
+            path="/agreement/confirm/:token"
+            element={<AgreementConfirmationPage />}
+          />
+          <Route
+            path="/tenant/payment/:confirmationId"
+            element={<PaymentPage />}
+          />
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/failure" element={<PaymentSuccess />} />
+          <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
 
-      {/* Admin Routes */}
-      <Route element={<AdminLayout />}>
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminRoute>
-              <UserManagement />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/reports"
-          element={
-            <AdminRoute>
-              <RevenueReports />
-            </AdminRoute>
-          }
-        />
-      </Route>
+          {/* Profile Routes */}
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/change-password" element={<ChangePassword />} />
+        </Route>
 
-      <Route path="*" element={<HomePage />} />
-    </Routes>
+        {/* Owner Routes */}
+        <Route element={<OwnerLayout />}>
+          <Route
+            path="/owner"
+            element={
+              <OwnerRoute>
+                <OwnerDashboard />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/dashboard"
+            element={
+              <OwnerRoute>
+                <OwnerDashboard />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/rooms/:accommodationId"
+            element={
+              <OwnerRoute>
+                <RoomManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/rental-requests"
+            element={
+              <OwnerRoute>
+                <RentalRequestManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/accommodations"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/create"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/edit/:id"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/co-tenants"
+            element={
+              <OwnerRoute>
+                <CoTenantsRequest />
+              </OwnerRoute>
+            }
+          />
+
+          <Route
+            path="/owner/reports"
+            element={
+              <OwnerRoute>
+                <div className="p-6">Reports Page</div>
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/settings"
+            element={
+              <OwnerRoute>
+                <div className="p-6">Settings Page</div>
+              </OwnerRoute>
+            }
+          />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route element={<AdminLayout />}>
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UserManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <AdminRoute>
+                <RevenueReports />
+              </AdminRoute>
+            }
+          />
+        </Route>
+
+        <Route path="*" element={<HomePage />} />
+      </Routes>
+    </NotificationProvider>
   );
 }
 

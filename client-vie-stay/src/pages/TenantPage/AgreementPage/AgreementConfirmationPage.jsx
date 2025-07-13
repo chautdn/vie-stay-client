@@ -62,20 +62,20 @@ const AgreementConfirmationPage = () => {
         
         const confirmationId = response.data.data?._id || confirmation?._id;
         
-      
+        console.log('✅ Confirmed! Confirmation ID:', confirmationId);
         
         if (confirmationId) {
-          
-          navigate(`/tenant/payment/${confirmationId}`);
-          
+          // ✅ SỬA: Navigate đến payment page với đúng path
+          navigate(`/payment/${confirmationId}`);
         } else {
-          
           toast.error('Could not get confirmation ID');
+          console.error('❌ Missing confirmation ID in response:', response.data);
         }
       } else {
         toast.error(response.data.message || 'Failed to confirm agreement');
       }
     } catch (error) { 
+      console.error('❌ Error confirming agreement:', error);
       toast.error(
         error.response?.data?.message || 
         'Failed to confirm agreement'

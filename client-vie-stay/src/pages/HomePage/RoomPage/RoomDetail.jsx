@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from "react";
+import { Toaster } from 'react-hot-toast'; // Thêm import này
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { formatCurrencyVND } from "../../../utils/FormatPricePrint";
-import { RatingConsider } from "../../../utils/RatingConsider";
-import { useKeenSlider } from "keen-slider/react";
-import "keen-slider/keen-slider.min.css";
-import Navbar from "../../../components/common/Navbar";
-import Footer from "../../../components/common/Footer";
-import { useRoomStore } from "../../../store/owner/roomStore";
-import {roomService} from "../../../services/roomService";
+import { roomService } from "../../../services/roomService";
+import { NewestPosts } from "../Public";
+
+// Import components
+import ReportModal from "../../../components/RoomDetail/ReportModal";
+import RoomImageSlider from "../../../components/RoomDetail/RoomImageSlider";
+import RoomInfo from "../../../components/RoomDetail/RoomInfo";
+import RentalRequestModal from "../../../components/RoomDetail/RentalRequestModal";
+import UserInfoBox from "../../../components/RoomDetail/UserInfoBox";
 
 const RoomDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const queryParams = new URLSearchParams(location.search);
-  const returnPage = parseInt(queryParams.get("returnPage")) || 1;
+  const action = queryParams.get("action");
 
   const { room: roomFromState } = location.state || {};
   const [room, setRoom] = useState(roomFromState || null);
@@ -22,18 +25,27 @@ const RoomDetail = () => {
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
-
-  const [sliderRef, instanceRef] = useKeenSlider({
-    slideChanged(s) {
-      setCurrentSlide(s.track.details.rel);
-    },
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isReport, setIsReport] = useState(false);
+  const [isRentalRequest, setIsRentalRequest] = useState(false);
+  const [reportForm, setReportForm] = useState({
+    reportType: 'scam',
+    message: '',
+    fullname: '',
+    phone: ''
   });
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+    
+    if (action === 'rent') {
+      setTimeout(() => {
+        setIsRentalRequest(true);
+      }, 500);
+    }
+  }, [action]);
 
-  // ✅ SỬA: Sử dụng roomService thay vì fetch trực tiếp
+  // Fetch room data
   useEffect(() => {
     if (!room && id) {
       const fetchRoomDetail = async () => {
@@ -41,10 +53,8 @@ const RoomDetail = () => {
         setError(null);
         try {
           const response = await roomService.getRoomById(id);
-
           let roomData = null;
 
-          // ✅ SỬA: Xử lý response structure từ backend
           if (response?.status === "success" && response?.data?.room) {
             roomData = response.data.room;
           } else if (response?.data?.room) {
@@ -72,7 +82,7 @@ const RoomDetail = () => {
     }
   }, [room, id]);
 
-  // ✅ SỬA: Xử lý amenities mapping
+  // Helper functions
   const formatAmenity = (amenity) => {
     const amenityMapping = {
       air_conditioning: "Điều hòa",
@@ -94,11 +104,9 @@ const RoomDetail = () => {
       wardrobe: "Tủ quần áo",
       window: "Cửa sổ",
     };
-
     return amenityMapping[amenity] || amenity.replace(/_/g, " ");
   };
 
-  // ✅ SỬA: Format room type
   const formatRoomType = (type) => {
     const typeMapping = {
       single: "Phòng đơn",
@@ -108,96 +116,14 @@ const RoomDetail = () => {
       apartment: "Căn hộ mini",
       dormitory: "Ký túc xá",
     };
-
     return typeMapping[type] || type;
   };
 
-  // ✅ SỬA: Loading state
-  if (isLoading) {
-    return (
-      <>
-        <Navbar />
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  // ✅ SỬA: Error state
-  if (error) {
-    return (
-      <>
-        <Navbar />
-        <div className="max-w-6xl mx-auto p-6 text-center">
-          <div className="text-red-500 text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Có lỗi xảy ra
-          </h2>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => navigate(-1)}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Quay lại
-          </button>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  // ✅ SỬA: No room state
-  if (!room) {
-    return (
-      <>
-        <Navbar />
-        <div className="max-w-6xl mx-auto p-6 text-center">
-          <div className="text-gray-400 text-6xl mb-4">🏠</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">
-            Không tìm thấy phòng
-          </h2>
-          <p className="text-gray-600 mb-4">
-            Phòng bạn tìm kiếm không tồn tại hoặc đã bị xóa
-          </p>
-          <button
-            onClick={() => navigate("/search")}
-            className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Tìm phòng khác
-          </button>
-        </div>
-        <Footer />
-      </>
-    );
-  }
-
-  const roomId = room._id?.$oid || room._id?.toString?.() || room._id;
-
-  const handleBack = () => {
-    sessionStorage.setItem(
-      "scrollToRoom",
-      JSON.stringify({ scrollToId: roomId, returnPage })
-    );
-    navigate(-1); // ✅ SỬA: Sử dụng navigate(-1) thay vì hardcode path
-  };
-
-  // ✅ SỬA: Safe image handling
-  const roomImages =
-    room.images && room.images.length > 0
-      ? room.images
-      : [
-          "https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg",
-        ];
-
-  // ✅ SỬA: Format address từ accommodation
   const formatAddress = () => {
-    if (room.fullAddress) {
+    if (room?.fullAddress) {
       return room.fullAddress;
     }
-
-    if (room.accommodation?.address) {
+    if (room?.accommodation?.address) {
       const addr = room.accommodation.address;
       const parts = [];
       if (addr.ward) parts.push(addr.ward);
@@ -205,264 +131,251 @@ const RoomDetail = () => {
       if (addr.city) parts.push(addr.city);
       return parts.join(", ") || "Địa chỉ đang cập nhật";
     }
-
     return "Địa chỉ đang cập nhật";
   };
 
-  return (
-    <>
-      <Navbar />
+  const handleReportSubmit = (e) => {
+    e.preventDefault();
+    console.log("Report submitted:", {
+      roomId: room._id,
+      ...reportForm
+    });
+    setIsReport(false);
+    setReportForm({
+      reportType: 'scam',
+      message: '',
+      fullname: '',
+      phone: ''
+    });
+  };
 
-      <div className="max-w-6xl mx-auto p-6 bg-gray-50 rounded-xl shadow-lg space-y-10">
-        {/* Nút quay về */}
-        <div className="text-left">
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium hover:underline"
-          >
-            ← Quay về
-          </button>
-        </div>
+  // Loading và Error states
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
+      </div>
+    );
+  }
 
-        {/* Tiêu đề và địa chỉ */}
-        <div className="text-center md:text-left space-y-2">
-          <h1 className="text-3xl font-extrabold text-orange-600">
-            {room.name || "Phòng trọ"}
-          </h1>
-          <p className="text-gray-600 text-sm">
-            {room.description || "Mô tả đang được cập nhật"}
-          </p>
-          <p className="text-gray-500 text-sm flex items-center gap-1">
-            📍 {formatAddress()}
-          </p>
-        </div>
-
-        {/* Slider ảnh */}
-        <div
-          className="relative rounded-xl overflow-hidden bg-black cursor-pointer shadow-md"
-          onClick={() => setShowFullscreen(true)}
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 text-center">
+        <div className="text-red-500 text-6xl mb-4">❌</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Có lỗi xảy ra</h2>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button
+          onClick={() => navigate(-1)}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
         >
-          <div ref={sliderRef} className="keen-slider h-[420px]">
-            {roomImages.map((img, i) => (
-              <div
-                key={i}
-                className="keen-slider__slide flex justify-center items-center"
-              >
-                <img
-                  src={img}
-                  alt={`Ảnh phòng ${i + 1}`}
-                  className="h-full object-contain"
-                  onError={(e) => {
-                    e.target.src =
-                      "https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg";
-                  }}
-                />
-              </div>
-            ))}
-          </div>
+          Quay lại
+        </button>
+      </div>
+    );
+  }
 
-          {roomImages.length > 1 && (
-            <>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  instanceRef.current?.prev();
-                }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white px-3 py-2 rounded-full hover:bg-opacity-75"
-              >
-                ❮
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  instanceRef.current?.next();
-                }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 bg-black bg-opacity-50 text-white px-3 py-2 rounded-full hover:bg-opacity-75"
-              >
-                ❯
-              </button>
-            </>
+  if (!room) {
+    return (
+      <div className="max-w-6xl mx-auto p-6 text-center">
+        <div className="text-gray-400 text-6xl mb-4">🏠</div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy phòng</h2>
+        <p className="text-gray-600 mb-4">Phòng bạn tìm kiếm không tồn tại hoặc đã bị xóa</p>
+        <button
+          onClick={() => navigate("/search")}
+          className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Tìm phòng khác
+        </button>
+      </div>
+    );
+  }
+
+  const roomImages = room?.images && room.images.length > 0 
+    ? room.images 
+    : ["https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg"];
+
+  return (
+    <div className='w-full flex gap-4 relative'>
+      {/* Toast Container */}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            theme: {
+              primary: 'green',
+              secondary: 'black',
+            },
+          },
+        }}
+      />
+
+      {/* Modals */}
+      <ReportModal
+        isOpen={isReport}
+        onClose={() => setIsReport(false)}
+        reportForm={reportForm}
+        setReportForm={setReportForm}
+        onSubmit={handleReportSubmit}
+      />
+
+      <RentalRequestModal
+        isOpen={isRentalRequest}
+        onClose={() => setIsRentalRequest(false)}
+        room={room}
+      />
+
+      {/* Left Column - 70% width */}
+      <div className='w-[70%]'>
+        <RoomImageSlider
+          images={roomImages}
+          currentSlide={currentSlide}
+          setCurrentSlide={setCurrentSlide}
+        />
+
+        {/* Main Content Card */}
+        <div className='bg-white rounded-md shadow-md p-4'>
+          <RoomInfo
+            room={room}
+            formatRoomType={formatRoomType}
+            formatAddress={formatAddress}
+          />
+          
+          {/* Description Section */}
+          <div className='mt-8'>
+            <h3 className='font-semibold text-xl my-4'>Thông tin mô tả</h3>
+            <div className='flex flex-col gap-3'>
+              <span>{room?.description || "Mô tả đang được cập nhật..."}</span>
+            </div>
+          </div>
+          
+          {/* Room Features Table */}
+          <div className='mt-8'>
+            <h3 className='font-semibold text-xl my-4'>Đặc điểm tin đăng</h3>
+            <table className='w-full'>
+              <tbody className='w-full'>
+                <tr className='w-full'>
+                  <td className='p-2'>Mã tin</td>
+                  <td className='p-2'>#{room?._id?.slice(-6) || "000000"}</td>
+                </tr>
+                <tr className='w-full bg-gray-200'>
+                  <td className='p-2'>Khu vực</td>
+                  <td className='p-2'>{formatAddress()}</td>
+                </tr>
+                <tr className='w-full'>
+                  <td className='p-2'>Loại tin rao</td>
+                  <td className='p-2'>Cho thuê phòng trọ</td>
+                </tr>
+                <tr className='w-full bg-gray-200'>
+                  <td className='p-2'>Đối tượng</td>
+                  <td className='p-2'>{room?.capacity || 1} người</td>
+                </tr>
+                <tr className='w-full'>
+                  <td className='p-2'>Diện tích</td>
+                  <td className='p-2'>{room?.size || 0} m²</td>
+                </tr>
+                <tr className='w-full bg-gray-200'>
+                  <td className='p-2'>Ngày đăng</td>
+                  <td className='p-2'>{new Date(room?.createdAt || Date.now()).toLocaleDateString('vi-VN')}</td>
+                </tr>
+                <tr className='w-full'>
+                  <td className='p-2'>Trạng thái</td>
+                  <td className='p-2'>
+                    <span className={`px-2 py-1 rounded text-sm ${
+                      room?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {room?.isAvailable ? 'Còn trống' : 'Đã thuê'}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Amenities */}
+          {room?.amenities && room.amenities.length > 0 && (
+            <div className='mt-8'>
+              <h3 className='font-semibold text-xl my-4'>Tiện nghi</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {room.amenities.map((amenity, idx) => (
+                  <div key={idx} className="flex items-center text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    {formatAmenity(amenity)}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Utility Rates */}
+          {room?.utilityRates && Object.keys(room.utilityRates).length > 0 && (
+            <div className='mt-8'>
+              <h3 className='font-semibold text-xl my-4'>Chi phí dịch vụ</h3>
+              <table className='w-full'>
+                <tbody className='w-full'>
+                  {Object.entries(room.utilityRates).map(([key, value], index) =>
+                    value && value.rate ? (
+                      <tr key={key} className={`w-full ${index % 2 === 1 ? 'bg-gray-200' : ''}`}>
+                        <td className='p-2 capitalize'>
+                          {key === "water" ? "Tiền nước" : 
+                           key === "electricity" ? "Tiền điện" : 
+                           key === "internet" ? "Internet" : key}
+                        </td>
+                        <td className='p-2'>
+                          {value.type === "fixed"
+                            ? `${formatCurrencyVND(value.rate)} / tháng`
+                            : `${formatCurrencyVND(value.rate)} / đơn vị`}
+                        </td>
+                      </tr>
+                    ) : null
+                  )}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
-
-        {/* Ảnh thumbnail */}
-        {roomImages.length > 1 && (
-          <div className="flex mt-3 gap-2 justify-center flex-wrap">
-            {roomImages.map((img, i) => (
-              <img
-                key={i}
-                src={img}
-                alt={`thumb-${i}`}
-                className={`w-20 h-16 object-cover rounded-md cursor-pointer transition hover:scale-105 ${
-                  i === currentSlide ? "ring-2 ring-orange-500" : "opacity-80"
-                }`}
-                onClick={() => instanceRef.current?.moveToIdx(i)}
-                onError={(e) => {
-                  e.target.src =
-                    "https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg";
-                }}
-              />
-            ))}
-          </div>
-        )}
-
-        {/* Modal toàn màn hình */}
-        {showFullscreen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center"
-            onClick={() => setShowFullscreen(false)}
-          >
-            <div className="keen-slider w-full max-w-6xl h-[85vh]" ref={sliderRef}>
-              {roomImages.map((img, i) => (
-                <div key={i} className="keen-slider__slide flex justify-center items-center">
-                  <img src={img} alt={`Ảnh ${i}`} className="max-h-full object-contain" />
-                </div>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowFullscreen(false)}
-              className="absolute top-5 right-6 text-white text-3xl bg-orange-600 hover:bg-orange-700 px-4 py-1 rounded-full"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {/* Thông tin chi tiết */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-sm text-gray-800">
-          <div className="space-y-3">
-            <p><strong>Loại phòng:</strong> {formatRoomType(room.type)}</p>
-            <p><strong>Diện tích:</strong> {room.size || 0} m²</p>
-            <p><strong>Sức chứa:</strong> {room.capacity || 1} người</p>
-            <p><strong>Phòng tắm riêng:</strong> {room.hasPrivateBathroom ? "Có" : "Không"}</p>
-            <p>
-              <strong>Trạng thái:</strong>{" "}
-              <span className={`inline-block px-2 py-0.5 rounded-full text-white text-xs ${
-                room.isAvailable ? "bg-green-500" : "bg-red-500"
-              }`}>
-                {room.isAvailable ? "Còn trống" : "Đã thuê"}
-              </span>
-            </p>
-            {room.availableFrom && (
-              <p><strong>Có sẵn từ:</strong> {new Date(room.availableFrom).toLocaleDateString("vi-VN")}</p>
-            )}
-
-            {/* ✅ THÊM: Thông tin chủ nhà */}
-            {room.user && (
-              <div className="pt-2 border-t">
-                <p><strong>Chủ nhà:</strong> {room.user.name}</p>
-                {room.user.phone && (
-                  <p><strong>Điện thoại:</strong> {room.user.phone}</p>
-                )}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-4">
-            <div className="bg-orange-100 border border-orange-300 p-4 rounded-lg shadow-sm">
-              <h3 className="font-bold text-lg mb-1">Giá thuê</h3>
-              <p className="text-2xl text-orange-600 font-extrabold">
-                {formatCurrencyVND(room.baseRent || 0)} / tháng
-              </p>
-              {room.deposit > 0 && (
-                <p className="text-sm text-gray-700">
-                  Đặt cọc: {formatCurrencyVND(room.deposit)}
-                </p>
-              )}
-            </div>
-
-            {/* ✅ SỬA: Tiện nghi với mapping */}
-            {room.amenities && room.amenities.length > 0 && (
-              <div>
-                <h3 className="font-semibold mb-2 text-gray-800">Tiện nghi</h3>
-                <ul className="list-disc list-inside grid grid-cols-1 gap-1 text-sm">
-                  {room.amenities.map((item, idx) => (
-                    <li key={idx}>{formatAmenity(item)}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Phí dịch vụ */}
-        {room.utilityRates && Object.keys(room.utilityRates).length > 0 && (
-          <div className="bg-gray-100 p-4 rounded-md">
-            <h3 className="font-semibold text-gray-800 mb-2">📋 Phí dịch vụ</h3>
-            <ul className="text-sm text-gray-700 space-y-1">
-              {Object.entries(room.utilityRates).map(([key, value]) =>
-                value && value.rate ? (
-                  <li key={key}>
-                    <strong>
-                      {key === "water"
-                        ? "Nước"
-                        : key === "electricity"
-                        ? "Điện"
-                        : key === "internet"
-                        ? "Internet"
-                        : key}
-                      :
-                    </strong>{" "}
-                    {value.type === "fixed"
-                      ? `${formatCurrencyVND(value.rate)} / tháng`
-                      : `${formatCurrencyVND(value.rate)} mỗi đơn vị`}
-                  </li>
-                ) : null
-              )}
-            </ul>
-          </div>
-        )}
-
-        {/* Phí phụ thu */}
-        {room.additionalFees?.length > 0 && (
-          <div className="bg-gray-100 p-4 rounded-md">
-            <h3 className="font-semibold text-gray-800 mb-2">💰 Phí phụ thu</h3>
-            <ul className="text-sm text-gray-700 list-disc list-inside space-y-1">
-              {room.additionalFees.map((fee, idx) => (
-                <li key={idx}>
-                  <strong>{fee.name}:</strong> {formatCurrencyVND(fee.amount)} /{" "}
-                  {fee.type === "monthly" ? "tháng" : "lần"}
-                  {fee.description && ` - ${fee.description}`}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {/* Đánh giá và thống kê */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center pt-4 border-t text-sm text-gray-600 gap-2">
-          <div>{RatingConsider(room.averageRating || 0)}</div>
-          <div className="flex gap-4 text-xs">
-            <span>👁️ {room.viewCount || 0} lượt xem</span>
-            <span>❤️ {room.favoriteCount || 0} thích</span>
-            <span>📝 {room.totalRatings || 0} đánh giá</span>
-          </div>
-        </div>
-
-        {/* ✅ THÊM: Contact buttons */}
-        {room.user?.phone && (
-          <div className="flex gap-3 justify-center pt-4">
-            <button
-              onClick={() => window.open(`tel:${room.user.phone}`)}
-              className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors font-medium"
-            >
-              📞 Gọi điện: {room.user.phone}
-            </button>
-            <button
-              onClick={() => {
-                // TODO: Implement Zalo integration
-                console.log("Zalo chat with:", room.user.phone);
-              }}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors font-medium"
-            >
-              💬 Nhắn tin Zalo
-            </button>
-          </div>
-        )}
       </div>
 
-      <Footer />
-    </>
+      {/* Right Column - 30% width */}
+      <div className='w-[30%] flex flex-col gap-8'>
+        <UserInfoBox
+          room={room}
+          isFavorited={isFavorited}
+          setIsFavorited={setIsFavorited}
+          setIsReport={setIsReport}
+          setIsRentalRequest={setIsRentalRequest}
+        />
+
+        <NewestPosts />
+      </div>
+
+      {/* Fullscreen Modal */}
+      {showFullscreen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center"
+          onClick={() => setShowFullscreen(false)}
+        >
+          <div className="keen-slider w-full max-w-6xl h-[90vh]">
+            {roomImages.map((img, i) => (
+              <div key={i} className="keen-slider__slide flex justify-center items-center">
+                <img src={img} alt={`Ảnh ${i}`} className="max-h-full max-w-full object-contain" />
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={() => setShowFullscreen(false)}
+            className="absolute top-5 right-6 text-white text-3xl bg-black bg-opacity-50 hover:bg-opacity-75 px-4 py-2 rounded-full"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 

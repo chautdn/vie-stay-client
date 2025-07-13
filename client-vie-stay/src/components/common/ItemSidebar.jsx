@@ -17,18 +17,69 @@ const ItemSidebar = ({ title, content, isDouble, type }) => {
         
         // Xử lý theo type khác nhau
         if (type === 'priceCode') {
-            if (item.min !== undefined) newParams.set('minRent', item.min)
-            if (item.max !== undefined && item.max !== null) newParams.set('maxRent', item.max)
+            // ✅ SỬA: Kiểm tra nếu filter hiện tại đã được chọn
+            const currentMinRent = searchParams.get('minRent')
+            const currentMaxRent = searchParams.get('maxRent')
+            
+            const isCurrentlySelected = 
+                currentMinRent === item.min?.toString() && 
+                (item.max === null ? !currentMaxRent : currentMaxRent === item.max?.toString())
+            
+            if (isCurrentlySelected) {
+                // Nếu đang chọn thì bỏ chọn
+                newParams.delete('minRent')
+                newParams.delete('maxRent')
+            } else {
+                // Nếu chưa chọn thì set filter mới
+                if (item.min !== undefined) newParams.set('minRent', item.min)
+                if (item.max !== undefined && item.max !== null) {
+                    newParams.set('maxRent', item.max)
+                } else {
+                    // ✅ SỬA: Với "Trên X triệu" thì xóa maxRent
+                    newParams.delete('maxRent')
+                }
+            }
             newParams.delete('priceCode') // Xóa priceCode cũ
         } else if (type === 'areaCode') {
-            if (item.min !== undefined) newParams.set('minSize', item.min)
-            if (item.max !== undefined && item.max !== null) newParams.set('maxSize', item.max)
+            // ✅ SỬA: Kiểm tra nếu filter hiện tại đã được chọn
+            const currentMinSize = searchParams.get('minSize')
+            const currentMaxSize = searchParams.get('maxSize')
+            
+            const isCurrentlySelected = 
+                currentMinSize === item.min?.toString() && 
+                (item.max === null ? !currentMaxSize : currentMaxSize === item.max?.toString())
+            
+            if (isCurrentlySelected) {
+                // Nếu đang chọn thì bỏ chọn
+                newParams.delete('minSize')
+                newParams.delete('maxSize')
+            } else {
+                // Nếu chưa chọn thì set filter mới
+                if (item.min !== undefined) newParams.set('minSize', item.min)
+                if (item.max !== undefined && item.max !== null) {
+                    newParams.set('maxSize', item.max)
+                } else {
+                    // ✅ SỬA: Với "Trên X m²" thì xóa maxSize
+                    newParams.delete('maxSize')
+                }
+            }
             newParams.delete('areaCode') // Xóa areaCode cũ
         } else if (type === 'category') {
-            newParams.set('type', code)
+            // ✅ SỬA: Toggle category filter
+            const currentType = searchParams.get('type')
+            if (currentType === code) {
+                newParams.delete('type')
+            } else {
+                newParams.set('type', code)
+            }
         } else {
             // Fallback cho các type khác
-            newParams.set(type, code)
+            const currentValue = searchParams.get(type)
+            if (currentValue === code) {
+                newParams.delete(type)
+            } else {
+                newParams.set(type, code)
+            }
         }
         
         // Reset về trang 1
@@ -39,6 +90,27 @@ const ItemSidebar = ({ title, content, isDouble, type }) => {
             pathname: '/search',
             search: newParams.toString()
         })
+    }
+
+    // ✅ THÊM: Function để check item có được chọn không
+    const isItemSelected = (item) => {
+        if (type === 'priceCode') {
+            const currentMinRent = searchParams.get('minRent')
+            const currentMaxRent = searchParams.get('maxRent')
+            
+            return currentMinRent === item.min?.toString() && 
+                   (item.max === null ? !currentMaxRent : currentMaxRent === item.max?.toString())
+        } else if (type === 'areaCode') {
+            const currentMinSize = searchParams.get('minSize')
+            const currentMaxSize = searchParams.get('maxSize')
+            
+            return currentMinSize === item.min?.toString() && 
+                   (item.max === null ? !currentMaxSize : currentMaxSize === item.max?.toString())
+        } else if (type === 'category') {
+            return searchParams.get('type') === item.code
+        } else {
+            return searchParams.get(type) === item.code
+        }
     }
 
     if (isDouble) {
@@ -59,8 +131,12 @@ const ItemSidebar = ({ title, content, isDouble, type }) => {
                             <div
                                 key={item.code}
                                 onClick={() => handleFilterPosts(item.code, item)}
-                                className='flex items-center cursor-pointer hover:text-orange-600 border-b border-gray-200 border-dashed py-1 transition-colors'>
-                                <GrNext size={10} color='gray' className='mr-2' />
+                                className={`flex items-center cursor-pointer border-b border-gray-200 border-dashed py-1 transition-colors ${
+                                    isItemSelected(item) 
+                                        ? 'text-orange-600 font-medium' 
+                                        : 'hover:text-orange-600'
+                                }`}>
+                                <GrNext size={10} color={isItemSelected(item) ? '#ea580c' : 'gray'} className='mr-2' />
                                 <p className='text-sm'>{item.value}</p>
                             </div>
                         ))}
@@ -71,8 +147,12 @@ const ItemSidebar = ({ title, content, isDouble, type }) => {
                             <div
                                 key={item.code}
                                 onClick={() => handleFilterPosts(item.code, item)}
-                                className='flex items-center cursor-pointer hover:text-orange-600 border-b border-gray-200 border-dashed py-1 transition-colors'>
-                                <GrNext size={10} color='gray' className='mr-2' />
+                                className={`flex items-center cursor-pointer border-b border-gray-200 border-dashed py-1 transition-colors ${
+                                    isItemSelected(item) 
+                                        ? 'text-orange-600 font-medium' 
+                                        : 'hover:text-orange-600'
+                                }`}>
+                                <GrNext size={10} color={isItemSelected(item) ? '#ea580c' : 'gray'} className='mr-2' />
                                 <p className='text-sm'>{item.value}</p>
                             </div>
                         ))}
@@ -92,8 +172,12 @@ const ItemSidebar = ({ title, content, isDouble, type }) => {
                         <div
                             key={item.code}
                             onClick={() => handleFilterPosts(item.code, item)}
-                            className='flex items-center cursor-pointer hover:text-orange-600 border-b border-gray-200 border-dashed py-1 transition-colors'>
-                            <GrNext size={10} color='gray' className='mr-2' />
+                            className={`flex items-center cursor-pointer border-b border-gray-200 border-dashed py-1 transition-colors ${
+                                isItemSelected(item) 
+                                    ? 'text-orange-600 font-medium' 
+                                    : 'hover:text-orange-600'
+                            }`}>
+                            <GrNext size={10} color={isItemSelected(item) ? '#ea580c' : 'gray'} className='mr-2' />
                             <p className='text-sm'>{item.value}</p>
                         </div>
                     ))}

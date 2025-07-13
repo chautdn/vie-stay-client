@@ -1,33 +1,39 @@
 import React, { memo, useState, useEffect, useCallback } from 'react'
 import icons from '../../utils/icons'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { formatVietnameseToString } from '../../utils/Common/formatVietnameseToString'
 import { getSavedPosts, savePost, unsavePost, isPostSaved } from '../../utils/localStorage'
+import { getPackageStyle } from '../../utils/packageStyles'
 
-const { MdOutlineStarPurple500, IoIosHeart, IoIosHeartEmpty, BsBookmarkStarFill } = icons
+const { MdOutlineStarPurple500, IoIosHeart, IoIosHeartEmpty, BsBookmarkStarFill, MdPhone, MdMessage } = icons
 
-const Item = ({ room }) => {
+const PostItem = ({ post }) => {
     const [isHoverHeart, setIsHoverHeart] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
     
-    // ✅ Extract data từ room object
+    // Extract data từ post object
     const {
         _id: id,
-        name: title,
+        title,
         description,
         images = [],
-        baseRent,
-        size,
-        fullAddress,
-        district,
-        ward,
-        city,
-        user,
-        averageRating: star = 0,
-        accommodation
-    } = room || {}
+        rent,
+        area,
+        address = {},
+        contactName,
+        contactPhone,
+        contactEmail,
+        userId,
+        featuredType = 'THUONG',
+        propertyType,
+        amenities = [],
+        viewCount = 0
+    } = post || {}
 
-    // ✅ Check saved status khi component mount và ID thay đổi
+    // Get package style
+    const packageStyle = getPackageStyle(featuredType)
+
+    // Check saved status
     useEffect(() => {
         if (id) {
             const savedStatus = isPostSaved(id)
@@ -35,7 +41,7 @@ const Item = ({ room }) => {
         }
     }, [id])
 
-    // ✅ Listen for localStorage changes
+    // Listen for localStorage changes
     useEffect(() => {
         const handleSavedPostsChanged = (event) => {
             if (event.detail?.key === 'savedPosts' && id) {
@@ -51,7 +57,7 @@ const Item = ({ room }) => {
         }
     }, [id])
 
-    // ✅ Function để toggle save/unsave
+    // Toggle save/unsave
     const handleToggleSave = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
@@ -73,79 +79,93 @@ const Item = ({ room }) => {
         }
     }, [id])
     
-    // ✅ Memoize các computed values
+    // Memoize computed values
     const displayImages = React.useMemo(() => {
         return Array.isArray(images) && images.length > 0 
             ? images.slice(0, 4) 
             : ['https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg']
     }, [images])
 
-    const stars = React.useMemo(() => {
-        const starArray = []
-        for (let i = 1; i <= +star; i++) {
-            starArray.push(
-                <MdOutlineStarPurple500 
-                    key={i}
-                    className='star-item' 
-                    size={18} 
-                    color='yellow' 
-                />
-            )
-        }
-        return starArray
-    }, [star])
-
     const formattedAddress = React.useMemo(() => {
-        if (fullAddress) return fullAddress
-        
+        const { street, ward, district } = address
         const addressParts = []
+        
+        if (street) addressParts.push(street)
         if (ward) addressParts.push(ward)
         if (district) addressParts.push(district)
-        if (city) addressParts.push(city)
         
         return addressParts.length > 0 ? addressParts.join(', ') : 'Địa chỉ đang cập nhật'
-    }, [fullAddress, ward, district, city])
+    }, [address])
 
     const formattedPrice = React.useMemo(() => {
-        if (!baseRent) return '0 đ'
+        if (!rent) return '0 đ'
         return new Intl.NumberFormat('vi-VN', {
             style: 'currency',
             currency: 'VND'
-        }).format(baseRent)
-    }, [baseRent])
+        }).format(rent)
+    }, [rent])
 
     const formattedSize = React.useMemo(() => {
-        return size ? `${size}m²` : '0m²'
-    }, [size])
+        return area ? `${area}m²` : '0m²'
+    }, [area])
 
-    // ✅ Event handlers - Bỏ handlePhoneCall và handleZaloChat
+    const propertyTypeText = React.useMemo(() => {
+        const types = {
+            'single_room': 'Phòng đơn',
+            'shared_room': 'Phòng chia sẻ',
+            'apartment': 'Căn hộ',
+            'house': 'Nhà nguyên căn',
+            'studio': 'Studio',
+            'dormitory': 'Ký túc xá'
+        }
+        return types[propertyType] || 'Phòng trọ'
+    }, [propertyType])
+
+    // Event handlers
     const handleViewDetail = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
         
         if (!id) return
         
-        // Navigate đến trang chi tiết
-        window.location.href = `/chi-tiet/${formatVietnameseToString(title || 'phong-tro')}/${id}`
+        window.location.href = `/tin-dang/${formatVietnameseToString(title || 'tin-dang')}/${id}`
     }, [id, title])
+
+    const handlePhoneCall = useCallback((e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        
+        if (contactPhone) {
+            window.location.href = `tel:${contactPhone}`
+        }
+    }, [contactPhone])
 
     const handleImageError = useCallback((e) => {
         e.target.src = 'https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg'
     }, [])
 
     const handleAvatarError = useCallback((e) => {
-        e.target.src = "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"
+        e.target.src = "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"
     }, [])
 
-    // ✅ Early return nếu không có room data
-    if (!room || !id) {
+    // Early return nếu không có post data
+    if (!post || !id) {
         return null
     }
 
     return (
-        <div className='w-full relative flex gap-5 border-t-2 border-orange-400 p-4 cursor-pointer'>
+        <div className={`w-full relative flex gap-5 border-t-2 border-orange-400 p-4 cursor-pointer ${packageStyle.colorClass} ${packageStyle.animation}`}>
+            {/* Package Badge */}
+            {packageStyle.showBadge && (
+                <div className="absolute top-2 left-2 z-10">
+                    <span className={packageStyle.badgeClass}>
+                        {packageStyle.badgeText}
+                    </span>
+                </div>
+            )}
+
             <Link 
-                to={`/chi-tiet/${formatVietnameseToString(title || 'phong-tro')}/${id}`} 
+                to={`/tin-dang/${formatVietnameseToString(title || 'tin-dang')}/${id}`} 
                 className='w-2/5 grid grid-cols-2 gap-0.5 items-center cursor-pointer relative'
             >
                 {[0, 1, 2, 3].map((index) => (
@@ -184,22 +204,25 @@ const Item = ({ room }) => {
             <div className='w-3/5'>
                 <div className='items-center gap-1'>
                     <div className='flex items-center justify-between'>
-                        <div className='flex'>
-                            {stars.map((starElement, number) => (
-                                <span key={number}>{starElement}</span>
-                            ))}
+                        <div className='flex items-center gap-2'>
+                            <span className='text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded'>
+                                {propertyTypeText}
+                            </span>
+                            <span className='text-xs text-gray-500'>
+                                {viewCount} lượt xem
+                            </span>
                         </div>
                         <div className='w-[10%] flex justify-end'>
                             <BsBookmarkStarFill size={24} color='orange' />
                         </div>
                     </div>
                     
-                    <h3 className='text-red-600 font-medium ml-1 mt-2'>
-                        {title || 'Phòng trọ'}
+                    <h3 className={`ml-1 mt-2 ${packageStyle.titleClass}`}>
+                        {title || 'Tin đăng'}
                     </h3>
                     
                     <div className='my-2 flex items-center justify-between overflow-hidden'>
-                        <span className='font-bold flex-3 text-green-500'>
+                        <span className={`font-bold flex-3 ${packageStyle.priceClass}`}>
                             {formattedPrice}
                         </span>
                         <span className='flex-1'>
@@ -217,22 +240,36 @@ const Item = ({ room }) => {
                     <div className='flex items-center justify-between'>
                         <div className='flex items-center my-3'>
                             <img 
-                                src={user?.avatar || user?.profileImage || "https://www.kindpng.com/picc/m/22-223863_no-avatar-png-circle-transparent-png.png"}
+                                src={userId?.profileImage || "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png"}
                                 alt="avatar" 
                                 className='w-[30px] h-[30px] object-cover rounded-full'
                                 onError={handleAvatarError}
                                 loading="lazy"
                             />
-                            <p className='ml-2'>{user?.name || 'Chủ trọ'}</p>
+                            <p className='ml-2'>{contactName || userId?.name || 'Người đăng'}</p>
                         </div>
                         
-                        {/* Thay thế 2 buttons bằng 1 button "Xem chi tiết" */}
-                        <div className='flex items-center'>
+                        <div className='flex items-center gap-2'>
+                            {/* Phone button - chỉ hiển thị cho VIP packages */}
+                            {packageStyle.showCallButton && contactPhone && (
+                                <button
+                                    type='button'
+                                    className='bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors text-sm font-medium flex items-center gap-1'
+                                    onClick={handlePhoneCall}
+                                    title='Gọi điện ngay'
+                                >
+                                    <MdPhone size={16} />
+                                    Gọi ngay
+                                </button>
+                            )}
+                            
+                            {/* View detail button */}
                             <button
                                 type='button'
-                                className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium'
+                                className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium flex items-center gap-1'
                                 onClick={handleViewDetail}
                             >
+                                <MdMessage size={16} />
                                 Xem chi tiết
                             </button>
                         </div>
@@ -243,18 +280,18 @@ const Item = ({ room }) => {
     )
 }
 
-// ✅ Improved comparison function - Bỏ phone check
+// Improved comparison function
 const areEqual = (prevProps, nextProps) => {
-    const prevRoom = prevProps.room
-    const nextRoom = nextProps.room
+    const prevPost = prevProps.post
+    const nextPost = nextProps.post
     
     return (
-        prevRoom?._id === nextRoom?._id &&
-        prevRoom?.name === nextRoom?.name &&
-        prevRoom?.baseRent === nextRoom?.baseRent &&
-        prevRoom?.isAvailable === nextRoom?.isAvailable &&
-        JSON.stringify(prevRoom?.images) === JSON.stringify(nextRoom?.images)
+        prevPost?._id === nextPost?._id &&
+        prevPost?.title === nextPost?.title &&
+        prevPost?.rent === nextPost?.rent &&
+        prevPost?.featuredType === nextPost?.featuredType &&
+        JSON.stringify(prevPost?.images) === JSON.stringify(nextPost?.images)
     )
 }
 
-export default memo(Item, areEqual)
+export default memo(PostItem, areEqual)

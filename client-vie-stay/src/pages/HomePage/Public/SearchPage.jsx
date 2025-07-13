@@ -126,10 +126,9 @@ const SearchPage = () => {
     const getActiveFilters = () => {
         const activeFilters = []
         
-        // ✅ THÊM: District filter (từ province buttons hoặc search dropdown)
+        // District filter
         const selectedDistrict = params.get('district')
         if (selectedDistrict) {
-            // Check if district comes from province button
             const districtFromProvince = location.find(loc => loc.districtCode === selectedDistrict)
             if (districtFromProvince) {
                 activeFilters.push({
@@ -139,7 +138,6 @@ const SearchPage = () => {
                     value: selectedDistrict
                 })
             } else {
-                // Regular district from dropdown
                 const district = districts.find(dist => dist.code === selectedDistrict)
                 if (district) {
                     activeFilters.push({
@@ -152,7 +150,7 @@ const SearchPage = () => {
             }
         }
 
-        // ✅ THÊM: Features filter
+        // Features filter
         const selectedFeatures = params.get('features')
         if (selectedFeatures) {
             const feature = features.find(f => f.code === selectedFeatures)
@@ -184,16 +182,19 @@ const SearchPage = () => {
         const minRent = params.get('minRent')
         const maxRent = params.get('maxRent')
         if (minRent || maxRent) {
-            const priceRange = prices.find(price => 
-                price.min.toString() === minRent && 
-                (price.max === null ? !maxRent : price.max.toString() === maxRent)
-            )
+            // ✅ SỬA: Check for exact match first
+            const priceRange = prices.find(price => {
+                const minMatch = price.min.toString() === minRent
+                const maxMatch = price.max === null ? !maxRent : price.max.toString() === maxRent
+                return minMatch && maxMatch
+            })
+            
             if (priceRange) {
                 activeFilters.push({
                     type: 'price',
                     key: ['minRent', 'maxRent'],
                     label: priceRange.value,
-                    value: `${minRent}-${maxRent}`
+                    value: `${minRent}-${maxRent || 'max'}`
                 })
             } else {
                 // Custom price range
@@ -219,16 +220,19 @@ const SearchPage = () => {
         const minSize = params.get('minSize')
         const maxSize = params.get('maxSize')
         if (minSize || maxSize) {
-            const areaRange = areas.find(area => 
-                area.min.toString() === minSize && 
-                (area.max === null ? !maxSize : area.max.toString() === maxSize)
-            )
+            // ✅ SỬA: Check for exact match first
+            const areaRange = areas.find(area => {
+                const minMatch = area.min.toString() === minSize
+                const maxMatch = area.max === null ? !maxSize : area.max.toString() === maxSize
+                return minMatch && maxMatch
+            })
+            
             if (areaRange) {
                 activeFilters.push({
                     type: 'area',
                     key: ['minSize', 'maxSize'],
                     label: areaRange.value,
-                    value: `${minSize}-${maxSize}`
+                    value: `${minSize}-${maxSize || 'max'}`
                 })
             } else {
                 // Custom area range

@@ -3,15 +3,16 @@ import { Header, Intro } from '../../../components/common'
 import { Outlet, useLocation } from 'react-router-dom'
 import { Navigation, Search, ServicePrice } from './index'
 import { Contact } from '../../../components/common'
+import ChatbotAI from '../../../components/common/ChatbotAI'
 
 const Home = () => {
     const location = useLocation();
 
     return (
-        <div className='w-full flex gap-6 flex-col items-center h-full'>
-            <Header />
+        <div className='w-full flex flex-col items-center h-full'>
+             <Header />
             <Navigation />
-            {location.pathname !== '/bang-gia-dich-vu' && (
+            {location.pathname !== ('/bang-gia-dich-vu'||'/profile')  && (
                 <>
                     <Search />
                 </>
@@ -26,6 +27,7 @@ const Home = () => {
                 </>
             )}
             <div className='h-[500px]'></div>
+            <ChatbotAI />
         </div>
     )
 }

@@ -107,10 +107,11 @@ const HomePage = () => {
                 <div className='w-full flex gap-3'>
                     {/* Left Content - List + Pagination */}
                     <div className='w-[70%]'>
-                        {/* ✅ SỬA: Truyền pagination props vào List */}
+                        {/* ✅ SỬA: Truyền contentType vào List */}
                         <List 
                             currentPage={currentPage}
                             resultsPerPage={resultsPerPage}
+                            contentType="all" // ✅ THÊM: Hiển thị cả room và post
                         />
                         
                         {/* ✅ SỬA: Pagination chỉ có ở HomePage */}

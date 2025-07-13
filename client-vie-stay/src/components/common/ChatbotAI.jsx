@@ -34,7 +34,10 @@ const ChatbotAI = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
- const API_KEY_CHATBOT = process.env.REACT_APP_OPENAI_API_KEY;
+
+
+  const API_KEY_CHATBOT = process.env.REACT_APP_OPENAI_API_KEY;
+
 
 
   // Lấy phòng trọ mới nhất

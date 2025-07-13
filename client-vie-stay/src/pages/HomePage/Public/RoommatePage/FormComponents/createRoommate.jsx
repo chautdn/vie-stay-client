@@ -136,46 +136,71 @@ const CreateRoommate = () => {
     }
   };
 
-  const getInputClass = (field) => `w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors[field] ? "border-red-500" : ""}`;
+  const getInputClass = (field) =>
+    `w-full border border-gray-300 rounded-lg px-4 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-200 ${
+      errors[field] ? "border-red-500" : "focus:border-blue-500"
+    }`;
   const getError = (field) => errors[field] && <p className="text-red-500 text-sm mt-1">{errors[field]}</p>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow space-y-6">
-      <h2 className="text-2xl font-bold mb-4">Đăng tin phòng ở ghép</h2>
+    <div className="w-full max-w-none px-8 py-12 bg-white rounded-3xl shadow-2xl space-y-12 border border-gray-200">
+
+      <h2 className="text-4xl font-extrabold text-center text-blue-800 mb-8">Đăng tin phòng ở ghép</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <input className={getInputClass("name")} name="name" value={form.name} onChange={handleChange} placeholder="Tên phòng" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tên phòng *</label>
+            <input className={getInputClass("name")} name="name" value={form.name} onChange={handleChange} />
             {getError("name")}
           </div>
           <div>
-            <input className={getInputClass("roomNumber")} name="roomNumber" value={form.roomNumber} onChange={handleChange} placeholder="Số phòng" />
+            <label className="block text-sm font-medium text-gray-700 mb-1">Số phòng</label>
+            <input className={getInputClass("roomNumber")} name="roomNumber" value={form.roomNumber} onChange={handleChange} />
           </div>
         </div>
 
         <div>
-          <textarea className={getInputClass("description")} rows="4" name="description" value={form.description} onChange={handleChange} placeholder="Mô tả phòng..." />
+          <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả *</label>
+          <textarea className={getInputClass("description")} rows="4" name="description" value={form.description} onChange={handleChange} />
           {getError("description")}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <input className={getInputClass("size")} type="number" name="size" value={form.size} onChange={handleChange} placeholder="Diện tích (m²)" />
-          <input className={getInputClass("availableFrom")} type="date" name="availableFrom" value={form.availableFrom} onChange={handleChange} />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Diện tích (m²)</label>
+            <input className={getInputClass("size")} type="number" name="size" value={form.size} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Ngày có sẵn</label>
+            <input className={getInputClass("availableFrom")} type="date" name="availableFrom" value={form.availableFrom} onChange={handleChange} />
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <select className={getInputClass("type")} name="type" value={form.type} onChange={handleChange}>
-            <option value="shared">Ở ghép</option>
-            <option value="dormitory">Ký túc xá</option>
-          </select>
-          <select className={getInputClass("furnishingLevel")} name="furnishingLevel" value={form.furnishingLevel} onChange={handleChange}>
-            {furnishingOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Loại phòng</label>
+            <select className={getInputClass("type")} name="type" value={form.type} onChange={handleChange}>
+              <option value="shared">Ở ghép</option>
+              <option value="dormitory">Ký túc xá</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Mức độ nội thất</label>
+            <select className={getInputClass("furnishingLevel")} name="furnishingLevel" value={form.furnishingLevel} onChange={handleChange}>
+              {furnishingOptions.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <input className={getInputClass("capacity")} type="number" name="capacity" value={form.capacity} onChange={handleChange} placeholder="Sức chứa" />
-          <input className={getInputClass("maxRoommates")} type="number" name="maxRoommates" value={form.maxRoommates} onChange={handleChange} placeholder="Số người tối đa" />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Sức chứa</label>
+            <input className={getInputClass("capacity")} type="number" name="capacity" value={form.capacity} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Số người tối đa</label>
+            <input className={getInputClass("maxRoommates")} type="number" name="maxRoommates" value={form.maxRoommates} onChange={handleChange} />
+          </div>
         </div>
 
         <div className="flex items-center gap-2">
@@ -197,6 +222,7 @@ const CreateRoommate = () => {
         </div>
 
         <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh phòng</label>
           <input type="file" multiple onChange={handleImageUpload} accept="image/*" />
           <div className="flex flex-wrap gap-2 mt-2">
             {form.images.map((img, idx) => (
@@ -207,30 +233,48 @@ const CreateRoommate = () => {
 
         <div className="space-y-2">
           <label className="font-semibold">Địa chỉ</label>
-          <input className={getInputClass("address.street")} placeholder="Số nhà, tên đường" value={form.address.street} onChange={(e) => handleNestedChange("address", "street", e.target.value)} />
+          <label className="block text-sm text-gray-700">Số nhà, tên đường</label>
+          <input className={getInputClass("address.street")} value={form.address.street} onChange={(e) => handleNestedChange("address", "street", e.target.value)} />
           {getError("address.street")}
-          <input className={getInputClass("address.ward")} placeholder="Phường/Xã" value={form.address.ward} onChange={(e) => handleNestedChange("address", "ward", e.target.value)} />
+
+          <label className="block text-sm text-gray-700">Phường/Xã</label>
+          <input className={getInputClass("address.ward")} value={form.address.ward} onChange={(e) => handleNestedChange("address", "ward", e.target.value)} />
           {getError("address.ward")}
+
+          <label className="block text-sm text-gray-700">Quận/Huyện</label>
           <select className={getInputClass("address.district")} value={form.address.district} onChange={(e) => handleNestedChange("address", "district", e.target.value)}>
             {districtOptions.map(d => <option key={d}>{d}</option>)}
           </select>
           {getError("address.district")}
-          <input className={getInputClass("address.fullAddress")} placeholder="Địa chỉ đầy đủ" value={form.address.fullAddress} onChange={(e) => handleNestedChange("address", "fullAddress", e.target.value)} />
+
+          <label className="block text-sm text-gray-700">Địa chỉ đầy đủ</label>
+          <input className={getInputClass("address.fullAddress")} value={form.address.fullAddress} onChange={(e) => handleNestedChange("address", "fullAddress", e.target.value)} />
           {getError("address.fullAddress")}
         </div>
 
         <div className="space-y-2">
           <label className="font-semibold">Thông tin liên hệ</label>
-          <input className={getInputClass("contactInfo.phone")} placeholder="SĐT" value={form.contactInfo.phone} onChange={(e) => handleNestedChange("contactInfo", "phone", e.target.value)} />
+          <label className="block text-sm text-gray-700">SĐT</label>
+          <input className={getInputClass("contactInfo.phone")} value={form.contactInfo.phone} onChange={(e) => handleNestedChange("contactInfo", "phone", e.target.value)} />
           {getError("contactInfo.phone")}
-          <input className={getInputClass("contactInfo.email")} placeholder="Email" value={form.contactInfo.email} onChange={(e) => handleNestedChange("contactInfo", "email", e.target.value)} />
+
+          <label className="block text-sm text-gray-700">Email</label>
+          <input className={getInputClass("contactInfo.email")} value={form.contactInfo.email} onChange={(e) => handleNestedChange("contactInfo", "email", e.target.value)} />
           {getError("contactInfo.email")}
-          <input className={getInputClass("contactInfo.website")} placeholder="Website" value={form.contactInfo.website} onChange={(e) => handleNestedChange("contactInfo", "website", e.target.value)} />
+
+          <label className="block text-sm text-gray-700">Website</label>
+          <input className={getInputClass("contactInfo.website")} value={form.contactInfo.website} onChange={(e) => handleNestedChange("contactInfo", "website", e.target.value)} />
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          <input className={getInputClass("baseRent")} type="number" name="baseRent" value={form.baseRent} onChange={handleChange} placeholder="Giá thuê cơ bản" />
-          <input className={getInputClass("deposit")} type="number" name="deposit" value={form.deposit} onChange={handleChange} placeholder="Tiền đặt cọc" />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Giá thuê cơ bản</label>
+            <input className={getInputClass("baseRent")} type="number" name="baseRent" value={form.baseRent} onChange={handleChange} />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tiền đặt cọc</label>
+            <input className={getInputClass("deposit")} type="number" name="deposit" value={form.deposit} onChange={handleChange} />
+          </div>
         </div>
 
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Đăng tin</button>

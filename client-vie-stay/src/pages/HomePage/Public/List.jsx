@@ -125,7 +125,7 @@ const List = ({
                     currentRooms.map(room => (
                         <Item
                             key={room?._id}
-                            room={room}
+                            room={room} 
                         />
                     ))
                 ) : (

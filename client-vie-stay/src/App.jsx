@@ -25,6 +25,10 @@ import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
 import CoTenantsRequest from "./pages/OwnerPage/Co-tenantsRequest";
 import Room from "./pages/HomePage/RoomPage/Room";
 import RoomDetail from "./pages/HomePage/RoomPage/RoomDetail";
+import  RoommateList from "./pages/HomePage/Public/Roommate"; // ✅ THÊM: Import RoommateList
+import RoommateDetail from "./pages/HomePage/Public/RoommateDetail"; // ✅ THÊM: Import RoommateDetail
+import CreateRoommate from "./pages/HomePage/Public/RoommatePage/FormComponents/createRoommate";
+
 
 // Import Tenant Agreement Pages
 import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/AgreementConfirmationPage";
@@ -73,6 +77,11 @@ function App() {
           {/* ✅ SỬA: Thay List bằng SearchPage */}
           <Route path="list" element={<List />} />
           <Route path="*" element={<HomePage />} />
+          <Route path="/roommates" element={<RoommateList />} />
+          <Route path="/roommates/:id" element={<RoommateDetail />} /> {/* chi tiết */}
+          <Route path="/roommates/post" element={<CreateRoommate />} />
+
+          
         </Route>
 
         {/* ✅ THÊM: Direct routes không qua Home layout */}

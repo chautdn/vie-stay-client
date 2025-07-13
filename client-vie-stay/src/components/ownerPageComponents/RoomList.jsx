@@ -11,7 +11,9 @@ import {
   AlertTriangle,
   User,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  Plus,
+  FileText
 } from 'lucide-react';
 
 const RoomList = ({ 
@@ -19,7 +21,8 @@ const RoomList = ({
   onViewDetails, 
   onEdit, 
   onDelete, 
-  onToggleAvailability,  // ✅ SỬA: Đổi tên từ onDeactivate
+  onToggleAvailability,
+  onCreatePost, // ✅ NEW: Add create post handler
   isLoading 
 }) => {
   const formatPrice = (price) => {
@@ -84,6 +87,9 @@ const RoomList = ({
         <h2 className="text-lg font-semibold text-gray-900">
           Danh sách phòng ({rooms.length})
         </h2>
+        <div className="text-xs text-gray-500">
+          💡 Bấm "Đăng tin" để tạo tin đăng từ phòng
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -109,41 +115,6 @@ const RoomList = ({
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">
                   {room.name || `Phòng ${room.roomNumber}`}
                 </h3>
-                <div className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(room)}`}>
-                  {getStatusIcon(room)}
-                  {getStatusText(room)}
-                </div>
-              </div>
-            </div>
-
-            {/* Room Info */}
-            <div className="space-y-3 mb-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Loại phòng:</span>
-                <span className="font-medium">{room.type}</span>
-              </div>
-              
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Sức chứa:</span>
-                <div className="flex items-center gap-1">
-                  <Users size={14} />
-                  <span className="font-medium">{room.capacity} người</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Giá thuê:</span>
-                <div className="flex items-center gap-1">
-                  <DollarSign size={14} />
-                  <span className="font-semibold text-blue-600">
-                    {formatPrice(room.baseRent)}/tháng
-                  </span>
-                </div>
-              </div>
-
-              {/* Tenant Status */}
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">Tình trạng:</span>
                 <div className="flex items-center gap-1">
                   <User size={14} />
                   <span className="font-medium">
@@ -160,6 +131,20 @@ const RoomList = ({
                 </div>
               )}
             </div>
+
+            {/* ✅ NEW: Create Post Button - Prominent placement */}
+            {room.isAvailable && (
+              <div className="mb-4">
+                <button
+                  onClick={() => onCreatePost(room)}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-green-500 to-blue-500 text-white rounded-lg hover:from-green-600 hover:to-blue-600 transition-all transform hover:scale-105 font-semibold shadow-md"
+                >
+                  <Plus size={16} />
+                  <FileText size={16} />
+                  Đăng tin cho phòng này
+                </button>
+              </div>
+            )}
 
             {/* Actions */}
             <div className="flex items-center gap-2 pt-4 border-t border-gray-200">
@@ -179,7 +164,7 @@ const RoomList = ({
                 Sửa
               </button>
 
-              {/* ✅ SỬA: Toggle button với icon và text dynamic */}
+              {/* Toggle availability button */}
               <button
                 onClick={() => onToggleAvailability(room)}
                 className={`flex-1 flex items-center justify-center gap-1 px-3 py-2 rounded-lg transition-colors ${
@@ -188,7 +173,7 @@ const RoomList = ({
                     : 'bg-green-100 text-green-700 hover:bg-green-200'
                 }`}
                 title={room.isAvailable ? "Vô hiệu hóa phòng" : "Kích hoạt phòng"}
-                disabled={room.currentTenant?.length>0} // ✅ THÊM: Disable nếu có tenant
+                disabled={room.currentTenant?.length > 0}
               >
                 {room.isAvailable ? (
                   <>
@@ -207,16 +192,23 @@ const RoomList = ({
                 onClick={() => onDelete(room)}
                 className="flex items-center justify-center px-3 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
                 title="Xóa phòng"
-                disabled={room.currentTenant?.length>0} // ✅ THÊM: Disable nếu có tenant
+                disabled={room.currentTenant?.length > 0}
               >
                 <Trash2 size={16} />
               </button>
             </div>
 
-            {/* ✅ THÊM: Warning message nếu có tenant */}
-            {room.currentTenant?.length>0 && (
+            {/* Warning message if has tenant */}
+            {room.currentTenant?.length > 0 && (
               <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded text-xs text-orange-700">
                 ⚠️ Không thể ẩn/xóa phòng đang có người thuê
+              </div>
+            )}
+
+            {/* Info message for unavailable rooms */}
+            {!room.isAvailable && (
+              <div className="mt-2 p-2 bg-gray-50 border border-gray-200 rounded text-xs text-gray-600">
+                ℹ️ Kích hoạt phòng để có thể đăng tin
               </div>
             )}
           </div>

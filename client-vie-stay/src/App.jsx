@@ -51,6 +51,7 @@ import TopUpCancel from "./pages/TopUpPage/TopUpCancel";
 // Import Post Management Pages
 import CreatePostPage from "./pages/PostPage/CreatePostPage";
 import PostManagementPage from "./pages/PostPage/PostManagementPage";
+import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -76,7 +77,10 @@ function App() {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/verify-email" element={<EmailVerificationPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
         </Route>
 
         <Route element={<MainLayout />}>
@@ -127,6 +131,14 @@ function App() {
             element={
               <OwnerRoute>
                 <OwnerDashboard />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/posts"
+            element={
+              <OwnerRoute>
+                <OwnerPostManagement />
               </OwnerRoute>
             }
           />

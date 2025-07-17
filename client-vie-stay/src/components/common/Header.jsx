@@ -6,11 +6,13 @@ import {
   User,
   Pencil,
   UserCog,
+  FileText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import LogoutButton from "./LogOutButton";
 import axiosInstance from "../utils/AxiosInstance";
+
 // Login Prompt Modal
 const LoginPromptModal = ({ onClose }) => (
   <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -121,7 +123,7 @@ const Navbar = () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
     } else {
-      navigate("/owner/create-post");
+      navigate("/create-post");
     }
   };
 
@@ -131,7 +133,7 @@ const Navbar = () => {
         {/* Logo */}
         <div
           className="flex items-center gap-2 cursor-pointer"
-          onClick={() => navigate("/home")}
+          onClick={() => navigate("/")}
         >
           <div className="flex items-center text-xl font-extrabold">
             <span className="text-blue-600">VIE</span>
@@ -170,14 +172,24 @@ const Navbar = () => {
           {/* Authenticated User Options */}
           {isAuthenticated ? (
             <>
+              {/* My Posts - Available to all authenticated users */}
               <div
                 className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
-                onClick={() =>
-                  handleNavigate(isOwner() ? "/owner" : "/dashboard")
-                }
+                onClick={() => handleNavigate("/posts")}
               >
-                <Folder size={16} /> Quản lý
+                <FileText size={16} /> Tin của tôi
               </div>
+
+              {/* Owner Management - Only for owners */}
+              {isOwner() && (
+                <div
+                  className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+                  onClick={() => handleNavigate("/owner")}
+                >
+                  <Folder size={16} /> Quản lý chủ nhà
+                </div>
+              )}
+
               <div
                 className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
                 onClick={toggleDropdown}
@@ -197,7 +209,7 @@ const Navbar = () => {
               </button>
               <button
                 className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-full font-semibold"
-                onClick={() => navigate("/register")}
+                onClick={() => navigate("/signup")}
               >
                 Đăng ký
               </button>
@@ -233,11 +245,17 @@ const Navbar = () => {
                     {user.phoneNumber || "Chưa có số điện thoại"}
                   </p>
                   <p className="text-xs text-blue-600 font-medium">
-                    {user.role === "owner" ? "Chủ nhà" : "Người thuê"}
+                    {user.role?.includes("landlord") ? "Chủ nhà" : "Người dùng"}
                   </p>
                 </div>
               </div>
               <div className="p-4 space-y-2 text-sm text-gray-700">
+                <button
+                  onClick={() => handleNavigate("/posts")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <FileText size={18} /> <span>Quản lý tin đăng</span>
+                </button>
                 <button
                   onClick={() => handleNavigate("/profile")}
                   className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"

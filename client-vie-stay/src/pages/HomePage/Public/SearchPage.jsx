@@ -403,6 +403,7 @@ const SearchPage = () => {
                     </div>
                 </div>
             </div>
+            <div className='h-10' /> {/* Spacer for footer */}
         </div>
     )
 }

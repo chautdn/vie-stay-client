@@ -4,11 +4,13 @@ import { text } from '../../../utils/Constant'
 import { ItemSidebar } from '../../../components/common'
 import { useSearchParams } from 'react-router-dom'
 import { useRoomStore } from '../../../store/owner/roomStore'
+import { usePostStore } from '../../../store/postStore'
 import Province from '../../../components/common/Province'
 
 const HomePage = () => {
     const [params] = useSearchParams()
-    const { getAllRooms, searchResults, rooms } = useRoomStore()
+    const { getAllRooms, searchResults: roomSearchResults, rooms } = useRoomStore()
+    const { getAllPosts, searchResults: postSearchResults, posts } = usePostStore()
     
     const [currentPage, setCurrentPage] = useState(1)
     const resultsPerPage = 5
@@ -72,18 +74,33 @@ const HomePage = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
+                // Load both rooms and posts
                 await getAllRooms()
+                await getAllPosts()
             } catch (error) {
-                console.error('Error loading rooms:', error)
+                console.error('Error loading data:', error)
             }
         }
 
         loadInitialData()
-    }, [params, getAllRooms])
+    }, [params, getAllRooms, getAllPosts])
 
-    // ✅ THÊM: Tính toán total results
-    const allRooms = params.toString() ? (searchResults || []) : (rooms || [])
-    const totalResults = allRooms.length
+    // ✅ SỬA: Tính toán total results từ cả room và post
+    const getTotalResults = () => {
+        if (params.toString()) {
+            // Nếu có search params, lấy từ search results
+            const roomCount = (roomSearchResults || []).length
+            const postCount = (postSearchResults || []).length
+            return roomCount + postCount
+        } else {
+            // Nếu không có search params, lấy từ all data
+            const roomCount = (rooms || []).length
+            const postCount = (posts || []).length
+            return roomCount + postCount
+        }
+    }
+
+    const totalResults = getTotalResults()
 
     // Sắp xếp prices và areas theo order
     const sortedPrices = prices?.slice().sort((a, b) => a.order - b.order)
@@ -99,6 +116,11 @@ const HomePage = () => {
                 <p className='text-sm text-gray-700 text-center'>
                     {text?.HOME_DESCRIPTION || 'Tìm kiếm phòng trọ, nhà trọ tại Đà Nẵng với giá cả hợp lý và đầy đủ tiện nghi'}
                 </p>
+                
+                {/* ✅ THÊM: Hiển thị tổng số kết quả */}
+                <div className='text-center text-sm text-gray-500 mt-2'>
+                    Tổng cộng: {totalResults} kết quả (rooms + posts)
+                </div>
             </div>
 
             {/* Main Content */}
@@ -114,7 +136,7 @@ const HomePage = () => {
                             contentType="all" // ✅ THÊM: Hiển thị cả room và post
                         />
                         
-                        {/* ✅ SỬA: Pagination chỉ có ở HomePage */}
+                        {/* ✅ SỬA: Pagination với tổng số kết quả từ cả room và post */}
                         {totalResults > resultsPerPage && (
                             <Pagination 
                                 currentPage={currentPage}

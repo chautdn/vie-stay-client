@@ -9,6 +9,7 @@ import OwnerRoute from "./components/common/OwnerRoute";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminRoute from "./components/common/AdminRoute";
 
+import { NotificationProvider } from "./components/common/NotificationSystem";
 // Import Auth pages
 import SignUpPage from "./pages/AuthPage/SignUpPage";
 import LoginPage from "./pages/AuthPage/LoginPage";
@@ -45,7 +46,15 @@ import WithdrawalRequestPage from "./pages/TenantPage/WithdrawalRequestPage";
 import WithdrawalHistoryPage from "./pages/TenantPage/WithdrawalHistoryPage";
 import PendingWithdrawalsPage from "./pages/OwnerPage/PendingWithdrawalsPage";
 import Profile from "./pages/ProfilePage/Profile";
-import PostPage from "./pages/PostPage/PostPage";
+import ChangePassword from "./pages/ProfilePage/ChangePassword";
+
+// Import TopUp Pages
+
+
+// Import Post Management Pages
+import CreatePostPage from "./pages/PostPage/CreatePostPage";
+import PostManagementPage from "./pages/PostPage/PostManagementPage";
+import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -64,6 +73,7 @@ function App() {
   }
 
   return (
+    <NotificationProvider>
     <Routes>
       {/* Auth Routes */}
       <Route element={<AuthLayout />}>
@@ -85,7 +95,8 @@ function App() {
           <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
           <Route path="my-rental-requests" element={<MyRentalRequest />} />
           <Route path="profile" element={<Profile/>} />
-          <Route path="/owner/create-post" element={<PostPage />} />
+                      <Route path="/posts" element={<PostManagementPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
           <Route path="/detail/:id" element={<RoomDetail />} />
         <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
           <Route path="*" element={<HomePage />} />
@@ -94,7 +105,6 @@ function App() {
         {/* ✅ Room Routes */}
         <Route path="/rooms" element={<Room />} />
 
-        <Route path="/owner/create-post" element={<PostPage />} />
 
 
         {/* ✅ Agreement và Payment Routes */}
@@ -190,6 +200,14 @@ function App() {
             </OwnerRoute>
           }
         />
+         <Route
+            path="/owner/posts"
+            element={
+              <OwnerRoute>
+                <OwnerPostManagement />
+              </OwnerRoute>
+            }
+          />
         <Route
           path="/owner/reports"
           element={
@@ -249,6 +267,7 @@ function App() {
       {/* Fallback route */}
       <Route path="*" element={<HomePage />} />
     </Routes>
+    </NotificationProvider>
   );
 }
 

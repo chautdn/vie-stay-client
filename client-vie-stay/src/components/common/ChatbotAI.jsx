@@ -36,7 +36,7 @@ const ChatbotAI = () => {
 
 
 
-  const API_KEY_CHATBOT = process.env.REACT_APP_OPENAI_API_KEY;
+   const API_KEY_CHATBOT = import.meta.env.VITE_OPENAI_API_KEY;
 
 
 

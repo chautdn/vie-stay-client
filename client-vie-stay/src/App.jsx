@@ -9,6 +9,7 @@ import OwnerRoute from "./components/common/OwnerRoute";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminRoute from "./components/common/AdminRoute";
 
+import { NotificationProvider } from "./components/common/NotificationSystem";
 // Import Auth pages
 import SignUpPage from "./pages/AuthPage/SignUpPage";
 import LoginPage from "./pages/AuthPage/LoginPage";
@@ -18,7 +19,7 @@ import ResetPasswordPage from "./pages/AuthPage/ResetPasswordPage";
 import Home from "./pages/HomePage/Public/Home";
 import HomePage from "./pages/HomePage/Public/HomePage";
 import List from "./pages/HomePage/Public/List";
-import SearchPage from "./pages/HomePage/Public/SearchPage"; // ✅ THÊM: Import SearchPage
+import SearchPage from "./pages/HomePage/Public/SearchPage";
 import OwnerDashboard from "./components/ownerPageComponents/Dashboard";
 import RoomManagement from "./pages/OwnerPage/RoomManagement";
 import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
@@ -32,11 +33,28 @@ import PaymentPage from "./pages/TenantPage/AgreementPage/PaymentPage";
 import PaymentSuccess from "./pages/TenantPage/AgreementPage/PaymentSuccess";
 import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
 import SavedPosts from "./pages/HomePage/Public/SavedPosts";
+import MyRentalRequest from "./pages/HomePage/Public/MyRentalRequest";
+import { ServicePrice } from "./pages/HomePage/Public";
 
 // Import Admin Pages
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
 import UserManagement from "./pages/AdminPage/UserManagement";
 import RevenueReports from "./pages/AdminPage/RevenueReports";
+
+// ✅ THÊM: Import Withdrawal Pages
+import WithdrawalRequestPage from "./pages/TenantPage/WithdrawalRequestPage";
+import WithdrawalHistoryPage from "./pages/TenantPage/WithdrawalHistoryPage";
+import PendingWithdrawalsPage from "./pages/OwnerPage/PendingWithdrawalsPage";
+import Profile from "./pages/ProfilePage/Profile";
+import ChangePassword from "./pages/ProfilePage/ChangePassword";
+
+// Import TopUp Pages
+
+
+// Import Post Management Pages
+import CreatePostPage from "./pages/PostPage/CreatePostPage";
+import PostManagementPage from "./pages/PostPage/PostManagementPage";
+import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -55,7 +73,9 @@ function App() {
   }
 
   return (
+    <NotificationProvider>
     <Routes>
+      {/* Auth Routes */}
       <Route element={<AuthLayout />}>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignUpPage />} />
@@ -64,35 +84,54 @@ function App() {
         <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
       </Route>
 
+      {/* Main Layout Routes */}
       <Route element={<MainLayout />}>
-        {/* ✅ SỬA: Home layout với nested routes */}
+        {/* ✅ Home layout với nested routes */}
         <Route path="/" element={<Home />}>
           <Route index element={<HomePage />} />
           <Route path="saved" element={<SavedPosts />} />
-          <Route path="search" element={<SearchPage />} />{" "}
-          {/* ✅ SỬA: Thay List bằng SearchPage */}
+          <Route path="search" element={<SearchPage />} />
           <Route path="list" element={<List />} />
+          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
+          <Route path="my-rental-requests" element={<MyRentalRequest />} />
+          <Route path="profile" element={<Profile/>} />
+                      <Route path="/posts" element={<PostManagementPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
+          <Route path="/detail/:id" element={<RoomDetail />} />
+        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
           <Route path="*" element={<HomePage />} />
         </Route>
 
-        {/* ✅ THÊM: Direct routes không qua Home layout */}
+        {/* ✅ Room Routes */}
         <Route path="/rooms" element={<Room />} />
-        <Route path="/detail/:id" element={<RoomDetail />} />
 
-        {/* ✅ SỬA: Thêm chi tiết phòng route */}
-        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
 
+
+        {/* ✅ Agreement và Payment Routes */}
         <Route
           path="/agreement/confirm/:token"
           element={<AgreementConfirmationPage />}
         />
+
+        {/* ✅ Payment routes */}
+        <Route path="/payment/:confirmationId" element={<PaymentPage />} />
         <Route
           path="/tenant/payment/:confirmationId"
           element={<PaymentPage />}
         />
+
+        {/* ✅ Payment result routes */}
         <Route path="/payment/success" element={<PaymentSuccess />} />
+        <Route path="/payment/failed" element={<PaymentSuccess />} />
         <Route path="/payment/failure" element={<PaymentSuccess />} />
         <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
+        
+        {/* ✅ THÊM: Withdrawal Routes - ĐẶT NGOÀI Home nested routes */}
+        <Route path="/withdrawal/request/:confirmationId" element={<WithdrawalRequestPage />} />
+        <Route path="/withdrawal/history" element={<WithdrawalHistoryPage />} />
+        <Route path="/withdrawal/success" element={<PaymentSuccess />} />
+        <Route path="/withdrawal/failure" element={<PaymentSuccess />} />
+        <Route path="/withdrawal/vnpay/return" element={<PaymentSuccess />} />
       </Route>
 
       {/* Owner Routes */}
@@ -161,6 +200,14 @@ function App() {
             </OwnerRoute>
           }
         />
+         <Route
+            path="/owner/posts"
+            element={
+              <OwnerRoute>
+                <OwnerPostManagement />
+              </OwnerRoute>
+            }
+          />
         <Route
           path="/owner/reports"
           element={
@@ -174,6 +221,16 @@ function App() {
           element={
             <OwnerRoute>
               <div className="p-6">Settings Page</div>
+            </OwnerRoute>
+          }
+        />
+        
+        {/* ✅ Owner withdrawal management */}
+        <Route
+          path="/owner/withdrawals"
+          element={
+            <OwnerRoute>
+              <PendingWithdrawalsPage />
             </OwnerRoute>
           }
         />
@@ -207,8 +264,10 @@ function App() {
         />
       </Route>
 
+      {/* Fallback route */}
       <Route path="*" element={<HomePage />} />
     </Routes>
+    </NotificationProvider>
   );
 }
 

@@ -12,7 +12,8 @@ import {
   X,
   Bell,
   User,
-  UserCheck
+  UserCheck,
+  WalletIcon // Thêm icon ví
 } from 'lucide-react';
 
 const OwnerLayout = () => {
@@ -51,6 +52,12 @@ const OwnerLayout = () => {
     { name: 'Yêu cầu bạn chung phòng', href: '/owner/co-tenants', icon: Users, current: false },
     { name: 'Báo cáo', href: '/owner/reports', icon: FileText, current: false },
     { name: 'Cài đặt', href: '/owner/settings', icon: Settings, current: false },
+    {
+      name: "Rút tiền",
+      href: "/owner/withdrawals",
+      icon: WalletIcon, // Thêm icon phù hợp
+      current: location.pathname === "/owner/withdrawals",
+    },
   ];
 
   // ✅ THÊM: Loading state

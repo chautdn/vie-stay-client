@@ -112,7 +112,7 @@ const Search = () => {
             }
 
             // Xử lý district (quận/huyện)
-            if (queries.district && queries.district !== 'Toàn quốc') {
+            if (queries.district && queries.district !== 'Tất cả quận/huyện') {
                 const selectedDistrict = districts.find(district => district.value === queries.district)
                 if (selectedDistrict) {
                     searchParams.district = selectedDistrict.code
@@ -193,14 +193,14 @@ const Search = () => {
                 </span>
                 
                 <span 
-                    onClick={() => handleShowModal(districts, 'district', 'Toàn quốc')} 
+                    onClick={() => handleShowModal(districts, 'district', 'Tất cả quận/huyện')} 
                     className='cursor-pointer flex-1'
                 >
                     <SearchItem 
                         IconBefore={<HiOutlineLocationMarker />} 
                         IconAfter={<BsChevronRight color='rgb(156, 163, 175)' />} 
                         text={queries.district} 
-                        defaultText={'Toàn quốc'} 
+                        defaultText={'Tất cả quận/huyện'} 
                     />
                 </span>
                 

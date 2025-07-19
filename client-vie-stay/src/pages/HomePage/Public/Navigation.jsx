@@ -32,7 +32,7 @@ const Navigation = () => {
             ]
         },
         { name: 'Blog', path: '/search?type=blog', code: 'blog' },
-        { name: 'Tìm người ở ghép', path: '/search?type=shared', code: 'shared' },
+        { name: 'Tìm người ở ghép', path: '/search?propertyType=shared_room', code: 'shared' },
         { name: 'Bảng giá dịch vụ', path: '/bang-gia-dich-vu', code: 'serviceprice' }
     ]
 

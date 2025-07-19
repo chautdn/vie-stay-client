@@ -26,6 +26,7 @@ import RentalRequestManagement from "./pages/OwnerPage/RentalRequestManagement";
 import CoTenantsRequest from "./pages/OwnerPage/Co-tenantsRequest";
 import Room from "./pages/HomePage/RoomPage/Room";
 import RoomDetail from "./pages/HomePage/RoomPage/RoomDetail";
+import PostDetail from "./pages/HomePage/RoomPage/PostDetail";
 
 // Import Tenant Agreement Pages
 import AgreementConfirmationPage from "./pages/TenantPage/AgreementPage/AgreementConfirmationPage";
@@ -95,10 +96,10 @@ function App() {
           <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
           <Route path="my-rental-requests" element={<MyRentalRequest />} />
           <Route path="profile" element={<Profile/>} />
-                      <Route path="/posts" element={<PostManagementPage />} />
-            <Route path="/create-post" element={<CreatePostPage />} />
+          <Route path="/posts" element={<PostManagementPage />} />
+          <Route path="/create-post" element={<CreatePostPage />} />
           <Route path="/detail/:id" element={<RoomDetail />} />
-        <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
+          <Route path="/tin-dang/:id" element={<PostDetail />} />
           <Route path="*" element={<HomePage />} />
         </Route>
 

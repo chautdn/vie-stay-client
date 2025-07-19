@@ -20,6 +20,7 @@ const Home = () => {
             <div className='w-4/5 lg:w-4/6 flex flex-col items-center justify-center mt-3'>
                 <Outlet />
             </div>
+            <div className='h-[50px]'></div>
             {location.pathname !== '/bang-gia-dich-vu' && (
                 <>
                     <Intro/>

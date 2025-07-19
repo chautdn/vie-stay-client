@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react'
-import { useRoomStore } from '../../../store/owner/roomStore'
-import { Item } from '../../../components/common'
+import { usePostStore } from '../../../store/postStore'
+import { PostItem } from '../../../components/common'
 import { getSavedPosts, clearAllSavedPosts } from '../../../utils/localStorage'
 
 const SavedPosts = () => {
     const [savedPostIds, setSavedPostIds] = useState([])
-    const [savedRooms, setSavedRooms] = useState([])
+    const [savedPosts, setSavedPosts] = useState([])
     const [loading, setLoading] = useState(true)
-    const { getRoomById } = useRoomStore()
+    const { getPostById } = usePostStore()
 
     const loadSavedPosts = async () => {
         try {
@@ -16,65 +16,57 @@ const SavedPosts = () => {
             setSavedPostIds(savedIds)
 
             if (savedIds.length > 0) {
-                const roomPromises = savedIds.map(async (id) => {
+                const postPromises = savedIds.map(async (id) => {
                     try {
-                        const result = await getRoomById(id)
-                        
-                        // ✅ Handle response structure từ store
-                        let roomData = null
-                        if (result?.status === 'success' && result?.data?.room) {
-                            roomData = result.data.room
-                        } else if (result?.data?.room) {
-                            roomData = result.data.room
-                        } else if (result?.room) {
-                            roomData = result.room
+                        const result = await getPostById(id)
+                        let postData = null
+                        if (result?.status === 'success' && result?.data?.post) {
+                            postData = result.data.post
+                        } else if (result?.data?.post) {
+                            postData = result.data.post
+                        } else if (result?.post) {
+                            postData = result.post
                         } else if (result?._id) {
-                            roomData = result
+                            postData = result
                         }
-                        
-                        return roomData || null
+                        return postData || null
                     } catch (error) {
                         return null
                     }
                 })
-                
-                const rooms = await Promise.all(roomPromises)
-                const validRooms = rooms.filter(room => room !== null)
-                setSavedRooms(validRooms)
-                
-                // ✅ Cleanup logic - chỉ xóa invalid IDs
-                if (validRooms.length < savedIds.length) {
-                    const validIds = validRooms.map(room => room._id?.toString() || room._id)
+
+                const posts = await Promise.all(postPromises)
+                const validPosts = posts.filter(post => post !== null)
+                setSavedPosts(validPosts)
+
+                // Cleanup logic - chỉ xóa invalid IDs
+                if (validPosts.length < savedIds.length) {
+                    const validIds = validPosts.map(post => post._id?.toString() || post._id)
                     const invalidIds = savedIds.filter(id => !validIds.includes(id))
-                    
+
                     if (invalidIds.length > 0) {
                         const cleanedIds = savedIds.filter(id => validIds.includes(id))
                         localStorage.setItem('savedPosts', JSON.stringify(cleanedIds))
                         setSavedPostIds(cleanedIds)
-                        
-                        // Dispatch event để notify other components
                         window.dispatchEvent(new CustomEvent('savedPostsChanged', {
                             detail: { key: 'savedPosts', action: 'cleanup' }
                         }))
                     }
                 }
             } else {
-                setSavedRooms([])
+                setSavedPosts([])
             }
         } catch (error) {
-            // Silently handle error
-            setSavedRooms([])
+            setSavedPosts([])
         } finally {
             setLoading(false)
         }
     }
 
-    // ✅ Initial load
     useEffect(() => {
         loadSavedPosts()
-    }, [getRoomById])
+    }, [getPostById])
 
-    // ✅ Listen for localStorage changes
     useEffect(() => {
         const handleSavedPostsChanged = (event) => {
             if (event.detail?.key === 'savedPosts') {
@@ -92,7 +84,7 @@ const SavedPosts = () => {
 
         window.addEventListener('savedPostsChanged', handleSavedPostsChanged)
         window.addEventListener('storage', handleStorageChange)
-        
+
         return () => {
             window.removeEventListener('savedPostsChanged', handleSavedPostsChanged)
             window.removeEventListener('storage', handleStorageChange)
@@ -103,7 +95,7 @@ const SavedPosts = () => {
         const success = clearAllSavedPosts()
         if (success) {
             setSavedPostIds([])
-            setSavedRooms([])
+            setSavedPosts([])
         }
     }
 
@@ -142,7 +134,7 @@ const SavedPosts = () => {
                 <h1 className="text-2xl font-bold">
                     Tin đã lưu ({savedPostIds.length})
                 </h1>
-                
+
                 <button
                     onClick={handleClearAll}
                     className="text-red-500 hover:text-red-700 text-sm font-medium"
@@ -150,17 +142,17 @@ const SavedPosts = () => {
                     Xóa tất cả
                 </button>
             </div>
-            
+
             <div className="space-y-4">
-                {savedRooms.map((room) => (
-                    <Item
-                        key={room._id?.toString() || room._id} 
-                        room={room}
+                {savedPosts.map((post) => (
+                    <PostItem
+                        key={post._id?.toString() || post._id}
+                        post={post}
                     />
                 ))}
             </div>
-            
-            {savedPostIds.length > 0 && savedRooms.length === 0 && !loading && (
+
+            {savedPostIds.length > 0 && savedPosts.length === 0 && !loading && (
                 <div className="text-center py-12">
                     <div className="text-gray-400 text-5xl mb-4">⚠️</div>
                     <div className="text-gray-500 text-lg mb-2">

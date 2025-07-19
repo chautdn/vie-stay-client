@@ -44,7 +44,7 @@ export const unsavePost = (postId) => {
 export const isPostSaved = (postId) => {
     try {
         const savedPosts = getSavedPosts()
-        return savedPosts.includes(postId)
+        return savedPosts.includes(postId.toString())
     } catch (error) {
         return false
     }

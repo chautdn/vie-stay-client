@@ -24,6 +24,28 @@ export const useCoTenantRequestStore = create((set, get) => ({
       throw error;
     }
   },
+  // Gửi yêu cầu thêm người ở cùng
+  requestCoTenant: async ({ roomId, name, phoneNumber, imageCCCD }) => {
+    set({ isLoading: true, successMessage: "", error: null });
+    try {
+      const result = await coTenantRequestService.requestCoTenant({
+        roomId,
+        name,
+        phoneNumber,
+        imageCCCD,
+      });
+      set({ isLoading: false, successMessage: result.message, error: null });
+      return result;
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || "Lỗi khi gửi yêu cầu thêm bạn ở chung";
+      set({ isLoading: false, error: msg });
+      useErrorStore.getState().setError(msg);
+      throw error;
+    }
+  },
+
+  clearStatus: () => set({ successMessage: "", error: null }),
 
   // Phê duyệt yêu cầu
   approveRequest: async (requestId) => {

@@ -92,6 +92,20 @@ const ReportModal = ({ isOpen, onClose, reportForm, setReportForm, onSubmit }) =
                     required
                   />
                 </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email của bạn (để nhận phản hồi)
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    value={reportForm.email || ''}
+                    onChange={(e) => setReportForm({...reportForm, email: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="example@email.com"
+                  />
+                </div>
                 
                 <div>
                   <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">

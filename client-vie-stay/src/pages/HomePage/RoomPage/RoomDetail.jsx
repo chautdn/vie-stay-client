@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Toaster } from 'react-hot-toast'; // Thêm import này
+import { Toaster, toast } from 'react-hot-toast'; // Thêm toast
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { formatCurrencyVND } from "../../../utils/FormatPricePrint";
 import { roomService } from "../../../services/roomService";
@@ -32,7 +32,8 @@ const RoomDetail = () => {
     reportType: 'scam',
     message: '',
     fullname: '',
-    phone: ''
+    phone: '',
+    email: ''
   });
 
   useEffect(() => {
@@ -134,19 +135,46 @@ const RoomDetail = () => {
     return "Địa chỉ đang cập nhật";
   };
 
-  const handleReportSubmit = (e) => {
+  const handleReportSubmit = async (e) => {
     e.preventDefault();
-    console.log("Report submitted:", {
-      roomId: room._id,
-      ...reportForm
-    });
-    setIsReport(false);
-    setReportForm({
-      reportType: 'scam',
-      message: '',
-      fullname: '',
-      phone: ''
-    });
+    
+    try {
+      const reportData = {
+        reportType: reportForm.reportType,
+        message: reportForm.message,
+        fullname: reportForm.fullname,
+        phone: reportForm.phone,
+        email: reportForm.email,
+        postId: room._id
+      };
+
+      const response = await fetch('http://localhost:8080/api/reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast.success('Phản ánh đã được gửi thành công! Chúng tôi sẽ xem xét và phản hồi sớm nhất.');
+        setIsReport(false);
+        setReportForm({
+          reportType: 'scam',
+          message: '',
+          fullname: '',
+          phone: '',
+          email: ''
+        });
+      } else {
+        toast.error(`Lỗi: ${result.message || 'Không thể gửi phản ánh'}`);
+      }
+    } catch (error) {
+      console.error('Error submitting report:', error);
+      toast.error('Có lỗi xảy ra khi gửi phản ánh. Vui lòng thử lại.');
+    }
   };
 
   // Loading và Error states

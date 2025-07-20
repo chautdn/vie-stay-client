@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react'
 import { SearchItem, Modal } from '../../../components/common'
 import icons from '../../../utils/icons'
 import { useNavigate, createSearchParams, useLocation } from 'react-router-dom'
-import { useRoomStore } from '../../../store/owner/roomStore'
+// Nếu chỉ search post, bạn có thể bỏ useRoomStore và dùng usePostStore nếu có
 
 const { BsChevronRight, HiOutlineLocationMarker, TbReportMoney, RiCrop2Line, MdOutlineHouseSiding, FiSearch, AiOutlinePlusCircle } = icons
 
@@ -16,16 +16,17 @@ const Search = () => {
     const [arrMinMax, setArrMinMax] = useState({})
     const [defaultText, setDefaultText] = useState('')
 
-    // Zustand store
-    const { searchRooms, isLoading } = useRoomStore()
+    // Nếu chỉ search post, bỏ useRoomStore
+    // const { searchRooms, isLoading } = useRoomStore()
+    const isLoading = false // hoặc lấy từ usePostStore nếu có
 
-    const roomTypes = [
-        { code: 'single', value: 'Phòng trọ đơn' },
+    const postTypes = [
+        { code: 'single_room', value: 'Phòng trọ đơn' },
         { code: 'double', value: 'Phòng trọ đôi' },
-        { code: 'shared', value: 'Phòng chia sẻ' },
+        { code: 'shared_room', value: 'Phòng chia sẻ' },
         { code: 'studio', value: 'Phòng studio' },
         { code: 'apartment', value: 'Căn hộ mini' },
-        { code: 'dormitory', value: 'Ký túc xá' }
+        { code: 'house', value: 'Nhà nguyên căn' }
     ]
 
     const districts = [
@@ -50,7 +51,6 @@ const Search = () => {
         { code: 'cho_de_xe', value: 'Chỗ để xe' },
     ]
 
-    // ✅ SỬA: Fix prices with proper min/max values
     const prices = [
         { code: 'price1', value: 'Dưới 1.5 triệu', min: 0, max: 1500000 },
         { code: 'price2', value: '1.5 - 2.5 triệu', min: 1500000, max: 2500000 },
@@ -60,7 +60,6 @@ const Search = () => {
         { code: 'price6', value: 'Trên 7 triệu', min: 7000000, max: null }
     ]
 
-    // ✅ SỬA: Fix areas with proper min/max values
     const areas = [
         { code: 'area1', value: 'Dưới 20m²', min: 0, max: 20 },
         { code: 'area2', value: '20 - 30m²', min: 20, max: 30 },
@@ -95,15 +94,15 @@ const Search = () => {
         try {
             const searchParams = {}
 
-            // Xử lý type (loại phòng)
+            // SỬA: propertyType cho post
             if (queries.category && queries.category !== 'Tìm tất cả') {
-                const selectedType = roomTypes.find(type => type.value === queries.category)
+                const selectedType = postTypes.find(type => type.value === queries.category)
                 if (selectedType) {
-                    searchParams.type = selectedType.code
+                    searchParams.propertyType = selectedType.code
                 }
             }
 
-            // Xử lý features
+            // SỬA: features cho post
             if (queries.feature && queries.feature !== 'Đặc điểm nổi bật') {
                 const selectedFeature = features.find(f => f.value === queries.feature)
                 if (selectedFeature) {
@@ -111,7 +110,7 @@ const Search = () => {
                 }
             }
 
-            // Xử lý district (quận/huyện)
+            // District
             if (queries.district && queries.district !== 'Tất cả quận/huyện') {
                 const selectedDistrict = districts.find(district => district.value === queries.district)
                 if (selectedDistrict) {
@@ -119,39 +118,34 @@ const Search = () => {
                 }
             }
 
-            // ✅ SỬA: Fix price range handling
+            // Price range
             if (queries.price && queries.price !== 'Chọn giá') {
-                // Check if it's a predefined price range
                 const selectedPrice = prices.find(price => price.value === queries.price)
                 if (selectedPrice) {
                     if (selectedPrice.min !== undefined) searchParams.minRent = selectedPrice.min
                     if (selectedPrice.max !== null && selectedPrice.max !== undefined) searchParams.maxRent = selectedPrice.max
                 } else if (queries.priceNumber && Array.isArray(queries.priceNumber)) {
-                    // ✅ SỬA: Handle custom price from slider
                     const [minTrieu, maxTrieu] = queries.priceNumber
                     if (minTrieu > 0) searchParams.minRent = Math.round(minTrieu * 1000000)
                     if (maxTrieu < 15) searchParams.maxRent = Math.round(maxTrieu * 1000000)
                 }
             }
 
-            // ✅ SỬA: Fix area range handling
+            // Area range
             if (queries.area && queries.area !== 'Chọn diện tích') {
-                // Check if it's a predefined area range
                 const selectedArea = areas.find(area => area.value === queries.area)
                 if (selectedArea) {
                     if (selectedArea.min !== undefined) searchParams.minSize = selectedArea.min
                     if (selectedArea.max !== null && selectedArea.max !== undefined) searchParams.maxSize = selectedArea.max
                 } else if (queries.areaNumber && Array.isArray(queries.areaNumber)) {
-                    // ✅ SỬA: Handle custom area from slider
                     const [minM2, maxM2] = queries.areaNumber
                     if (minM2 > 0) searchParams.minSize = Math.round(minM2)
                     if (maxM2 < 90) searchParams.maxSize = Math.round(maxM2)
                 }
             }
 
-            // Mặc định chỉ tìm phòng available
+            // Mặc định chỉ tìm post available
             searchParams.isAvailable = true
-
 
             // Navigate to search results page
             navigate({
@@ -168,7 +162,7 @@ const Search = () => {
         <>
             <div className='p-[10px] w-3/5 my-3 bg-[#febb02] rounded-lg flex-col lg:flex-row flex items-center justify-around gap-2'>
                 <span 
-                    onClick={() => handleShowModal(roomTypes, 'category', 'Tìm tất cả')} 
+                    onClick={() => handleShowModal(postTypes, 'category', 'Tìm tất cả')} 
                     className='cursor-pointer flex-1'
                 >
                     <SearchItem 

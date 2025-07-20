@@ -1,6 +1,12 @@
-import dayjs from 'dayjs';  // Hoặc moment.js nếu bạn muốn
-
-// Hàm định dạng ngày
-export const formatDate = (date, format = 'DD/MM/YYYY') => {
-    return dayjs(date).format(format); // Thay thế dayjs bằng moment nếu bạn dùng moment.js
+export const formatDate = (dateString) => {
+  if (!dateString) return "Không xác định";
+  
+  const date = new Date(dateString);
+  return date.toLocaleDateString("vi-VN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
 };

@@ -4,11 +4,13 @@ import { text } from '../../../utils/Constant'
 import { ItemSidebar } from '../../../components/common'
 import { useSearchParams } from 'react-router-dom'
 import { useRoomStore } from '../../../store/owner/roomStore'
+import { usePostStore } from '../../../store/postStore'
 import Province from '../../../components/common/Province'
 
 const HomePage = () => {
     const [params] = useSearchParams()
-    const { getAllRooms, searchResults, rooms } = useRoomStore()
+    const { getAllRooms, searchResults: roomSearchResults, rooms } = useRoomStore()
+    const { getAllPosts, searchResults: postSearchResults, posts } = usePostStore()
     
     const [currentPage, setCurrentPage] = useState(1)
     const resultsPerPage = 5
@@ -41,12 +43,12 @@ const HomePage = () => {
 
     // Categories cho Đà Nẵng
     const categories = [
-        { code: 'single', value: 'Phòng trọ đơn' },
+       { code: 'single_room', value: 'Phòng trọ đơn' },
         { code: 'double', value: 'Phòng trọ đôi' },
-        { code: 'shared', value: 'Phòng chia sẻ' },
+        { code: 'shared_room', value: 'Phòng chia sẻ' },
         { code: 'studio', value: 'Phòng studio' },
         { code: 'apartment', value: 'Căn hộ mini' },
-        { code: 'dormitory', value: 'Ký túc xá' }
+        { code: 'house', value: 'Nhà nguyên căn' }
     ]
 
     // Price ranges cho Đà Nẵng (VND)
@@ -72,18 +74,23 @@ const HomePage = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                await getAllRooms()
+                await getAllPosts()
             } catch (error) {
-                console.error('Error loading rooms:', error)
+                console.error('Error loading data:', error)
             }
         }
 
         loadInitialData()
-    }, [params, getAllRooms])
+    }, [params, getAllRooms, getAllPosts])
 
-    // ✅ THÊM: Tính toán total results
-    const allRooms = params.toString() ? (searchResults || []) : (rooms || [])
-    const totalResults = allRooms.length
+    // ✅ SỬA: Tính toán total results từ cả room và post
+    const getTotalResults = () => {    
+            const postCount = (posts || []).length
+            return postCount
+        
+    }
+
+    const totalResults = getTotalResults()
 
     // Sắp xếp prices và areas theo order
     const sortedPrices = prices?.slice().sort((a, b) => a.order - b.order)
@@ -99,6 +106,7 @@ const HomePage = () => {
                 <p className='text-sm text-gray-700 text-center'>
                     {text?.HOME_DESCRIPTION || 'Tìm kiếm phòng trọ, nhà trọ tại Đà Nẵng với giá cả hợp lý và đầy đủ tiện nghi'}
                 </p>
+
             </div>
 
             {/* Main Content */}
@@ -107,13 +115,14 @@ const HomePage = () => {
                 <div className='w-full flex gap-3'>
                     {/* Left Content - List + Pagination */}
                     <div className='w-[70%]'>
-                        {/* ✅ SỬA: Truyền pagination props vào List */}
+                        {/* ✅ SỬA: Truyền contentType vào List */}
                         <List 
                             currentPage={currentPage}
                             resultsPerPage={resultsPerPage}
+                            contentType="post" // ✅ THÊM: Hiển thị cả room và post
                         />
                         
-                        {/* ✅ SỬA: Pagination chỉ có ở HomePage */}
+                        {/* ✅ SỬA: Pagination với tổng số kết quả từ cả room và post */}
                         {totalResults > resultsPerPage && (
                             <Pagination 
                                 currentPage={currentPage}

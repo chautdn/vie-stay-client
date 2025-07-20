@@ -13,8 +13,9 @@ import {
   Bell,
   User,
   UserCheck,
-  MessageSquare, // ✅ ADDED: Icon for posts
-} from "lucide-react";
+  WalletIcon,
+  MessageSquare
+} from 'lucide-react';
 
 const OwnerLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,19 +23,19 @@ const OwnerLayout = () => {
   const [fadeOut, setFadeOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 
+  // ✅ THÊM: Auto hide welcome message after 5 seconds with fade effect
   useEffect(() => {
     if (showWelcome && user?.name) {
       const fadeTimer = setTimeout(() => {
         setFadeOut(true);
-      }, 4500);
+      }, 4500); // Start fading at 4.5s
 
       const hideTimer = setTimeout(() => {
         setShowWelcome(false);
         setFadeOut(false);
-      }, 5000);
+      }, 5000); // Completely hide at 5s
 
       return () => {
         clearTimeout(fadeTimer);
@@ -43,47 +44,58 @@ const OwnerLayout = () => {
     }
   }, [showWelcome, user?.name]);
 
-  // ✅ UPDATED: Added post management navigation
   const navigation = [
-    {
-      name: "Dashboard",
-      href: "/owner/dashboard",
-      icon: LayoutDashboard,
-      current: false,
-    },
-    {
-      name: "Quản lý tin đăng",
-      href: "/owner/posts",
-      icon: MessageSquare,
-      current: false,
-    }, // ✅ ADDED
-    {
-      name: "Tòa nhà",
-      href: "/owner/accommodations",
-      icon: Building,
-      current: false,
-    },
-    {
-      name: "Yêu cầu thuê",
-      href: "/owner/rental-requests",
-      icon: UserCheck,
-      current: false,
-    },
-    {
-      name: "Yêu cầu bạn chung phòng",
-      href: "/owner/co-tenants",
-      icon: Users,
-      current: false,
-    },
-    { name: "Báo cáo", href: "/owner/reports", icon: FileText, current: false },
-    {
-      name: "Cài đặt",
-      href: "/owner/settings",
-      icon: Settings,
-      current: false,
-    },
-  ];
+  {
+    name: "Dashboard",
+    href: "/owner/dashboard",
+    icon: LayoutDashboard,
+    current: false,
+  },
+  {
+    name: "Quản lý tin đăng",
+    href: "/owner/posts",
+    icon: MessageSquare,
+    current: false,
+  },
+  {
+    name: "Tòa nhà",
+    href: "/owner/accommodations",
+    icon: Building,
+    current: false,
+  },
+  {
+    name: "Yêu cầu thuê",
+    href: "/owner/rental-requests",
+    icon: UserCheck,
+    current: false,
+  },
+  {
+    name: "Yêu cầu bạn chung phòng",
+    href: "/owner/co-tenants",
+    icon: Users,
+    current: false,
+  },
+  {
+    name: "Báo cáo",
+    href: "/owner/reports",
+    icon: FileText,
+    current: false,
+  },
+  {
+    name: "Rút tiền",
+    href: "/owner/withdrawals",
+    icon: WalletIcon,
+    current: location.pathname === "/owner/withdrawals",
+  },
+  {
+    name: "Cài đặt",
+    href: "/owner/settings",
+    icon: Settings,
+    current: false,
+  },
+];
 
+  // ✅ THÊM: Loading state
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -95,20 +107,21 @@ const OwnerLayout = () => {
     );
   }
 
-  if (!isAuthenticated || !user?.role?.includes("landlord")) {
-    return <Navigate to="/login" replace />;
-  }
+// ✅ SỬA: Role protection cho array role
+if (!isAuthenticated || !user?.role?.includes('landlord')) {
+  return <Navigate to="/login" replace />;
+}
 
-  // ✅ ENHANCED: Better current path detection for nested routes
-  const updatedNavigation = navigation.map((item) => ({
-    ...item,
-    current:
-      location.pathname === item.href ||
-      location.pathname.startsWith(item.href + "/") ||
-      // Special handling for posts route
-      (item.href === "/owner/posts" &&
-        location.pathname.startsWith("/owner/posts")),
-  }));
+// ✅ ENHANCED: Better current path detection for nested routes
+const updatedNavigation = navigation.map((item) => ({
+  ...item,
+  current:
+    location.pathname === item.href ||
+    location.pathname.startsWith(item.href + "/") ||
+    // Special handling for posts route
+    (item.href === "/owner/posts" &&
+      location.pathname.startsWith("/owner/posts")),
+}));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -147,7 +160,7 @@ const OwnerLayout = () => {
                     navigate(item.href);
                     setSidebarOpen(false);
                   }}
-                  className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full text-left transition-colors ${
+                  className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full text-left ${
                     item.current
                       ? "bg-blue-100 text-blue-900"
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
@@ -162,7 +175,7 @@ const OwnerLayout = () => {
             </nav>
           </div>
 
-          {/* Mobile user section */}
+          {/* ✅ SỬA: Mobile user section với AuthStore */}
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
             <div className="flex items-center w-full">
               <div className="flex-shrink-0">
@@ -254,7 +267,7 @@ const OwnerLayout = () => {
             </div>
           </div>
 
-          {/* Desktop user section */}
+          {/* ✅ SỬA: Desktop user section với AuthStore */}
           <div className="flex-shrink-0 flex border-t border-gray-200 p-4">
             <div className="flex items-center w-full">
               <div className="flex-shrink-0">
@@ -287,7 +300,7 @@ const OwnerLayout = () => {
 
       {/* Main content */}
       <div className="md:pl-64 flex flex-col flex-1">
-        {/* Top bar */}
+        {/* ✅ SỬA: Top bar với user info */}
         <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow">
           <button
             type="button"

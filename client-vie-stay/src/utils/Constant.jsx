@@ -52,7 +52,7 @@ export const location = [
     {
         id: 'lc',
         name: 'Phòng trọ Liên Chiểu',
-        image: 'https://baodanang.vn/dataimages/202201/original/images1636776_1.gif',
+        image: 'https://meeymap.com/tin-tuc/wp-content/uploads/2022/02/co-so-ha-tang-quan-lien-chieu.jpg',
         districtCode: 'lien-chieu'
     },
     {
@@ -64,7 +64,7 @@ export const location = [
     {
         id: 'cl',
         name: 'Phòng trọ Cẩm Lệ',
-        image: 'https://www.baodanang.vn/dataimages/202411/original/images1755889_8_CSQA_1.jpg',
+        image: 'https://hellodanang.vn/wp-content/uploads/2025/01/quan-cam-le-phat-trien-1735808204.jpeg',
         districtCode: 'cam-le' 
     },
 ]

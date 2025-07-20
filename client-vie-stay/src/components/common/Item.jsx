@@ -118,20 +118,16 @@ const Item = ({ room }) => {
         return size ? `${size}m²` : '0m²'
     }, [size])
 
-    // ✅ Event handlers
-    const handlePhoneCall = useCallback((e) => {
+    // ✅ Event handlers - Bỏ handlePhoneCall và handleZaloChat
+    const handleViewDetail = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
-        if (user?.phone) {
-            window.open(`tel:${user.phone}`)
-        }
-    }, [user?.phone])
-
-    const handleZaloChat = useCallback((e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        // TODO: Implement Zalo integration
-    }, [user?.phone])
+        
+        if (!id) return
+        
+        // Navigate đến trang chi tiết
+        window.location.href = `/chi-tiet/${formatVietnameseToString(title || 'phong-tro')}/${id}`
+    }, [id, title])
 
     const handleImageError = useCallback((e) => {
         e.target.src = 'https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg'
@@ -230,22 +226,14 @@ const Item = ({ room }) => {
                             <p className='ml-2'>{user?.name || 'Chủ trọ'}</p>
                         </div>
                         
-                        <div className='flex items-center gap-1'>
+                        {/* Thay thế 2 buttons bằng 1 button "Xem chi tiết" */}
+                        <div className='flex items-center'>
                             <button
                                 type='button'
-                                className='bg-blue-500 text-white p-1 rounded-lg hover:bg-blue-600 transition-colors text-xs'
-                                onClick={handlePhoneCall}
-                                disabled={!user?.phone}
+                                className='bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors text-sm font-medium'
+                                onClick={handleViewDetail}
                             >
-                                {user?.phone ? `Gọi ${user.phone}` : 'Chưa có SĐT'}
-                            </button>
-                            <button
-                                type='button'
-                                className='border border-blue-500 text-blue-500 p-1 rounded-lg hover:bg-blue-50 transition-colors text-xs'
-                                onClick={handleZaloChat}
-                                disabled={!user?.phone}
-                            >
-                                Nhắn zalo
+                                Xem chi tiết
                             </button>
                         </div>
                     </div>
@@ -255,7 +243,7 @@ const Item = ({ room }) => {
     )
 }
 
-// ✅ Improved comparison function
+// ✅ Improved comparison function - Bỏ phone check
 const areEqual = (prevProps, nextProps) => {
     const prevRoom = prevProps.room
     const nextRoom = nextProps.room
@@ -265,7 +253,6 @@ const areEqual = (prevProps, nextProps) => {
         prevRoom?.name === nextRoom?.name &&
         prevRoom?.baseRent === nextRoom?.baseRent &&
         prevRoom?.isAvailable === nextRoom?.isAvailable &&
-        prevRoom?.user?.phone === nextRoom?.user?.phone &&
         JSON.stringify(prevRoom?.images) === JSON.stringify(nextRoom?.images)
     )
 }

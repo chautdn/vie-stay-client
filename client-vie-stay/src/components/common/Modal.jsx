@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, memo } from 'react'
 import icons from '../../utils/icons'
 
@@ -42,10 +41,14 @@ const Modal = ({ setIsShowModal, content, name, handleSubmit, queries, arrMinMax
     const convert100toTarget = percent => {
         if (name === 'price') {
             // 0% = 0 triệu, 100% = 15 triệu
-            return (percent * 15) / 100
+            const rawValue = (percent * 15) / 100
+            // Làm tròn đến 0.5 triệu
+            return Math.round(rawValue * 2) / 2
+
         } else if (name === 'area') {
-            // 0% = 0 m², 100% = 90 m²
-            return (percent * 90) / 100
+            // 0% = 0 m², 100% = 90 m² - làm tròn theo bội số 5
+            const rawValue = (percent * 90) / 100
+            return Math.round(rawValue / 5) * 5
         }
         return 0
     }
@@ -55,8 +58,9 @@ const Modal = ({ setIsShowModal, content, name, handleSubmit, queries, arrMinMax
             // Convert triệu to percent (max 15 triệu)
             return Math.round((targetValue / 15) * 100)
         } else if (name === 'area') {
-            // Convert m² to percent (max 90 m²)
-            return Math.round((targetValue / 90) * 100)
+            // Convert m² to percent (max 90 m²) - làm tròn theo bội số 5
+            const roundedValue = Math.round(targetValue / 5) * 5
+            return Math.round((roundedValue / 90) * 100)
         }
         return 0
     }
@@ -100,11 +104,11 @@ const Modal = ({ setIsShowModal, content, name, handleSubmit, queries, arrMinMax
         if (min === 0 && max === 100) {
             displayText = `Tất cả ${unit}`
         } else if (min === 0) {
-            displayText = `Dưới ${maxValue.toFixed(1)} ${unit}`
+            displayText = name === 'area' ? `Dưới ${maxValue} ${unit}` : `Dưới ${maxValue.toFixed(1)} ${unit}`
         } else if (max === 100) {
-            displayText = `Trên ${minValue.toFixed(1)} ${unit}`
+            displayText = name === 'area' ? `Trên ${minValue} ${unit}` : `Trên ${minValue.toFixed(1)} ${unit}`
         } else {
-            displayText = `${minValue.toFixed(1)} - ${maxValue.toFixed(1)} ${unit}`
+            displayText = name === 'area' ? `${minValue} - ${maxValue} ${unit}` : `${minValue.toFixed(1)} - ${maxValue.toFixed(1)} ${unit}`
         }
         
         handleSubmit(e, {
@@ -167,8 +171,10 @@ const Modal = ({ setIsShowModal, content, name, handleSubmit, queries, arrMinMax
                     <div className='flex flex-col items-center justify-center relative'>
                         <div className='z-30 absolute top-[-48px] font-bold text-xl text-orange-600'>
                             {(persent1 === 100 && persent2 === 100)
-                                ? `Trên ${convert100toTarget(persent1).toFixed(1)} ${name === 'price' ? 'triệu' : 'm²'} +`
-                                : `Từ ${Math.min(convert100toTarget(persent1), convert100toTarget(persent2)).toFixed(1)} - ${Math.max(convert100toTarget(persent1), convert100toTarget(persent2)).toFixed(1)} ${name === 'price' ? 'triệu' : 'm²'}`}
+                                ? `Trên ${convert100toTarget(persent1)} ${name === 'price' ? 'triệu' : 'm²'} +`
+                                : name === 'area' 
+                                    ? `Từ ${Math.min(convert100toTarget(persent1), convert100toTarget(persent2))} - ${Math.max(convert100toTarget(persent1), convert100toTarget(persent2))} m²`
+                                    : `Từ ${Math.min(convert100toTarget(persent1), convert100toTarget(persent2)).toFixed(1)} - ${Math.max(convert100toTarget(persent1), convert100toTarget(persent2)).toFixed(1)} triệu`}
                         </div>
                         <div onClick={handleClickTrack} id='track' className='slider-track h-[5px] absolute top-0 bottom-0 w-full bg-gray-300 rounded-full'></div>
                         <div onClick={handleClickTrack} id='track-active' className='slider-track-active h-[5px] absolute top-0 bottom-0 bg-orange-600 rounded-full'></div>

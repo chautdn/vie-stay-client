@@ -7,6 +7,7 @@ import {
   Pencil,
   UserCog,
   FileText,
+  HotelIcon
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -51,33 +52,42 @@ const TopUpModal = ({ onClose }) => {
   const amounts = [2000, 100000, 500000, 1000000, 5000000];
 
   const handleTopUp = async (amount) => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
+  if (!isAuthenticated) {
+    navigate("/login");
+    return;
+  }
 
-    try {
-      const res = await axiosInstance.post(
-        "/api/payment/create-topup-session",
-        { amount }
-      );
-      const data = res.data;
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        alert("Không thể tạo phiên thanh toán.");
-      }
-    } catch (err) {
-      console.error("Top-up error:", err);
-      alert("Đã xảy ra lỗi khi tạo thanh toán.");
+  try {
+    console.log("🚀 Starting top-up for amount:", amount);
+    const res = await axiosInstance.post(
+      "/api/payment/create-topup-session",
+      { amount }
+    );
+    
+    console.log("✅ Response received:", res);
+    console.log("📦 Response data:", res.data);
+    
+    const data = res.data;
+    if (data?.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
+    } else {
+      console.warn("⚠️ No checkoutUrl in response:", data);
+      alert("Không thể tạo phiên thanh toán.");
     }
-  };
+  } catch (err) {
+    console.error("❌ Top-up error:", err);
+    console.error("❌ Error response:", err.response);
+    console.error("❌ Error status:", err.response?.status);
+    console.error("❌ Error data:", err.response?.data);
+    alert(`Đã xảy ra lỗi: ${err.response?.data?.message || err.message}`);
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
       <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center">
         <h3 className="text-lg font-semibold mb-4 text-gray-800">
-          Nạp tiền vào ví
+          Nạp tiền vào ví 
         </h3>
         <div className="grid grid-cols-2 gap-3 mb-6">
           {amounts.map((amt) => (
@@ -261,6 +271,12 @@ const Navbar = () => {
                   className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
                 >
                   <UserCog size={18} /> <span>Quản lý tài khoản</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/my-rental-requests")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <HotelIcon size={18} /> <span>Yêu cầu thuê của tôi</span>
                 </button>
                 <LogoutButton className="w-full p-2 rounded-lg hover:bg-red-50 text-red-600 transition text-sm" />
               </div>

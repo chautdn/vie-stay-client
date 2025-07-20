@@ -13,6 +13,28 @@ export const coTenantRequestService = {
     }
   },
 
+  requestCoTenant: async ({ roomId, name, phoneNumber, imageCCCD }) => {
+    const formData = new FormData();
+    formData.append("name", name);
+    formData.append("phoneNumber", phoneNumber);
+    formData.append("imageCCCD", imageCCCD);
+
+    try {
+      const response = await axiosInstance.post(
+        `${API_URL}/room/${roomId}/create`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
   // Phê duyệt yêu cầu
   approveRequest: async (requestId) => {
     try {

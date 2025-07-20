@@ -49,7 +49,7 @@ export const roomService = {
   createRoom: async (roomData, accommodationId) => {
     try {
       const response = await axiosInstance.post(
-        `${API_URL}/${accommodationId}/create`,
+        `${API_URL}/accommodation/${accommodationId}/create`,
         roomData
       );
       return response.data;

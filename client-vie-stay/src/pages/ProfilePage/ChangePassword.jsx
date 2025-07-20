@@ -1,6 +1,4 @@
 import React, { useState } from "react";
-import Navbar from "../Navbar/Navbar";
-import Footer from "../Navbar/Footer";
 
 const ChangePassword = () => {
   const [form, setForm] = useState({
@@ -59,8 +57,6 @@ const ChangePassword = () => {
 
   return (
     <>
-      <Navbar />
-
       <div className="min-h-screen bg-gray-50 px-4 py-10 flex items-center justify-center">
         <div className="w-full max-w-md bg-white p-8 rounded-xl shadow-md">
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">
@@ -122,8 +118,6 @@ const ChangePassword = () => {
           </form>
         </div>
       </div>
-
-      <Footer />
     </>
   );
 };

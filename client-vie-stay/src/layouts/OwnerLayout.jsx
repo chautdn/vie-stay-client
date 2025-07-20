@@ -1,20 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
-import LogoutButton from '../components/common/LogOutButton';
-import { 
-  LayoutDashboard, 
-  Building, 
-  Users, 
-  FileText, 
-  Settings, 
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate, useLocation, Navigate } from "react-router-dom";
+import { useAuthStore } from "../store/authStore";
+import LogoutButton from "../components/common/LogOutButton";
+import {
+  LayoutDashboard,
+  Building,
+  Users,
+  FileText,
+  Settings,
   Menu,
   X,
   Bell,
   User,
   UserCheck,
-  MessageSquare // ✅ ADDED: Icon for posts
-} from 'lucide-react';
+  MessageSquare, // ✅ ADDED: Icon for posts
+} from "lucide-react";
 
 const OwnerLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -22,7 +22,7 @@ const OwnerLayout = () => {
   const [fadeOut, setFadeOut] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-  
+
   const { user, isAuthenticated, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
@@ -45,44 +45,85 @@ const OwnerLayout = () => {
 
   // ✅ UPDATED: Added post management navigation
   const navigation = [
-    { name: 'Dashboard', href: '/owner/dashboard', icon: LayoutDashboard, current: false },
-    { name: 'Quản lý tin đăng', href: '/owner/posts', icon: MessageSquare, current: false }, // ✅ ADDED
-    { name: 'Tòa nhà', href: '/owner/accommodations', icon: Building, current: false },
-    { name: 'Yêu cầu thuê', href: '/owner/rental-requests', icon: UserCheck, current: false },
-    { name: 'Yêu cầu bạn chung phòng', href: '/owner/co-tenants', icon: Users, current: false },
-    { name: 'Báo cáo', href: '/owner/reports', icon: FileText, current: false },
-    { name: 'Cài đặt', href: '/owner/settings', icon: Settings, current: false },
+    {
+      name: "Dashboard",
+      href: "/owner/dashboard",
+      icon: LayoutDashboard,
+      current: false,
+    },
+    {
+      name: "Quản lý tin đăng",
+      href: "/owner/posts",
+      icon: MessageSquare,
+      current: false,
+    }, // ✅ ADDED
+    {
+      name: "Tòa nhà",
+      href: "/owner/accommodations",
+      icon: Building,
+      current: false,
+    },
+    {
+      name: "Yêu cầu thuê",
+      href: "/owner/rental-requests",
+      icon: UserCheck,
+      current: false,
+    },
+    {
+      name: "Yêu cầu bạn chung phòng",
+      href: "/owner/co-tenants",
+      icon: Users,
+      current: false,
+    },
+    { name: "Báo cáo", href: "/owner/reports", icon: FileText, current: false },
+    {
+      name: "Cài đặt",
+      href: "/owner/settings",
+      icon: Settings,
+      current: false,
+    },
   ];
 
   if (isCheckingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        <span className="ml-2 text-gray-600">Đang kiểm tra quyền truy cập...</span>
+        <span className="ml-2 text-gray-600">
+          Đang kiểm tra quyền truy cập...
+        </span>
       </div>
     );
   }
 
-  if (!isAuthenticated || !user?.role?.includes('landlord')) {
+  if (!isAuthenticated || !user?.role?.includes("landlord")) {
     return <Navigate to="/login" replace />;
   }
 
   // ✅ ENHANCED: Better current path detection for nested routes
-  const updatedNavigation = navigation.map(item => ({
+  const updatedNavigation = navigation.map((item) => ({
     ...item,
-    current: location.pathname === item.href || 
-             location.pathname.startsWith(item.href + '/') ||
-             // Special handling for posts route
-             (item.href === '/owner/posts' && location.pathname.startsWith('/owner/posts'))
+    current:
+      location.pathname === item.href ||
+      location.pathname.startsWith(item.href + "/") ||
+      // Special handling for posts route
+      (item.href === "/owner/posts" &&
+        location.pathname.startsWith("/owner/posts")),
   }));
 
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar */}
-      <div className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? '' : 'pointer-events-none'}`}>
-        <div className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`} onClick={() => setSidebarOpen(false)} />
-        
-        <div className={`relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white transform transition ease-in-out duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div
+        className={`fixed inset-0 flex z-40 md:hidden ${sidebarOpen ? "" : "pointer-events-none"}`}
+      >
+        <div
+          className={`fixed inset-0 bg-gray-600 bg-opacity-75 transition-opacity ease-linear duration-300 ${sidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+          onClick={() => setSidebarOpen(false)}
+        />
+
+        <div
+          className={`relative flex-1 flex flex-col max-w-xs w-full pt-5 pb-4 bg-white transform transition ease-in-out duration-300 ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}`}
+        >
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               type="button"
@@ -92,11 +133,11 @@ const OwnerLayout = () => {
               <X className="h-6 w-6 text-white" />
             </button>
           </div>
-          
+
           <div className="flex-shrink-0 flex items-center px-4">
-            <h1 className="text-2xl font-bold text-blue-600">VietStay</h1>
+            <h1 className="text-2xl font-bold text-blue-600">VieStay</h1>
           </div>
-          
+
           <div className="mt-5 flex-1 h-0 overflow-y-auto">
             <nav className="px-2 space-y-1">
               {updatedNavigation.map((item) => (
@@ -108,11 +149,13 @@ const OwnerLayout = () => {
                   }}
                   className={`group flex items-center px-2 py-2 text-base font-medium rounded-md w-full text-left transition-colors ${
                     item.current
-                      ? 'bg-blue-100 text-blue-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-blue-100 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <item.icon className={`mr-4 flex-shrink-0 h-6 w-6 ${item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                  <item.icon
+                    className={`mr-4 flex-shrink-0 h-6 w-6 ${item.current ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"}`}
+                  />
                   {item.name}
                 </button>
               ))}
@@ -136,7 +179,9 @@ const OwnerLayout = () => {
                 )}
               </div>
               <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-700">{user?.name || 'Chủ nhà'}</p>
+                <p className="text-sm font-medium text-gray-700">
+                  {user?.name || "Chủ nhà"}
+                </p>
                 <p className="text-xs text-gray-500">Chủ nhà</p>
               </div>
               <LogoutButton className="ml-2 p-1 text-red-600 hover:bg-red-50 rounded" />
@@ -149,10 +194,10 @@ const OwnerLayout = () => {
       <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0">
         <div className="flex flex-col flex-grow pt-5 bg-white overflow-y-auto border-r border-gray-200">
           <div className="flex items-center flex-shrink-0 px-4">
-            <h1 className="text-2xl font-bold text-blue-600">VietStay</h1>
+            <h1 className="text-2xl font-bold text-blue-600">VieStay</h1>
             <span className="ml-2 text-sm text-gray-500">Owner</span>
           </div>
-          
+
           <div className="mt-8 flex-grow flex flex-col">
             <nav className="flex-1 px-2 pb-4 space-y-1">
               {updatedNavigation.map((item) => (
@@ -161,14 +206,16 @@ const OwnerLayout = () => {
                   onClick={() => navigate(item.href)}
                   className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md w-full text-left transition-colors ${
                     item.current
-                      ? 'bg-blue-100 text-blue-900'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                      ? "bg-blue-100 text-blue-900"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <item.icon className={`mr-3 flex-shrink-0 h-5 w-5 ${item.current ? 'text-blue-500' : 'text-gray-400 group-hover:text-gray-500'}`} />
+                  <item.icon
+                    className={`mr-3 flex-shrink-0 h-5 w-5 ${item.current ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"}`}
+                  />
                   {item.name}
                   {/* ✅ ADDED: Badge for post management to show it's important */}
-                  {item.href === '/owner/posts' && (
+                  {item.href === "/owner/posts" && (
                     <span className="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">
                       New
                     </span>
@@ -180,22 +227,24 @@ const OwnerLayout = () => {
             {/* ✅ ADDED: Quick action section */}
             <div className="px-2 pb-4">
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-                <h3 className="text-sm font-medium text-blue-800 mb-2">Thao tác nhanh</h3>
+                <h3 className="text-sm font-medium text-blue-800 mb-2">
+                  Thao tác nhanh
+                </h3>
                 <div className="space-y-2">
                   <button
-                    onClick={() => navigate('/owner/posts')}
+                    onClick={() => navigate("/owner/posts")}
                     className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
                   >
                     📝 Quản lý tin đăng
                   </button>
                   <button
-                    onClick={() => navigate('/owner/accommodations')}
+                    onClick={() => navigate("/owner/accommodations")}
                     className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
                   >
                     🏢 Thêm tòa nhà mới
                   </button>
                   <button
-                    onClick={() => navigate('/create-post')}
+                    onClick={() => navigate("/create-post")}
                     className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
                   >
                     ➕ Đăng tin mới
@@ -222,7 +271,9 @@ const OwnerLayout = () => {
                 )}
               </div>
               <div className="ml-3 flex-1">
-                <p className="text-sm font-medium text-gray-700">{user?.name || 'Chủ nhà'}</p>
+                <p className="text-sm font-medium text-gray-700">
+                  {user?.name || "Chủ nhà"}
+                </p>
                 <p className="text-xs text-gray-500">Chủ nhà</p>
                 {user?.email && (
                   <p className="text-xs text-gray-400 truncate">{user.email}</p>
@@ -245,30 +296,39 @@ const OwnerLayout = () => {
           >
             <Menu className="h-6 w-6" />
           </button>
-          
+
           <div className="flex-1 px-4 flex justify-between items-center">
             <div className="flex-1">
               {showWelcome && user?.name ? (
-                <h2 className={`text-lg font-semibold text-gray-900 hidden md:block transition-opacity duration-500 ease-in-out ${
-                  fadeOut ? 'opacity-0' : 'opacity-100'
-                }`}>
+                <h2
+                  className={`text-lg font-semibold text-gray-900 hidden md:block transition-opacity duration-500 ease-in-out ${
+                    fadeOut ? "opacity-0" : "opacity-100"
+                  }`}
+                >
                   Xin chào, {user.name}! 👋
                 </h2>
               ) : (
                 <div className="hidden md:block">
                   {/* ✅ ENHANCED: Dynamic page title based on current route */}
                   <h2 className="text-lg font-semibold text-gray-900 transition-opacity duration-300 ease-in-out opacity-100">
-                    {location.pathname === '/owner/dashboard' && 'Dashboard'}
-                    {location.pathname.startsWith('/owner/posts') && 'Quản lý tin đăng'}
-                    {location.pathname.startsWith('/owner/accommodations') && 'Quản lý tòa nhà'}
-                    {location.pathname.startsWith('/owner/rental-requests') && 'Yêu cầu thuê'}
-                    {location.pathname.startsWith('/owner/co-tenants') && 'Yêu cầu bạn chung phòng'}
-                    {location.pathname.startsWith('/owner/reports') && 'Báo cáo'}
-                    {location.pathname.startsWith('/owner/settings') && 'Cài đặt'}
-                    {location.pathname.startsWith('/owner/rooms/') && 'Quản lý phòng'}
+                    {location.pathname === "/owner/dashboard" && "Dashboard"}
+                    {location.pathname.startsWith("/owner/posts") &&
+                      "Quản lý tin đăng"}
+                    {location.pathname.startsWith("/owner/accommodations") &&
+                      "Quản lý tòa nhà"}
+                    {location.pathname.startsWith("/owner/rental-requests") &&
+                      "Yêu cầu thuê"}
+                    {location.pathname.startsWith("/owner/co-tenants") &&
+                      "Yêu cầu bạn chung phòng"}
+                    {location.pathname.startsWith("/owner/reports") &&
+                      "Báo cáo"}
+                    {location.pathname.startsWith("/owner/settings") &&
+                      "Cài đặt"}
+                    {location.pathname.startsWith("/owner/rooms/") &&
+                      "Quản lý phòng"}
                   </h2>
                   {/* ✅ ADDED: Quick navigation breadcrumb for posts */}
-                  {location.pathname.startsWith('/owner/posts') && (
+                  {location.pathname.startsWith("/owner/posts") && (
                     <p className="text-sm text-gray-500 mt-1">
                       Quản lý và theo dõi tất cả tin đăng của bạn
                     </p>
@@ -276,11 +336,11 @@ const OwnerLayout = () => {
                 </div>
               )}
             </div>
-            
+
             <div className="ml-4 flex items-center md:ml-6">
               {/* ✅ ADDED: Quick create post button in top bar */}
               <button
-                onClick={() => navigate('/create-post')}
+                onClick={() => navigate("/create-post")}
                 className="hidden md:flex items-center px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors mr-3"
               >
                 <MessageSquare className="h-4 w-4 mr-1" />
@@ -290,7 +350,7 @@ const OwnerLayout = () => {
               <button className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                 <Bell className="h-6 w-6" />
               </button>
-              
+
               {/* Mobile user info */}
               <div className="ml-3 flex items-center md:hidden">
                 {user?.profileImage ? (

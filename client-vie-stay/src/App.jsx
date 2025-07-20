@@ -41,6 +41,7 @@ import { ServicePrice } from "./pages/HomePage/Public";
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
 import UserManagement from "./pages/AdminPage/UserManagement";
 import RevenueReports from "./pages/AdminPage/RevenueReports";
+import ReportManagement from "./components/admin/ReportManagement";
 
 // ✅ THÊM: Import Withdrawal Pages
 import WithdrawalRequestPage from "./pages/TenantPage/WithdrawalRequestPage";
@@ -99,6 +100,7 @@ function App() {
           <Route path="/posts" element={<PostManagementPage />} />
           <Route path="/create-post" element={<CreatePostPage />} />
           <Route path="/detail/:id" element={<RoomDetail />} />
+          <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
           <Route path="/tin-dang/:id" element={<PostDetail />} />
           <Route path="*" element={<HomePage />} />
         </Route>
@@ -260,6 +262,14 @@ function App() {
           element={
             <AdminRoute>
               <RevenueReports />
+            </AdminRoute>
+          }
+        />
+        <Route
+          path="/admin/report-management"
+          element={
+            <AdminRoute>
+              <ReportManagement />
             </AdminRoute>
           }
         />

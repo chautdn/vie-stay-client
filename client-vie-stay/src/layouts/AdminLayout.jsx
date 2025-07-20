@@ -10,7 +10,8 @@ import {
   X,
   Bell,
   Search,
-  FileText // ✅ ADDED: Icon for posts
+  FileText, // ✅ ADDED: Icon for posts
+  Flag // ✅ ADDED: Icon for reports
 } from "lucide-react";
 
 // Import the real data components
@@ -20,6 +21,7 @@ import UserManagement from "../pages/AdminPage/UserManagement";
 import RevenueReports from "../pages/AdminPage/RevenueReports";
 // ✅ FIXED: Import from the correct path
 import AdminPostManagement from "../pages/AdminPage/AdminPostManagement";
+import ReportManagement from "../components/admin/ReportManagement";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -74,6 +76,12 @@ const AdminLayout = () => {
       description: "Analytics & Revenue"
     },
     {
+      name: "Report Management",
+      icon: Flag,
+      path: "/admin/report-management",
+      description: "Manage User Reports"
+    },
+    {
       name: "Settings",
       icon: Settings,
       path: "/admin/settings",
@@ -117,6 +125,8 @@ const AdminLayout = () => {
         return <UserManagement />;
       case "reports":
         return <RevenueReports />;
+      case "report-management":
+        return <ReportManagement />;
       case "settings":
         return <AdminSettings />;
       default:
@@ -132,6 +142,7 @@ const AdminLayout = () => {
       accommodations: "Accommodation Management",
       users: "User Management",
       reports: "Revenue Reports",
+      "report-management": "Report Management",
       settings: "System Settings"
     };
     return titles[currentPage] || "Dashboard";

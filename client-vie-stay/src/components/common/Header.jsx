@@ -52,27 +52,36 @@ const TopUpModal = ({ onClose }) => {
   const amounts = [2000, 100000, 500000, 1000000, 5000000];
 
   const handleTopUp = async (amount) => {
-    if (!isAuthenticated) {
-      navigate("/login");
-      return;
-    }
+  if (!isAuthenticated) {
+    navigate("/login");
+    return;
+  }
 
-    try {
-      const res = await axiosInstance.post(
-        "/api/payment/create-topup-session",
-        { amount }
-      );
-      const data = res.data;
-      if (data?.checkoutUrl) {
-        window.location.href = data.checkoutUrl;
-      } else {
-        alert("Không thể tạo phiên thanh toán.");
-      }
-    } catch (err) {
-      console.error("Top-up error:", err);
-      alert("Đã xảy ra lỗi khi tạo thanh toán.");
+  try {
+    console.log("🚀 Starting top-up for amount:", amount);
+    const res = await axiosInstance.post(
+      "/api/payment/create-topup-session",
+      { amount }
+    );
+    
+    console.log("✅ Response received:", res);
+    console.log("📦 Response data:", res.data);
+    
+    const data = res.data;
+    if (data?.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
+    } else {
+      console.warn("⚠️ No checkoutUrl in response:", data);
+      alert("Không thể tạo phiên thanh toán.");
     }
-  };
+  } catch (err) {
+    console.error("❌ Top-up error:", err);
+    console.error("❌ Error response:", err.response);
+    console.error("❌ Error status:", err.response?.status);
+    console.error("❌ Error data:", err.response?.data);
+    alert(`Đã xảy ra lỗi: ${err.response?.data?.message || err.message}`);
+  }
+};
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">

@@ -50,8 +50,8 @@ import PendingWithdrawalsPage from "./pages/OwnerPage/PendingWithdrawalsPage";
 import Profile from "./pages/ProfilePage/Profile";
 import ChangePassword from "./pages/ProfilePage/ChangePassword";
 
-// Import TopUp Pages
-
+//Transaction PAges
+import TransactionHistoryPage from "./pages/TransactionPage/TransactionHistoryPage"
 
 // Import Post Management Pages
 import CreatePostPage from "./pages/PostPage/CreatePostPage";
@@ -97,6 +97,7 @@ function App() {
           <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
           <Route path="my-rental-requests" element={<MyRentalRequest />} />
           <Route path="profile" element={<Profile/>} />
+           <Route path="transaction-history" element={<TransactionHistoryPage />} />
           <Route path="/posts" element={<PostManagementPage />} />
           <Route path="/create-post" element={<CreatePostPage />} />
           <Route path="/detail/:id" element={<RoomDetail />} />

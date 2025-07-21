@@ -14,6 +14,7 @@ const Home = () => {
       <Navigation />
       {location.pathname !== "/bang-gia-dich-vu" &&
         location.pathname !== "/profile" &&
+        location.pathname !== "/transaction-history" &&
         location.pathname !== "/create-post" && (
           <>
             <Search />

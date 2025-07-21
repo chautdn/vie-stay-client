@@ -131,13 +131,12 @@ const Navbar = () => {
   };
 
   const handlePostClick = () => {
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-    } else {
-      navigate("/create-post");
-    }
-  };
-
+  if (!isAuthenticated) {
+    setShowLoginModal(true);
+  } else {
+    navigate("/create-post"); 
+  }
+};
   return (
     <div className="w-full shadow-sm border-b bg-white relative z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center p-3">

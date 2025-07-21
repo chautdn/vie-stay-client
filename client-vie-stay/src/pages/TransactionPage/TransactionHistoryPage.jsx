@@ -43,7 +43,7 @@ const TransactionHistoryPage = () => {
         params.append('search', searchTerm);
       }
 
-      const response = await axiosInstance.get(`/user/transactions?${params}`);
+      const response = await axiosInstance.get(`/api/transactions?${params}`);
       setTransactions(response.data.transactions || []);
       setTotalPages(response.data.totalPages || 1);
     } catch (err) {

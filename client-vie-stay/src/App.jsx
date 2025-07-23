@@ -115,6 +115,7 @@ function App() {
             <Route path="/topup-success" element={<TopUpSuccess />} />
             <Route path="/topup-cancel" element={<TopUpCancel />} />
             <Route path="*" element={<HomePage />} />
+            <Route path="/owner/create" element={<AccommodationManagement />} />
           </Route>
 
           {/* ✅ Room Routes */}

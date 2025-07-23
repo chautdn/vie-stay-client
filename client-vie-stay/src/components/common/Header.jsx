@@ -9,6 +9,7 @@ import {
   FileText,
   HotelIcon,
   CreditCard,
+  HousePlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -131,12 +132,12 @@ const Navbar = () => {
   };
 
   const handlePostClick = () => {
-  if (!isAuthenticated) {
-    setShowLoginModal(true);
-  } else {
-    navigate("/create-post"); 
-  }
-};
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+    } else {
+      navigate("/create-post");
+    }
+  };
   return (
     <div className="w-full shadow-sm border-b bg-white relative z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center p-3">
@@ -277,6 +278,13 @@ const Navbar = () => {
                   className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
                 >
                   <CreditCard size={18} /> <span>Lịch sử giao dịch</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/owner/create")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <HousePlus size={18} />
+                  <span>Tạo nhà trọ của bạn</span>
                 </button>
                 <button
                   onClick={() => handleNavigate("/my-rental-requests")}

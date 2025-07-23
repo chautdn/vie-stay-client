@@ -4,7 +4,6 @@ import ProfileAvatar from "./components/ProfileAvatar";
 import ProfileAddress from "./components/ProfileAddress";
 import ProfileNationalId from "./components/ProfileNationalId";
 import ProfileEmergencyContact from "./components/ProfileEmergencyContact";
-import Navbar from "../../components/common/Navbar";
 import axiosInstance from "../../components/utils/AxiosInstance";
 import { getOwnerId } from "../../components/utils/authUtils";
 import ChangePassword from "./ChangePassword";
@@ -191,6 +190,79 @@ export default function Profile() {
     }
   };
 
+  // Cập nhật hàm handleVerifyNationalId
+  const handleVerifyNationalId = async (frontImage, backImage) => {
+    try {
+      const id = getOwnerId();
+      if (!id) throw new Error("Không tìm thấy userId");
+
+      const formData = new FormData();
+      formData.append("nationalIdFront", frontImage);
+      formData.append("nationalIdBack", backImage);
+
+      // ✅ Tăng timeout lên 60 giây
+      const response = await axiosInstance.post(`/user/${id}/verify-national-id`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000, // 60 giây thay vì 10 giây
+      });
+
+      if (response.data.status === "success") {
+        // Cập nhật profile với thông tin mới
+        const extractedData = response.data.data.extractedData;
+        setProfile(prev => ({
+          ...prev,
+          nationalId: extractedData.nationalId,
+          name: extractedData.name,
+          dateOfBirth: extractedData.dateOfBirth?.split('T')[0], // Format date
+          nationalIdVerified: true,
+          address: {
+            ...prev.address,
+            fullAddress: extractedData.address || prev.address.fullAddress,
+            province: extractedData.address?.includes('ĐÀ NẴNG') ? 'Đà Nẵng' : prev.address.province,
+            district: extractedData.address?.includes('HÒA VANG') ? 'Hòa Vang' : prev.address.district,
+            ward: extractedData.address?.includes('HÒA NINH') ? 'Hòa Ninh' : prev.address.ward,
+            street: extractedData.address?.includes('THÔN 5') ? 'Thôn 5' : prev.address.street
+          }
+        }));
+
+        setSuccessMsg(`Xác thực CCCD thành công! Thông tin đã được cập nhật.
+          - CCCD: ${extractedData.nationalId}
+          - Họ tên: ${extractedData.name}
+          - Ngày sinh: ${extractedData.dateOfBirth}
+          - Địa chỉ: ${extractedData.address}`);
+        
+        return {
+          success: true,
+          data: response.data.data,
+          message: "Xác thực thành công!"
+        };
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      
+      // Xử lý lỗi timeout đặc biệt
+      if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+        setApiError("Quá trình xác thực mất nhiều thời gian. Vui lòng kiểm tra lại thông tin trong profile.");
+        
+        // Thử refresh profile để xem có cập nhật không
+        setTimeout(() => {
+          window.location.reload();
+        }, 3000);
+        
+        return {
+          success: false,
+          message: "Timeout - đang kiểm tra kết quả xử lý..."
+        };
+      }
+      
+      setApiError("Lỗi xác thực CCCD: " + errorMsg);
+      return {
+        success: false,
+        message: errorMsg
+      };
+    }
+  };
+
   return (
     <>
       <form
@@ -210,12 +282,10 @@ export default function Profile() {
         </div>
         <ProfileAddress value={profile.address} onChange={handleAddressChange} errors={errors} />
         <ProfileNationalId
-          value={{
-            ...profile,
-            nationalIdImage: formatNationalIdImage(profile.nationalIdImage),
-          }}
+          value={profile}
           onChange={handleChange}
           errors={errors}
+          onVerifyNationalId={handleVerifyNationalId}
         />
         <ProfileEmergencyContact
           value={profile.emergencyContact}

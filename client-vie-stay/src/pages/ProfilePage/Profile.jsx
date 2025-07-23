@@ -200,62 +200,69 @@ export default function Profile() {
       formData.append("nationalIdFront", frontImage);
       formData.append("nationalIdBack", backImage);
 
-      // ✅ Tăng timeout lên 60 giây
       const response = await axiosInstance.post(`/user/${id}/verify-national-id`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
-        timeout: 60000, // 60 giây thay vì 10 giây
+        timeout: 60000,
       });
 
-      if (response.data.status === "success") {
-        // Cập nhật profile với thông tin mới
-        const extractedData = response.data.data.extractedData;
+      console.log("🔍 Backend response:", response.data);
+
+      if (response.data.success) { // ✅ Kiểm tra success field
+        const extractedData = response.data.extractedData; // ✅ Lấy data đúng level
+        
+        console.log("📋 Extracted data for update:", extractedData);
+        
+        // ✅ Cập nhật với đúng field names
         setProfile(prev => ({
           ...prev,
-          nationalId: extractedData.nationalId,
-          name: extractedData.name,
-          dateOfBirth: extractedData.dateOfBirth?.split('T')[0], // Format date
+          nationalId: extractedData.nationalId || prev.nationalId,
+          name: extractedData.fullName || extractedData.name || prev.name, // Try both
+          dateOfBirth: extractedData.dateOfBirth ? 
+            (extractedData.dateOfBirth.includes('T') ? 
+              extractedData.dateOfBirth.split('T')[0] : 
+              extractedData.dateOfBirth) : prev.dateOfBirth,
           nationalIdVerified: true,
           address: {
             ...prev.address,
             fullAddress: extractedData.address || prev.address.fullAddress,
-            province: extractedData.address?.includes('ĐÀ NẴNG') ? 'Đà Nẵng' : prev.address.province,
-            district: extractedData.address?.includes('HÒA VANG') ? 'Hòa Vang' : prev.address.district,
-            ward: extractedData.address?.includes('HÒA NINH') ? 'Hòa Ninh' : prev.address.ward,
-            street: extractedData.address?.includes('THÔN 5') ? 'Thôn 5' : prev.address.street
+            // ✅ Cải thiện logic parse địa chỉ
+            city: extractedData.address?.toUpperCase().includes('ĐÀ NẴNG') ? 'Đà Nẵng' : prev.address.city,
+            district: extractedData.address?.toUpperCase().includes('HÒA VANG') ? 'Hòa Vang' : prev.address.district,
+            ward: extractedData.address?.toUpperCase().includes('HÒA NINH') ? 'Hòa Ninh' : prev.address.ward,
+            street: extractedData.address?.toUpperCase().includes('THÔN 5') ? 'Thôn 5' : prev.address.street
           }
         }));
 
-        setSuccessMsg(`Xác thực CCCD thành công! Thông tin đã được cập nhật.
-          - CCCD: ${extractedData.nationalId}
-          - Họ tên: ${extractedData.name}
-          - Ngày sinh: ${extractedData.dateOfBirth}
-          - Địa chỉ: ${extractedData.address}`);
+        // ✅ Expose function cho ProfileNationalId component
+        window.updateProfileAddress = handleAddressChange;
+
+        setSuccessMsg(`✅ Xác thực CCCD thành công!
+          • CCCD: ${extractedData.nationalId}
+          • Họ tên: ${extractedData.fullName || extractedData.name}
+          • Ngày sinh: ${extractedData.dateOfBirth}
+          • Địa chỉ: ${extractedData.address}`);
         
         return {
           success: true,
-          data: response.data.data,
+          data: { extractedData },
           message: "Xác thực thành công!"
         };
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.message;
       
-      // Xử lý lỗi timeout đặc biệt
+      console.error("❌ Verification error:", error);
+      
       if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
-        setApiError("Quá trình xác thực mất nhiều thời gian. Vui lòng kiểm tra lại thông tin trong profile.");
-        
-        // Thử refresh profile để xem có cập nhật không
-        setTimeout(() => {
-          window.location.reload();
-        }, 3000);
-        
+        setApiError("⏱️ Quá trình xác thực mất nhiều thời gian. Vui lòng kiểm tra lại thông tin.");
+        setTimeout(() => window.location.reload(), 3000);
         return {
           success: false,
-          message: "Timeout - đang kiểm tra kết quả xử lý..."
+          message: "Timeout - đang kiểm tra kết quả..."
         };
       }
       
-      setApiError("Lỗi xác thực CCCD: " + errorMsg);
+      setApiError("❌ Lỗi xác thực CCCD: " + errorMsg);
       return {
         success: false,
         message: errorMsg

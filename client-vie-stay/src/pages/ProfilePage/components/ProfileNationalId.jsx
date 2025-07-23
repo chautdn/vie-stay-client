@@ -24,16 +24,30 @@ export default function ProfileNationalId({
       const result = await onVerifyNationalId(frontImage, backImage);
       setVerificationResult(result);
       
-      // Tự động cập nhật thông tin vào form
+      // Sử dụng đúng field names
       if (result.success && result.data) {
         const extractedData = result.data.extractedData;
-        onChange("nationalId", extractedData.nationalId);
-        onChange("name", extractedData.name);
-        onChange("dateOfBirth", extractedData.dateOfBirth?.split('T')[0]); // Format ngày
         
-        // Cập nhật địa chỉ nếu có
+        console.log("📋 Extracted data:", extractedData);
+        
+        // Sửa field mapping
+        onChange("nationalId", extractedData.nationalId || "");
+        onChange("name", extractedData.fullName || extractedData.name || ""); // Try both
+        
+        // Format date properly
+        if (extractedData.dateOfBirth) {
+          const formattedDate = extractedData.dateOfBirth.includes('T') 
+            ? extractedData.dateOfBirth.split('T')[0] 
+            : extractedData.dateOfBirth;
+          onChange("dateOfBirth", formattedDate);
+        }
+        
+        // Cập nhật địa chỉ đúng cách
         if (extractedData.address) {
-          onChange("address", { fullAddress: extractedData.address });
+          // Gọi parent component để update address
+          if (window.updateProfileAddress) {
+            window.updateProfileAddress("fullAddress", extractedData.address);
+          }
         }
       }
       

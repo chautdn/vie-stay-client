@@ -86,8 +86,10 @@ const TopUpModal = ({ onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center">
+    <div className="fixed inset-0 bg-opacity backdrop-blur-xs z-50 flex items-center justify-center p-4"
+      onClick={onClose}>
+      <div className="bg-white p-6 rounded-xl shadow-lg w-full max-w-md text-center"
+        onClick={(e) => e.stopPropagation()}>
         <h3 className="text-lg font-semibold mb-4 text-gray-800">
           Nạp tiền vào ví
         </h3>
@@ -115,7 +117,7 @@ const TopUpModal = ({ onClose }) => {
 
 const Navbar = () => {
   const { user, isAuthenticated } = useAuthStore();
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);  
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const navigate = useNavigate();

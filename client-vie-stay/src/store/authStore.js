@@ -21,11 +21,8 @@ export const useAuthStore = create((set, get) => ({
       const token = localStorage.getItem("token");
       const userData = localStorage.getItem("user");
 
-      
-
       if (token && userData) {
         const user = JSON.parse(userData);
-        
 
         // Set auth state immediately without validation
         set({
@@ -305,10 +302,10 @@ export const useAuthStore = create((set, get) => ({
   // NEW: Manual setter for user data
   setUser: (userData) => {
     console.log("🔄 Updating user data:", userData);
-    
+
     // Update localStorage
     localStorage.setItem("user", JSON.stringify(userData));
-    
+
     // Update store
     set({ user: userData });
   },
@@ -321,14 +318,14 @@ export const useAuthStore = create((set, get) => ({
         ...currentUser,
         wallet: {
           ...currentUser.wallet,
-          balance: newBalance
-        }
+          balance: newBalance,
+        },
       };
-      
+
       // Update both localStorage and store
       localStorage.setItem("user", JSON.stringify(updatedUser));
       set({ user: updatedUser });
-      
+
       console.log("💰 Wallet balance updated:", newBalance);
     }
   },
@@ -336,9 +333,13 @@ export const useAuthStore = create((set, get) => ({
   // FIXED: Remove the problematic refreshUser function for now
   // You can add this back when you create the appropriate backend endpoint
   refreshUser: async () => {
-    console.log("⚠️ refreshUser called but /user/profile endpoint doesn't exist");
-    console.log("💡 Consider creating a user profile endpoint or removing this call");
-    
+    console.log(
+      "⚠️ refreshUser called but /user/profile endpoint doesn't exist"
+    );
+    console.log(
+      "💡 Consider creating a user profile endpoint or removing this call"
+    );
+
     // For now, just return the current user data
     const currentUser = get().user;
     return currentUser;

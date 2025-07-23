@@ -15,26 +15,17 @@ export const useAuthStore = create((set, get) => ({
 
   // Initialize auth state from localStorage
   initializeAuth: () => {
-    console.log("🔄 Initializing auth from localStorage...");
     set({ isCheckingAuth: true });
 
     try {
       const token = localStorage.getItem("token");
       const userData = localStorage.getItem("user");
 
-      console.log("Debug localStorage:", {
-        token: token ? "exists" : "not found",
-        tokenLength: token?.length || 0,
-        user: userData ? "exists" : "not found",
-      });
+      
 
       if (token && userData) {
         const user = JSON.parse(userData);
-        console.log("✅ Auth data found in localStorage:", {
-          user: user.email,
-          role: user.role,
-          tokenPreview: token.substring(0, 20) + "...",
-        });
+        
 
         // Set auth state immediately without validation
         set({
@@ -150,7 +141,6 @@ export const useAuthStore = create((set, get) => ({
       console.log("✅ [AUTH STORE] Login response received:", response.data);
 
       const userData = response.data.data?.user || response.data.user;
-      console.log("User data:", userData);
       const token = response.data.token;
 
       if (!token || !userData) {
@@ -315,10 +305,10 @@ export const useAuthStore = create((set, get) => ({
   // NEW: Manual setter for user data
   setUser: (userData) => {
     console.log("🔄 Updating user data:", userData);
-
+    
     // Update localStorage
     localStorage.setItem("user", JSON.stringify(userData));
-
+    
     // Update store
     set({ user: userData });
   },
@@ -331,14 +321,14 @@ export const useAuthStore = create((set, get) => ({
         ...currentUser,
         wallet: {
           ...currentUser.wallet,
-          balance: newBalance,
-        },
+          balance: newBalance
+        }
       };
-
+      
       // Update both localStorage and store
       localStorage.setItem("user", JSON.stringify(updatedUser));
       set({ user: updatedUser });
-
+      
       console.log("💰 Wallet balance updated:", newBalance);
     }
   },
@@ -346,13 +336,9 @@ export const useAuthStore = create((set, get) => ({
   // FIXED: Remove the problematic refreshUser function for now
   // You can add this back when you create the appropriate backend endpoint
   refreshUser: async () => {
-    console.log(
-      "⚠️ refreshUser called but /user/profile endpoint doesn't exist"
-    );
-    console.log(
-      "💡 Consider creating a user profile endpoint or removing this call"
-    );
-
+    console.log("⚠️ refreshUser called but /user/profile endpoint doesn't exist");
+    console.log("💡 Consider creating a user profile endpoint or removing this call");
+    
     // For now, just return the current user data
     const currentUser = get().user;
     return currentUser;

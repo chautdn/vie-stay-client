@@ -41,6 +41,7 @@ import { ServicePrice } from "./pages/HomePage/Public";
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
 import UserManagement from "./pages/AdminPage/UserManagement";
 import RevenueReports from "./pages/AdminPage/RevenueReports";
+import ReportManagement from "./components/admin/ReportManagement";
 
 // ✅ THÊM: Import Withdrawal Pages
 import WithdrawalRequestPage from "./pages/TenantPage/WithdrawalRequestPage";
@@ -49,13 +50,16 @@ import PendingWithdrawalsPage from "./pages/OwnerPage/PendingWithdrawalsPage";
 import Profile from "./pages/ProfilePage/Profile";
 import ChangePassword from "./pages/ProfilePage/ChangePassword";
 
-// Import TopUp Pages
-
+//Transaction PAges
+import TransactionHistoryPage from "./pages/TransactionPage/TransactionHistoryPage";
 
 // Import Post Management Pages
 import CreatePostPage from "./pages/PostPage/CreatePostPage";
 import PostManagementPage from "./pages/PostPage/PostManagementPage";
 import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
+
+import TopUpSuccess from "./pages/TopUpPage/TopUpSuccess";
+import TopUpCancel from "./pages/TopUpPage/TopUpCancel";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -75,133 +79,148 @@ function App() {
 
   return (
     <NotificationProvider>
-    <Routes>
-      {/* Auth Routes */}
-      <Route element={<AuthLayout />}>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/verify-email" element={<EmailVerificationPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password/:token" element={<ResetPasswordPage />} />
-      </Route>
-
-      {/* Main Layout Routes */}
-      <Route element={<MainLayout />}>
-        {/* ✅ Home layout với nested routes */}
-        <Route path="/" element={<Home />}>
-          <Route index element={<HomePage />} />
-          <Route path="saved" element={<SavedPosts />} />
-          <Route path="search" element={<SearchPage />} />
-          <Route path="list" element={<List />} />
-          <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
-          <Route path="my-rental-requests" element={<MyRentalRequest />} />
-          <Route path="profile" element={<Profile/>} />
-          <Route path="/posts" element={<PostManagementPage />} />
-          <Route path="/create-post" element={<CreatePostPage />} />
-          <Route path="/detail/:id" element={<RoomDetail />} />
-          <Route path="/tin-dang/:id" element={<PostDetail />} />
-          <Route path="*" element={<HomePage />} />
+      <Routes>
+        {/* Auth Routes */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/verify-email" element={<EmailVerificationPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
         </Route>
 
-        {/* ✅ Room Routes */}
-        <Route path="/rooms" element={<Room />} />
+        {/* Main Layout Routes */}
+        <Route element={<MainLayout />}>
+          {/* ✅ Home layout với nested routes */}
+          <Route path="/" element={<Home />}>
+            <Route index element={<HomePage />} />
+            <Route path="saved" element={<SavedPosts />} />
+            <Route path="search" element={<SearchPage />} />
+            <Route path="list" element={<List />} />
+            <Route path="bang-gia-dich-vu" element={<ServicePrice />} />
+            <Route path="my-rental-requests" element={<MyRentalRequest />} />
+            <Route path="profile" element={<Profile />} />
+            <Route
+              path="transaction-history"
+              element={<TransactionHistoryPage />}
+            />
+            <Route path="/posts" element={<PostManagementPage />} />
+            <Route path="/create-post" element={<CreatePostPage />} />
+            <Route path="/detail/:id" element={<RoomDetail />} />
+            <Route path="/chi-tiet/:slug/:id" element={<RoomDetail />} />
+            <Route path="/tin-dang/:id" element={<PostDetail />} />
+            <Route path="/topup-success" element={<TopUpSuccess />} />
+            <Route path="/topup-cancel" element={<TopUpCancel />} />
+            <Route path="*" element={<HomePage />} />
+            <Route path="/owner/create" element={<AccommodationManagement />} />
+          </Route>
 
+          {/* ✅ Room Routes */}
+          <Route path="/rooms" element={<Room />} />
 
+          {/* ✅ Agreement và Payment Routes */}
+          <Route
+            path="/agreement/confirm/:token"
+            element={<AgreementConfirmationPage />}
+          />
 
-        {/* ✅ Agreement và Payment Routes */}
-        <Route
-          path="/agreement/confirm/:token"
-          element={<AgreementConfirmationPage />}
-        />
+          {/* ✅ Payment routes */}
+          <Route path="/payment/:confirmationId" element={<PaymentPage />} />
+          <Route
+            path="/tenant/payment/:confirmationId"
+            element={<PaymentPage />}
+          />
 
-        {/* ✅ Payment routes */}
-        <Route path="/payment/:confirmationId" element={<PaymentPage />} />
-        <Route
-          path="/tenant/payment/:confirmationId"
-          element={<PaymentPage />}
-        />
+          {/* ✅ Payment result routes */}
+          <Route path="/payment/success" element={<PaymentSuccess />} />
+          <Route path="/payment/failed" element={<PaymentSuccess />} />
+          <Route path="/payment/failure" element={<PaymentSuccess />} />
+          <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
 
-        {/* ✅ Payment result routes */}
-        <Route path="/payment/success" element={<PaymentSuccess />} />
-        <Route path="/payment/failed" element={<PaymentSuccess />} />
-        <Route path="/payment/failure" element={<PaymentSuccess />} />
-        <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
-        
-        {/* ✅ THÊM: Withdrawal Routes - ĐẶT NGOÀI Home nested routes */}
-        <Route path="/withdrawal/request/:confirmationId" element={<WithdrawalRequestPage />} />
-        <Route path="/withdrawal/history" element={<WithdrawalHistoryPage />} />
-        <Route path="/withdrawal/success" element={<PaymentSuccess />} />
-        <Route path="/withdrawal/failure" element={<PaymentSuccess />} />
-        <Route path="/withdrawal/vnpay/return" element={<PaymentSuccess />} />
-      </Route>
+          {/* ✅ THÊM: Withdrawal Routes - ĐẶT NGOÀI Home nested routes */}
+          <Route
+            path="/withdrawal/request/:confirmationId"
+            element={<WithdrawalRequestPage />}
+          />
+          <Route
+            path="/withdrawal/history"
+            element={<WithdrawalHistoryPage />}
+          />
+          <Route path="/withdrawal/success" element={<PaymentSuccess />} />
+          <Route path="/withdrawal/failure" element={<PaymentSuccess />} />
+          <Route path="/withdrawal/vnpay/return" element={<PaymentSuccess />} />
+        </Route>
 
-      {/* Owner Routes */}
-      <Route element={<OwnerLayout />}>
-        <Route
-          path="/owner"
-          element={
-            <OwnerRoute>
-              <OwnerDashboard />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/dashboard"
-          element={
-            <OwnerRoute>
-              <OwnerDashboard />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/rooms/:accommodationId"
-          element={
-            <OwnerRoute>
-              <RoomManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/rental-requests"
-          element={
-            <OwnerRoute>
-              <RentalRequestManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/accommodations"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/create"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/edit/:id"
-          element={
-            <OwnerRoute>
-              <AccommodationManagement />
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/co-tenants"
-          element={
-            <OwnerRoute>
-              <CoTenantsRequest />
-            </OwnerRoute>
-          }
-        />
-         <Route
+        {/* Owner Routes */}
+        <Route element={<OwnerLayout />}>
+          <Route
+            path="/owner"
+            element={
+              <OwnerRoute>
+                <OwnerDashboard />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/dashboard"
+            element={
+              <OwnerRoute>
+                <OwnerDashboard />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/rooms/:accommodationId"
+            element={
+              <OwnerRoute>
+                <RoomManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/rental-requests"
+            element={
+              <OwnerRoute>
+                <RentalRequestManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/accommodations"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/create"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/edit/:id"
+            element={
+              <OwnerRoute>
+                <AccommodationManagement />
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/co-tenants"
+            element={
+              <OwnerRoute>
+                <CoTenantsRequest />
+              </OwnerRoute>
+            }
+          />
+          <Route
             path="/owner/posts"
             element={
               <OwnerRoute>
@@ -209,65 +228,73 @@ function App() {
               </OwnerRoute>
             }
           />
-        <Route
-          path="/owner/reports"
-          element={
-            <OwnerRoute>
-              <div className="p-6">Reports Page</div>
-            </OwnerRoute>
-          }
-        />
-        <Route
-          path="/owner/settings"
-          element={
-            <OwnerRoute>
-              <div className="p-6">Settings Page</div>
-            </OwnerRoute>
-          }
-        />
-        
-        {/* ✅ Owner withdrawal management */}
-        <Route
-          path="/owner/withdrawals"
-          element={
-            <OwnerRoute>
-              <PendingWithdrawalsPage />
-            </OwnerRoute>
-          }
-        />
-      </Route>
+          <Route
+            path="/owner/reports"
+            element={
+              <OwnerRoute>
+                <div className="p-6">Reports Page</div>
+              </OwnerRoute>
+            }
+          />
+          <Route
+            path="/owner/settings"
+            element={
+              <OwnerRoute>
+                <div className="p-6">Settings Page</div>
+              </OwnerRoute>
+            }
+          />
 
-      {/* Admin Routes */}
-      <Route element={<AdminLayout />}>
-        <Route
-          path="/admin/dashboard"
-          element={
-            <AdminRoute>
-              <AdminDashboard />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/users"
-          element={
-            <AdminRoute>
-              <UserManagement />
-            </AdminRoute>
-          }
-        />
-        <Route
-          path="/admin/reports"
-          element={
-            <AdminRoute>
-              <RevenueReports />
-            </AdminRoute>
-          }
-        />
-      </Route>
+          {/* ✅ Owner withdrawal management */}
+          <Route
+            path="/owner/withdrawals"
+            element={
+              <OwnerRoute>
+                <PendingWithdrawalsPage />
+              </OwnerRoute>
+            }
+          />
+        </Route>
 
-      {/* Fallback route */}
-      <Route path="*" element={<HomePage />} />
-    </Routes>
+        {/* Admin Routes */}
+        <Route element={<AdminLayout />}>
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminRoute>
+                <AdminDashboard />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/users"
+            element={
+              <AdminRoute>
+                <UserManagement />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/reports"
+            element={
+              <AdminRoute>
+                <RevenueReports />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/report-management"
+            element={
+              <AdminRoute>
+                <ReportManagement />
+              </AdminRoute>
+            }
+          />
+        </Route>
+
+        {/* Fallback route */}
+        <Route path="*" element={<HomePage />} />
+      </Routes>
     </NotificationProvider>
   );
 }

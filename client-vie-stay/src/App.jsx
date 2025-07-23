@@ -6,6 +6,8 @@ import AuthLayout from "./layouts/AuthLayout";
 import MainLayout from "./layouts/MainLayout";
 import OwnerLayout from "./layouts/OwnerLayout";
 import OwnerRoute from "./components/common/OwnerRoute";
+import TenantLayout from "./layouts/TenantLayout";
+import TenantRoute from "./components/common/TenantRoute";
 import AdminLayout from "./layouts/AdminLayout";
 import AdminRoute from "./components/common/AdminRoute";
 
@@ -57,6 +59,9 @@ import ChangePassword from "./pages/ProfilePage/ChangePassword";
 import CreatePostPage from "./pages/PostPage/CreatePostPage";
 import PostManagementPage from "./pages/PostPage/PostManagementPage";
 import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
+
+// Import Tenant Pages
+import TenantDashboard from "./pages/TenantPage/TenantDashboard";
 
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
@@ -235,6 +240,62 @@ function App() {
             <OwnerRoute>
               <PendingWithdrawalsPage />
             </OwnerRoute>
+          }
+        />
+      </Route>
+
+      {/* Tenant Routes */}
+      <Route element={<TenantLayout />}>
+        <Route
+          path="/tenant/dashboard"
+          element={
+            <TenantRoute>
+              <TenantDashboard />
+            </TenantRoute>
+          }
+        />
+        <Route
+          path="/tenant/documents"
+          element={
+            <TenantRoute>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">Giấy tờ của tôi</h1>
+                <p className="text-gray-600">Tính năng đang phát triển...</p>
+              </div>
+            </TenantRoute>
+          }
+        />
+        <Route
+          path="/tenant/contracts"
+          element={
+            <TenantRoute>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">Hợp đồng thuê</h1>
+                <p className="text-gray-600">Tính năng đang phát triển...</p>
+              </div>
+            </TenantRoute>
+          }
+        />
+        <Route
+          path="/tenant/approvals"
+          element={
+            <TenantRoute>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">Yêu cầu phê duyệt</h1>
+                <p className="text-gray-600">Tính năng đang phát triển...</p>
+              </div>
+            </TenantRoute>
+          }
+        />
+        <Route
+          path="/tenant/settings"
+          element={
+            <TenantRoute>
+              <div className="p-6">
+                <h1 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt</h1>
+                <p className="text-gray-600">Tính năng đang phát triển...</p>
+              </div>
+            </TenantRoute>
           }
         />
       </Route>

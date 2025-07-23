@@ -26,10 +26,10 @@ const Navbar = () => {
     navigate(path);
   };
 
-  // ✅ THÊM: Check user role
- const isOwner = () => {
-  return user?.role?.includes('landlord') ;
-};
+  // ✅ Check user role
+  const isOwner = () => {
+    return user?.role?.includes('landlord') || user?.role === 'owner';
+  };
 
   return (
     <div className="w-full shadow-sm border-b bg-white relative z-50">
@@ -77,13 +77,27 @@ const Navbar = () => {
                 <Heart size={16} /> Tin đã lưu
               </div>
 
-              {/* ✅ SỬA: Role-based navigation */}
-              <div
-                className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
-                onClick={() => handleNavigate(isOwner() ? "/owner" : "/dashboard")}
-              >
-                <Folder size={16} /> Quản lý
-              </div>
+              {/* ✅ Dashboard link chỉ cho tenant (không phải owner) */}
+              {isAuthenticated && !isOwner() && (
+                <div
+                  className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+                  onClick={() => handleNavigate("/tenant/dashboard")}
+                >
+                  <Folder size={16} /> 
+                  <span>Dashboard</span>
+                </div>
+              )}
+
+              {/* ✅ THÊM: Owner link riêng (nếu là owner) */}
+              {isOwner() && (
+                <div
+                  className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+                  onClick={() => handleNavigate("/owner")}
+                >
+                  <UserCog size={16} /> 
+                  <span>Quản lý nhà</span>
+                </div>
+              )}
 
               {/* Account dropdown */}
               <div

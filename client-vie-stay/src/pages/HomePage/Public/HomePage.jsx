@@ -106,7 +106,6 @@ const HomePage = () => {
                 <p className='text-sm text-gray-700 text-center'>
                     {text?.HOME_DESCRIPTION || 'Tìm kiếm phòng trọ, nhà trọ tại Đà Nẵng với giá cả hợp lý và đầy đủ tiện nghi'}
                 </p>
-
             </div>
 
             {/* Main Content */}

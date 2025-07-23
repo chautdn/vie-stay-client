@@ -1,8 +1,6 @@
 import axios from 'axios';
 import { BASE_URL } from './Constant';
 
-console.log("🚀 Creating axios instance with BASE_URL:", BASE_URL);
-
 // Create axios instance
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
@@ -173,7 +171,6 @@ axiosInstance.testAuth = async () => {
 // Global function for easy debugging
 if (typeof window !== 'undefined') {
   window.testAxiosAuth = axiosInstance.testAuth;
-  console.log("💡 Run 'window.testAxiosAuth()' in console to test auth");
 }
 
 export default axiosInstance;

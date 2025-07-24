@@ -1,33 +1,27 @@
 import React, { useEffect, useState } from "react";
-import { Toaster, toast } from 'react-hot-toast'; // Thêm toast
+import { Toaster, toast } from 'react-hot-toast';
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { formatCurrencyVND } from "../../../utils/FormatPricePrint";
-import { roomService } from "../../../services/roomService";
+import { usePostStore } from "../../../store/postStore";
+import RoomImageSlider from "../../../components/RoomDetail/RoomImageSlider";
+import RoomInfo from "../../../components/postDetail/RoomInfo";
+import UserInfoPost from "../../../components/postDetail/UserInfoPost";
+import ReportModal from "../../../components/RoomDetail/ReportModal";
 import { NewestPosts } from "../Public";
 
-// Import components
-import ReportModal from "../../../components/RoomDetail/ReportModal";
-import RoomImageSlider from "../../../components/RoomDetail/RoomImageSlider";
-import RoomInfo from "../../../components/RoomDetail/RoomInfo";
-import RentalRequestModal from "../../../components/RoomDetail/RentalRequestModal";
-import UserInfoBox from "../../../components/RoomDetail/UserInfoBox";
-
-const RoomDetail = () => {
+const PostDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const queryParams = new URLSearchParams(location.search);
-  const action = queryParams.get("action");
 
-  const { room: roomFromState } = location.state || {};
-  const [room, setRoom] = useState(roomFromState || null);
+  const { getPostById } = usePostStore();
+  const [post, setPost] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [isFavorited, setIsFavorited] = useState(false);
   const [isReport, setIsReport] = useState(false);
-  const [isRentalRequest, setIsRentalRequest] = useState(false);
   const [reportForm, setReportForm] = useState({
     reportType: 'scam',
     message: '',
@@ -38,50 +32,44 @@ const RoomDetail = () => {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
-    
-    if (action === 'rent') {
-      setTimeout(() => {
-        setIsRentalRequest(true);
-      }, 500);
-    }
-  }, [action]);
+  }, []);
 
-  // Fetch room data
+  // Fetch post data
   useEffect(() => {
-    if (!room && id) {
-      const fetchRoomDetail = async () => {
+    if (!post && id) {
+      const fetchPostDetail = async () => {
         setIsLoading(true);
         setError(null);
         try {
-          const response = await roomService.getRoomById(id);
-          let roomData = null;
+          const response = await getPostById(id);
+          let postData = null;
 
-          if (response?.status === "success" && response?.data?.room) {
-            roomData = response.data.room;
-          } else if (response?.data?.room) {
-            roomData = response.data.room;
-          } else if (response?.room) {
-            roomData = response.room;
+          if (response?.status === "success" && response?.data?.post) {
+            postData = response.data.post;
+          } else if (response?.data?.post) {
+            postData = response.data.post;
+          } else if (response?.post) {
+            postData = response.post;
           } else if (response?._id) {
-            roomData = response;
+            postData = response;
           }
 
-          if (roomData) {
-            setRoom(roomData);
+          if (postData) {
+            setPost(postData);
           } else {
-            throw new Error("Không tìm thấy thông tin phòng");
+            throw new Error("Không tìm thấy thông tin tin đăng");
           }
         } catch (err) {
-          console.error("❌ Lỗi fetch room detail:", err);
-          setError(err.message || "Lỗi khi tải thông tin phòng");
+          console.error("❌ Lỗi fetch post detail:", err);
+          setError(err.message || "Lỗi khi tải thông tin tin đăng");
         } finally {
           setIsLoading(false);
         }
       };
 
-      fetchRoomDetail();
+      fetchPostDetail();
     }
-  }, [room, id]);
+  }, [post, id, getPostById]);
 
   // Helper functions
   const formatAmenity = (amenity) => {
@@ -121,12 +109,13 @@ const RoomDetail = () => {
   };
 
   const formatAddress = () => {
-    if (room?.fullAddress) {
-      return room.fullAddress;
+    if (post?.address?.fullAddress) {
+      return post.address.fullAddress;
     }
-    if (room?.accommodation?.address) {
-      const addr = room.accommodation.address;
+    if (post?.address) {
+      const addr = post.address;
       const parts = [];
+      if (addr.street) parts.push(addr.street);
       if (addr.ward) parts.push(addr.ward);
       if (addr.district) parts.push(addr.district);
       if (addr.city) parts.push(addr.city);
@@ -145,7 +134,7 @@ const RoomDetail = () => {
         fullname: reportForm.fullname,
         phone: reportForm.phone,
         email: reportForm.email,
-        postId: room._id
+        postId: post._id
       };
 
       const response = await fetch('http://localhost:8080/api/reports', {
@@ -202,24 +191,24 @@ const RoomDetail = () => {
     );
   }
 
-  if (!room) {
+  if (!post) {
     return (
       <div className="max-w-6xl mx-auto p-6 text-center">
         <div className="text-gray-400 text-6xl mb-4">🏠</div>
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy phòng</h2>
-        <p className="text-gray-600 mb-4">Phòng bạn tìm kiếm không tồn tại hoặc đã bị xóa</p>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy tin đăng</h2>
+        <p className="text-gray-600 mb-4">Tin đăng bạn tìm kiếm không tồn tại hoặc đã bị xóa</p>
         <button
           onClick={() => navigate("/search")}
           className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 rounded-lg transition-colors"
         >
-          Tìm phòng khác
+          Tìm tin khác
         </button>
       </div>
     );
   }
 
-  const roomImages = room?.images && room.images.length > 0 
-    ? room.images 
+  const postImages = post?.images && post.images.length > 0 
+    ? post.images 
     : ["https://t3.ftcdn.net/jpg/02/15/15/46/360_F_215154625_hJg9QkfWH9Cu6LCTUc8TiuV6jQSI0C5X.jpg"];
 
   return (
@@ -252,16 +241,10 @@ const RoomDetail = () => {
         onSubmit={handleReportSubmit}
       />
 
-      <RentalRequestModal
-        isOpen={isRentalRequest}
-        onClose={() => setIsRentalRequest(false)}
-        room={room}
-      />
-
       {/* Left Column - 70% width */}
       <div className='w-[70%]'>
         <RoomImageSlider
-          images={roomImages}
+          images={postImages}
           currentSlide={currentSlide}
           setCurrentSlide={setCurrentSlide}
         />
@@ -269,7 +252,7 @@ const RoomDetail = () => {
         {/* Main Content Card */}
         <div className='bg-white rounded-md shadow-md p-4'>
           <RoomInfo
-            room={room}
+            post={post}
             formatRoomType={formatRoomType}
             formatAddress={formatAddress}
           />
@@ -278,7 +261,7 @@ const RoomDetail = () => {
           <div className='mt-8'>
             <h3 className='font-semibold text-xl my-4'>Thông tin mô tả</h3>
             <div className='flex flex-col gap-3'>
-              <span>{room?.description || "Mô tả đang được cập nhật..."}</span>
+              <span>{post?.description || "Mô tả đang được cập nhật..."}</span>
             </div>
           </div>
           
@@ -289,7 +272,7 @@ const RoomDetail = () => {
               <tbody className='w-full'>
                 <tr className='w-full'>
                   <td className='p-2'>Mã tin</td>
-                  <td className='p-2'>#{room?._id?.slice(-6) || "000000"}</td>
+                  <td className='p-2'>#{post?._id?.slice(-6) || "000000"}</td>
                 </tr>
                 <tr className='w-full bg-gray-200'>
                   <td className='p-2'>Khu vực</td>
@@ -301,23 +284,23 @@ const RoomDetail = () => {
                 </tr>
                 <tr className='w-full bg-gray-200'>
                   <td className='p-2'>Đối tượng</td>
-                  <td className='p-2'>{room?.capacity || 1} người</td>
+                  <td className='p-2'>{post?.capacity || 1} người</td>
                 </tr>
                 <tr className='w-full'>
                   <td className='p-2'>Diện tích</td>
-                  <td className='p-2'>{room?.size || 0} m²</td>
+                  <td className='p-2'>{post?.area || 0} m²</td>
                 </tr>
                 <tr className='w-full bg-gray-200'>
                   <td className='p-2'>Ngày đăng</td>
-                  <td className='p-2'>{new Date(room?.createdAt || Date.now()).toLocaleDateString('vi-VN')}</td>
+                  <td className='p-2'>{new Date(post?.createdAt || Date.now()).toLocaleDateString('vi-VN')}</td>
                 </tr>
                 <tr className='w-full'>
                   <td className='p-2'>Trạng thái</td>
                   <td className='p-2'>
                     <span className={`px-2 py-1 rounded text-sm ${
-                      room?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      post?.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                     }`}>
-                      {room?.isAvailable ? 'Còn trống' : 'Đã thuê'}
+                      {post?.isAvailable ? 'Còn trống' : 'Đã thuê'}
                     </span>
                   </td>
                 </tr>
@@ -326,11 +309,11 @@ const RoomDetail = () => {
           </div>
           
           {/* Amenities */}
-          {room?.amenities && room.amenities.length > 0 && (
+          {post?.amenities && post.amenities.length > 0 && (
             <div className='mt-8'>
               <h3 className='font-semibold text-xl my-4'>Tiện nghi</h3>
               <div className="grid grid-cols-2 gap-2">
-                {room.amenities.map((amenity, idx) => (
+                {post.amenities.map((amenity, idx) => (
                   <div key={idx} className="flex items-center text-sm">
                     <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                     {formatAmenity(amenity)}
@@ -341,12 +324,12 @@ const RoomDetail = () => {
           )}
 
           {/* Utility Rates */}
-          {room?.utilityRates && Object.keys(room.utilityRates).length > 0 && (
+          {post?.utilityRates && Object.keys(post.utilityRates).length > 0 && (
             <div className='mt-8'>
               <h3 className='font-semibold text-xl my-4'>Chi phí dịch vụ</h3>
               <table className='w-full'>
                 <tbody className='w-full'>
-                  {Object.entries(room.utilityRates).map(([key, value], index) =>
+                  {Object.entries(post.utilityRates).map(([key, value], index) =>
                     value && value.rate ? (
                       <tr key={key} className={`w-full ${index % 2 === 1 ? 'bg-gray-200' : ''}`}>
                         <td className='p-2 capitalize'>
@@ -371,12 +354,12 @@ const RoomDetail = () => {
 
       {/* Right Column - 30% width */}
       <div className='w-[30%] flex flex-col gap-8'>
-        <UserInfoBox
-          room={room}
+        <UserInfoPost
+          post={post}
           isFavorited={isFavorited}
           setIsFavorited={setIsFavorited}
           setIsReport={setIsReport}
-          setIsRentalRequest={setIsRentalRequest}
+          // Không truyền setIsRentalRequest
         />
 
         <NewestPosts />
@@ -389,7 +372,7 @@ const RoomDetail = () => {
           onClick={() => setShowFullscreen(false)}
         >
           <div className="keen-slider w-full max-w-6xl h-[90vh]">
-            {roomImages.map((img, i) => (
+            {postImages.map((img, i) => (
               <div key={i} className="keen-slider__slide flex justify-center items-center">
                 <img src={img} alt={`Ảnh ${i}`} className="max-h-full max-w-full object-contain" />
               </div>
@@ -407,4 +390,4 @@ const RoomDetail = () => {
   );
 };
 
-export default RoomDetail;
+export default PostDetail;

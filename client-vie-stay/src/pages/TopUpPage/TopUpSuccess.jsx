@@ -7,21 +7,20 @@ import axiosInstance from "../../utils/AxiosInstance";
 
 const TopUpSuccess = () => {
   const navigate = useNavigate();
-  const { user, updateWalletBalance } = useAuthStore();
+  const { updateWalletBalance } = useAuthStore();
   const [searchParams] = useSearchParams();
   const [isProcessing, setIsProcessing] = useState(true);
   const [paymentResult, setPaymentResult] = useState(null);
   
-  // 🔥 Prevent duplicate API calls
+  // Prevent duplicate processing
   const hasProcessed = useRef(false);
-  const isProcessingRef = useRef(false);
 
   useEffect(() => {
     const processPayment = async () => {
       const orderCode = searchParams.get('orderCode');
       
-      // 🔥 Prevent duplicate processing
-      if (hasProcessed.current || isProcessingRef.current || !orderCode) {
+      // Prevent duplicate processing
+      if (hasProcessed.current || !orderCode) {
         if (!orderCode) {
           toast.error("Không tìm thấy mã giao dịch");
           setIsProcessing(false);
@@ -30,21 +29,15 @@ const TopUpSuccess = () => {
         return;
       }
 
-      // Mark as processing
-      isProcessingRef.current = true;
       hasProcessed.current = true;
 
       try {
-        console.log("🔄 Processing payment for orderCode:", orderCode);
-
         // Call manual processing endpoint
         const response = await axiosInstance.post("/api/payment/process-payment", {
           orderCode: orderCode
         });
 
-        console.log("✅ Payment processing response:", response.data);
-
-        // Update user balance using the new method
+        // Update user balance
         if (response.data.wallet?.balance !== undefined) {
           updateWalletBalance(response.data.wallet.balance);
         }
@@ -59,8 +52,6 @@ const TopUpSuccess = () => {
         setTimeout(() => navigate("/"), 3000);
         
       } catch (error) {
-        console.error("❌ Error processing payment:", error);
-        
         if (error.response?.status === 400 && error.response?.data?.error) {
           toast.error(error.response.data.error);
         } else if (error.response?.status === 404) {
@@ -73,18 +64,13 @@ const TopUpSuccess = () => {
         
         setIsProcessing(false);
         setTimeout(() => navigate("/"), 2000);
-      } finally {
-        isProcessingRef.current = false;
       }
     };
 
-    // Small delay to ensure component is fully mounted
+    // Small delay to ensure component is mounted
     const timer = setTimeout(processPayment, 100);
-    
-    return () => {
-      clearTimeout(timer);
-    };
-  }, []); // 🔥 Empty dependency array to run only once
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-50 p-4">
@@ -111,7 +97,6 @@ const TopUpSuccess = () => {
             )}
             <p className="text-sm text-gray-500">Đang chuyển hướng về trang chủ...</p>
             
-            {/* Progress bar */}
             <div className="w-full bg-gray-200 rounded-full h-1 mt-4">
               <div className="bg-green-600 h-1 rounded-full animate-pulse" style={{width: '100%'}}></div>
             </div>

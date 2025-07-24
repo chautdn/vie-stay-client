@@ -4,7 +4,6 @@ import ProfileAvatar from "./components/ProfileAvatar";
 import ProfileAddress from "./components/ProfileAddress";
 import ProfileNationalId from "./components/ProfileNationalId";
 import ProfileEmergencyContact from "./components/ProfileEmergencyContact";
-import Navbar from "../../components/common/Navbar";
 import axiosInstance from "../../components/utils/AxiosInstance";
 import { getOwnerId } from "../../components/utils/authUtils";
 import ChangePassword from "./ChangePassword";
@@ -191,6 +190,86 @@ export default function Profile() {
     }
   };
 
+  // Cập nhật hàm handleVerifyNationalId
+  const handleVerifyNationalId = async (frontImage, backImage) => {
+    try {
+      const id = getOwnerId();
+      if (!id) throw new Error("Không tìm thấy userId");
+
+      const formData = new FormData();
+      formData.append("nationalIdFront", frontImage);
+      formData.append("nationalIdBack", backImage);
+
+      const response = await axiosInstance.post(`/user/${id}/verify-national-id`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 60000,
+      });
+
+      console.log("🔍 Backend response:", response.data);
+
+      if (response.data.success) { // ✅ Kiểm tra success field
+        const extractedData = response.data.extractedData; // ✅ Lấy data đúng level
+        
+        console.log("📋 Extracted data for update:", extractedData);
+        
+        // ✅ Cập nhật với đúng field names
+        setProfile(prev => ({
+          ...prev,
+          nationalId: extractedData.nationalId || prev.nationalId,
+          name: extractedData.fullName || extractedData.name || prev.name, // Try both
+          dateOfBirth: extractedData.dateOfBirth ? 
+            (extractedData.dateOfBirth.includes('T') ? 
+              extractedData.dateOfBirth.split('T')[0] : 
+              extractedData.dateOfBirth) : prev.dateOfBirth,
+          nationalIdVerified: true,
+          address: {
+            ...prev.address,
+            fullAddress: extractedData.address || prev.address.fullAddress,
+            // ✅ Cải thiện logic parse địa chỉ
+            city: extractedData.address?.toUpperCase().includes('ĐÀ NẴNG') ? 'Đà Nẵng' : prev.address.city,
+            district: extractedData.address?.toUpperCase().includes('HÒA VANG') ? 'Hòa Vang' : prev.address.district,
+            ward: extractedData.address?.toUpperCase().includes('HÒA NINH') ? 'Hòa Ninh' : prev.address.ward,
+            street: extractedData.address?.toUpperCase().includes('THÔN 5') ? 'Thôn 5' : prev.address.street
+          }
+        }));
+
+        // ✅ Expose function cho ProfileNationalId component
+        window.updateProfileAddress = handleAddressChange;
+
+        setSuccessMsg(`✅ Xác thực CCCD thành công!
+          • CCCD: ${extractedData.nationalId}
+          • Họ tên: ${extractedData.fullName || extractedData.name}
+          • Ngày sinh: ${extractedData.dateOfBirth}
+          • Địa chỉ: ${extractedData.address}`);
+        
+        return {
+          success: true,
+          data: { extractedData },
+          message: "Xác thực thành công!"
+        };
+      }
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message;
+      
+      console.error("❌ Verification error:", error);
+      
+      if (error.code === 'ECONNABORTED' && error.message.includes('timeout')) {
+        setApiError("⏱️ Quá trình xác thực mất nhiều thời gian. Vui lòng kiểm tra lại thông tin.");
+        setTimeout(() => window.location.reload(), 3000);
+        return {
+          success: false,
+          message: "Timeout - đang kiểm tra kết quả..."
+        };
+      }
+      
+      setApiError("❌ Lỗi xác thực CCCD: " + errorMsg);
+      return {
+        success: false,
+        message: errorMsg
+      };
+    }
+  };
+
   return (
     <>
       <form
@@ -210,12 +289,10 @@ export default function Profile() {
         </div>
         <ProfileAddress value={profile.address} onChange={handleAddressChange} errors={errors} />
         <ProfileNationalId
-          value={{
-            ...profile,
-            nationalIdImage: formatNationalIdImage(profile.nationalIdImage),
-          }}
+          value={profile}
           onChange={handleChange}
           errors={errors}
+          onVerifyNationalId={handleVerifyNationalId}
         />
         <ProfileEmergencyContact
           value={profile.emergencyContact}

@@ -10,10 +10,13 @@ import {
   MapPin, 
   Crown,
   Calendar,
-  Star
+  Star,
+  CheckCircle,
+  Clock,
+  Zap
 } from 'lucide-react';
 
-// Featured Types Configuration
+// Featured Types Configuration (same as before)
 const FEATURED_TYPES = {
   VIP_NOI_BAT: { 
     dailyPrice: 50000, 
@@ -23,7 +26,7 @@ const FEATURED_TYPES = {
     name: 'VIP Nổi Bật', 
     color: 'text-red-600', 
     bgColor: 'bg-red-50',
-    benefits: ['Hiển thị đầu tiên', 'Viền đỏ nổi bật', 'Logo VIP', 'Ưu tiên tối đa']
+    benefits: ['Hiển thị đầu tiên', 'Viền đỏ nổi bật', 'Logo VIP', 'Ưu tiên tối đa', 'Tự động duyệt ngay']
   },
   VIP_1: { 
     dailyPrice: 30000, 
@@ -33,7 +36,7 @@ const FEATURED_TYPES = {
     name: 'VIP 1', 
     color: 'text-orange-600', 
     bgColor: 'bg-orange-50',
-    benefits: ['Hiển thị ưu tiên cao', 'Viền cam nổi bật', 'Logo VIP', 'Tăng lượt xem']
+    benefits: ['Hiển thị ưu tiên cao', 'Viền cam nổi bật', 'Logo VIP', 'Tăng lượt xem', 'Tự động duyệt ngay']
   },
   VIP_2: { 
     dailyPrice: 20000, 
@@ -43,7 +46,7 @@ const FEATURED_TYPES = {
     name: 'VIP 2', 
     color: 'text-yellow-600', 
     bgColor: 'bg-yellow-50',
-    benefits: ['Hiển thị ưu tiên trung bình', 'Viền vàng', 'Tăng khả năng tiếp cận']
+    benefits: ['Hiển thị ưu tiên trung bình', 'Viền vàng', 'Tăng khả năng tiếp cận', 'Tự động duyệt ngay']
   },
   VIP_3: { 
     dailyPrice: 10000, 
@@ -53,7 +56,7 @@ const FEATURED_TYPES = {
     name: 'VIP 3', 
     color: 'text-blue-600', 
     bgColor: 'bg-blue-50',
-    benefits: ['Hiển thị ưu tiên cơ bản', 'Viền xanh', 'Tăng cơ hội được xem']
+    benefits: ['Hiển thị ưu tiên cơ bản', 'Viền xanh', 'Tăng cơ hội được xem', 'Tự động duyệt ngay']
   },
   THUONG: { 
     dailyPrice: 0, 
@@ -63,11 +66,11 @@ const FEATURED_TYPES = {
     name: 'Thường', 
     color: 'text-gray-600', 
     bgColor: 'bg-gray-50',
-    benefits: ['Tin đăng miễn phí', 'Hiển thị theo thứ tự thông thường']
+    benefits: ['Tin đăng miễn phí', 'Hiển thị theo thứ tự thông thường', 'Cần chờ duyệt thủ công']
   }
 };
 
-// Property type mapping - FIXED MAPPING
+// Property type mapping - FIXED MAPPING (same as before)
 const PROPERTY_TYPE_MAPPING = {
   'single': 'single_room',
   'double': 'shared_room',
@@ -82,41 +85,41 @@ const PROPERTY_TYPE_MAPPING = {
   'studio': 'studio'
 };
 
-// FIXED: Furnishing level mapping
+// FIXED: Furnishing level mapping (same as before)
 const FURNISHING_MAPPING = {
   'unfurnished': 'unfurnished',
   'semi': 'semi_furnished',
   'fully': 'fully_furnished'
 };
 
-// FIXED: Amenity mapping - Map room amenities to post amenities
+// FIXED: Amenity mapping (same as before)
 const AMENITY_MAPPING = {
   // Room amenities -> Post amenities
   'air_conditioning': 'air_conditioning',
-  'heating': 'air_conditioning', // Map heating to air_conditioning
+  'heating': 'air_conditioning',
   'wifi': 'wifi',
-  'tv': null, // Not supported in post schema
-  'refrigerator': null, // Not supported in post schema
-  'microwave': null, // Not supported in post schema
-  'coffee_maker': null, // Not supported in post schema
-  'desk': null, // Not supported in post schema
-  'chair': null, // Not supported in post schema
-  'wardrobe': null, // Not supported in post schema
-  'safe': null, // Not supported in post schema
+  'tv': null,
+  'refrigerator': null,
+  'microwave': null,
+  'coffee_maker': null,
+  'desk': null,
+  'chair': null,
+  'wardrobe': null,
+  'safe': null,
   'balcony': 'balcony',
-  'window': null, // Not supported in post schema
-  'blackout_curtains': null, // Not supported in post schema
-  'iron': null, // Not supported in post schema
-  'hairdryer': null, // Not supported in post schema
-  'towels': null, // Not supported in post schema
-  'bed_linens': null, // Not supported in post schema
-  'pillow': null, // Not supported in post schema
-  'blanket': null, // Not supported in post schema
-  'hangers': null, // Not supported in post schema
-  'mirror': null, // Not supported in post schema
-  'power_outlets': null, // Not supported in post schema
-  'usb_ports': null, // Not supported in post schema
-  'reading_light': null, // Not supported in post schema
+  'window': null,
+  'blackout_curtains': null,
+  'iron': null,
+  'hairdryer': null,
+  'towels': null,
+  'bed_linens': null,
+  'pillow': null,
+  'blanket': null,
+  'hangers': null,
+  'mirror': null,
+  'power_outlets': null,
+  'usb_ports': null,
+  'reading_light': null,
   
   // Accommodation amenities -> Post amenities
   'parking': 'parking',
@@ -126,18 +129,18 @@ const AMENITY_MAPPING = {
   'elevator': 'elevator',
   'security': 'security',
   'kitchen': 'kitchen_access',
-  'restaurant': null, // Not supported in post schema
-  'bar': null, // Not supported in post schema
+  'restaurant': null,
+  'bar': null,
   'garden': 'garden',
-  'terrace': 'garden', // Map terrace to garden
-  'sea_view': null, // Not supported in post schema
-  'mountain_view': null, // Not supported in post schema
+  'terrace': 'garden',
+  'sea_view': null,
+  'mountain_view': null,
   'pets_allowed': 'pets_allowed',
-  'smoking_allowed': null, // Not supported in post schema
-  'wheelchair_accessible': null // Not supported in post schema
+  'smoking_allowed': null,
+  'wheelchair_accessible': null
 };
 
-// FIXED: Filter and map amenities
+// FIXED: Filter and map amenities (same as before)
 const mapAmenities = (roomAmenities = [], accommodationAmenities = []) => {
   const allAmenities = [...roomAmenities, ...accommodationAmenities];
   const mappedAmenities = allAmenities
@@ -166,7 +169,7 @@ const RoomToPostModal = ({
 
   useEffect(() => {
     if (room && accommodation && isOpen) {
-      // FIXED: Generate post data with proper mapping
+      // FIXED: Generate post data with proper mapping (same as before)
       const mappedAmenities = mapAmenities(room.amenities, accommodation.amenities);
       
       const generatedData = {
@@ -176,7 +179,7 @@ const RoomToPostModal = ({
         area: room.size || '',
         capacity: room.capacity,
         hasPrivateBathroom: room.hasPrivateBathroom || false,
-        furnishingLevel: FURNISHING_MAPPING[room.furnishingLevel] || 'unfurnished', // FIXED
+        furnishingLevel: FURNISHING_MAPPING[room.furnishingLevel] || 'unfurnished',
         rent: room.baseRent,
         deposit: room.deposit || 0,
         electricityCost: room.utilityRates?.electricity?.rate || '',
@@ -185,7 +188,7 @@ const RoomToPostModal = ({
         street: accommodation.address?.street || '',
         ward: accommodation.address?.ward || '',
         district: accommodation.address?.district || 'Quận Hải Châu',
-        amenities: mappedAmenities, // FIXED: Use mapped amenities
+        amenities: mappedAmenities,
         contactName: user?.name || '',
         contactPhone: accommodation.contactInfo?.phone || user?.phoneNumber || '',
         contactEmail: accommodation.contactInfo?.email || user?.email || '',
@@ -197,7 +200,7 @@ const RoomToPostModal = ({
         images: room.images || []
       };
       
-      console.log('Generated post data:', generatedData); // Debug log
+      console.log('Generated post data:', generatedData);
       setPostData(generatedData);
     }
   }, [room, accommodation, user, isOpen]);
@@ -217,6 +220,7 @@ const RoomToPostModal = ({
 
   const cost = calculateCost(selectedPlan, duration);
   const canAfford = user?.wallet?.balance >= cost;
+  const isVipPlan = selectedPlan !== 'THUONG';
 
   const handleCreatePost = async () => {
     setIsLoading(true);
@@ -224,40 +228,44 @@ const RoomToPostModal = ({
     try {
       console.log('Creating post from room with data:', postData);
       
-      // Create the post with room and accommodation data
-      const response = await axiosInstance.post('/api/posts', postData, {
+      // Use the new integrated endpoint
+      const response = await axiosInstance.post('/api/posts/with-plan', {
+        postData,
+        selectedPlan,
+        duration,
+        autoRenew,
+        autoRenewDuration
+      }, {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      const createdPost = response.data.post;
+      const result = response.data;
       
-      // If not a free plan, upgrade the post
-      if (selectedPlan !== 'THUONG') {
-        if (!canAfford) {
-          throw new Error('Insufficient wallet balance for selected plan');
+      if (isVipPlan) {
+        // VIP post was created and auto-approved
+        success(
+          `🎉 Tin đăng VIP đã được tạo và duyệt tự động! Tin của bạn đã được hiển thị ngay lập tức với ${FEATURED_TYPES[selectedPlan].name}.`, 
+          {
+            title: '✅ Thành công - Tự động duyệt!',
+            duration: 5000
+          }
+        );
+        
+        if (result.newBalance !== undefined) {
+          updateWalletBalance(result.newBalance);
         }
-
-        const upgradeResponse = await axiosInstance.post(`/api/posts/${createdPost._id}/upgrade`, {
-          featuredType: selectedPlan,
-          duration,
-          autoRenew,
-          autoRenewDuration
-        });
-
-        success(`Tin đăng đã được tạo và nâng cấp lên ${FEATURED_TYPES[selectedPlan].name} thành công!`, {
-          title: 'Thành công!',
-          duration: 3000
-        });
-
-        updateWalletBalance(upgradeResponse.data.newBalance);
       } else {
-        success('Tin đăng đã được tạo thành công! Đang chờ duyệt.', {
-          title: 'Thành công!',
-          duration: 3000
-        });
+        // Free post needs manual approval
+        warning(
+          'Tin đăng miễn phí đã được tạo thành công! Tin của bạn đang chờ được kiểm duyệt và sẽ hiển thị sau khi được phê duyệt.', 
+          {
+            title: '⏳ Chờ duyệt',
+            duration: 4000
+          }
+        );
       }
       
-      onSuccess?.(createdPost);
+      onSuccess?.(result.post);
       onClose();
     } catch (err) {
       console.error('Error creating post from room:', err);
@@ -290,7 +298,7 @@ const RoomToPostModal = ({
             </button>
           </div>
 
-          {/* Room & Accommodation Preview */}
+          {/* Room & Accommodation Preview (same as before) */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Room Info */}
             <div className="bg-blue-50 rounded-lg p-4">
@@ -380,7 +388,7 @@ const RoomToPostModal = ({
             </div>
           </div>
 
-          {/* FIXED: Amenity Preview */}
+          {/* Amenity Preview */}
           <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
             <h3 className="font-semibold text-yellow-800 mb-3">Tiện ích sẽ được áp dụng</h3>
             <div className="flex flex-wrap gap-2">
@@ -414,9 +422,35 @@ const RoomToPostModal = ({
             </div>
           </div>
 
-          {/* Plan Selection */}
+          {/* Plan Selection with Auto-Approval Info */}
           <div className="mb-6">
             <h3 className="text-xl font-semibold mb-4 text-gray-800">Chọn gói tin đăng</h3>
+            
+            {/* Auto-Approval Info Banner */}
+            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <Zap className="text-blue-600" size={24} />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-blue-800 mb-2">Tính năng tự động duyệt</h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <CheckCircle className="text-green-600" size={16} />
+                      <span className="text-gray-700">
+                        <strong>Gói VIP:</strong> Tin đăng được duyệt và hiển thị ngay lập tức
+                      </span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Clock className="text-yellow-600" size={16} />
+                      <span className="text-gray-700">
+                        <strong>Gói miễn phí:</strong> Cần chờ kiểm duyệt thủ công (1-24h)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
               {Object.entries(FEATURED_TYPES).map(([key, plan]) => (
@@ -429,6 +463,14 @@ const RoomToPostModal = ({
                   }`}
                   onClick={() => setSelectedPlan(key)}
                 >
+                  {/* Auto-approval badge for VIP plans */}
+                  {key !== 'THUONG' && (
+                    <div className="absolute -top-2 -right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center">
+                      <Zap size={10} className="mr-1" />
+                      Auto-duyệt
+                    </div>
+                  )}
+                  
                   <div className={`flex items-center justify-between mb-3`}>
                     <h4 className={`font-bold ${plan.color}`}>{plan.name}</h4>
                     {key !== 'THUONG' && <Crown className={`${plan.color}`} size={20} />}
@@ -450,13 +492,32 @@ const RoomToPostModal = ({
                   <div className="mt-3">
                     <p className="text-xs font-semibold text-gray-700 mb-1">Lợi ích:</p>
                     <ul className="space-y-1">
-                      {plan.benefits.slice(0, 2).map((benefit, index) => (
+                      {plan.benefits.slice(0, key === 'THUONG' ? 2 : 3).map((benefit, index) => (
                         <li key={index} className="text-xs text-gray-600 flex items-start">
-                          <Star size={10} className="text-yellow-500 mr-1 mt-0.5 flex-shrink-0" />
+                          {key !== 'THUONG' && benefit.includes('Tự động duyệt') ? (
+                            <Zap size={10} className="text-green-500 mr-1 mt-0.5 flex-shrink-0" />
+                          ) : (
+                            <Star size={10} className="text-yellow-500 mr-1 mt-0.5 flex-shrink-0" />
+                          )}
                           {benefit}
                         </li>
                       ))}
                     </ul>
+                  </div>
+                  
+                  {/* Approval time indicator */}
+                  <div className="mt-3 pt-2 border-t border-gray-200">
+                    {key !== 'THUONG' ? (
+                      <div className="flex items-center text-xs text-green-600">
+                        <CheckCircle size={12} className="mr-1" />
+                        Hiển thị ngay lập tức
+                      </div>
+                    ) : (
+                      <div className="flex items-center text-xs text-yellow-600">
+                        <Clock size={12} className="mr-1" />
+                        Chờ duyệt 1-24h
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -527,13 +588,28 @@ const RoomToPostModal = ({
             )}
           </div>
 
-          {/* Cost Summary */}
+          {/* Cost Summary with Auto-Approval Benefits */}
           <div className="bg-gradient-to-r from-orange-50 to-red-50 p-6 rounded-lg mb-6 border border-orange-200">
             <div className="flex justify-between items-center mb-3">
               <span className="text-lg font-medium text-gray-800">Tổng chi phí:</span>
               <span className="text-2xl font-bold text-orange-600">
                 {cost.toLocaleString()}₫
               </span>
+            </div>
+            
+            {/* Approval status info */}
+            <div className="mb-3 p-3 rounded-lg bg-white/70">
+              {isVipPlan ? (
+                <div className="flex items-center text-green-700">
+                  <CheckCircle size={16} className="mr-2" />
+                  <span className="font-medium">Tin đăng sẽ được duyệt và hiển thị ngay lập tức</span>
+                </div>
+              ) : (
+                <div className="flex items-center text-yellow-700">
+                  <Clock size={16} className="mr-2" />
+                  <span className="font-medium">Tin đăng sẽ chờ kiểm duyệt thủ công (1-24 giờ)</span>
+                </div>
+              )}
             </div>
             
             <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -583,7 +659,17 @@ const RoomToPostModal = ({
                 </>
               ) : (
                 <>
-                  {selectedPlan === 'THUONG' ? 'Đăng tin miễn phí' : `Thanh toán ${cost.toLocaleString()}₫`}
+                  {isVipPlan ? (
+                    <>
+                      <Zap size={16} className="mr-2" />
+                      {`Thanh toán ${cost.toLocaleString()}₫ & Duyệt ngay`}
+                    </>
+                  ) : (
+                    <>
+                      <Clock size={16} className="mr-2" />
+                      Đăng tin miễn phí (Chờ duyệt)
+                    </>
+                  )}
                 </>
               )}
             </button>

@@ -198,7 +198,7 @@ const LoginPage = () => {
 
           {error && (
             <div className="mb-4 p-3 bg-red-500 bg-opacity-20 border border-red-500 rounded-lg">
-              <p className="text-red-400 text-sm">{error}</p>
+              <p className="text-white-400 text-sm">{error}</p>
             </div>
           )}
 

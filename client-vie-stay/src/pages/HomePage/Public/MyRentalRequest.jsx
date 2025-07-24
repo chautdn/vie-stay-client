@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRentalRequestStore } from "../../../store/owner/rentalRequestStore";
 import { useAuthStore } from "../../../store/authStore";
+import { useCoTenantRequestStore } from "../../../store/owner/co-tenantRequestStore";
 import { Calendar, Home, User, MessageCircle, AlertCircle, CheckCircle, XCircle, Clock, Trash2, Wallet } from "lucide-react";
 import { formatDate } from "../../../utils/FormatDatePrint";
+import SendCotenantRequestModal from "../../../pages/TenantPage/CotenantRequest/SendCotenantRequestModal";
 
 const MyRentalRequest = () => {
   const navigate = useNavigate();
@@ -17,11 +19,14 @@ const MyRentalRequest = () => {
     deleteRentalRequest,
     clearError 
   } = useRentalRequestStore();
+  const { isLoading: coTenantLoading, error: coTenantError, requestCoTenant } = useCoTenantRequestStore();
 
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [actionType, setActionType] = useState(""); // "withdraw" or "delete"
   const [selectedRequestId, setSelectedRequestId] = useState(null);
+  const [showCoTenantModal, setShowCoTenantModal] = useState(false);
+  const [selectedRoomId, setSelectedRoomId] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -86,12 +91,30 @@ const MyRentalRequest = () => {
   };
 
   const handleWithdrawalRequest = (request) => {
-    // Kiểm tra xem yêu cầu có agreement confirmation không
     if (request.agreementConfirmationId) {
       navigate(`/withdrawal/request/${request.agreementConfirmationId}`);
     } else {
-      // Nếu chưa có agreement confirmation, có thể chuyển đến trang tạo agreement
       alert("Chưa có thông tin agreement confirmation. Vui lòng liên hệ chủ nhà để hoàn tất thủ tục.");
+    }
+  };
+
+  const handleOpenCoTenantModal = (roomId) => {
+    setSelectedRoomId(roomId);
+    setShowCoTenantModal(true);
+  };
+
+  const handleCloseCoTenantModal = () => {
+    setShowCoTenantModal(false);
+    setSelectedRoomId(null);
+  };
+
+  const handleSubmitCoTenant = async ({ name, phoneNumber, imageCCCD }) => {
+    try {
+      await requestCoTenant({ roomId: selectedRoomId, name, phoneNumber, imageCCCD });
+      handleCloseCoTenantModal();
+      alert("Yêu cầu thêm người ở cùng đã được gửi thành công!");
+    } catch (error) {
+      console.error("Failed to send co-tenant request:", error);
     }
   };
 
@@ -150,7 +173,15 @@ const MyRentalRequest = () => {
         </div>
       )}
 
-      {/* Filter tabs */}
+      {coTenantError && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 text-red-600" />
+            <span className="text-red-700">{coTenantError}</span>
+          </div>
+        </div>
+      )}
+
       <div className="mb-6 border-b border-gray-200">
         <div className="flex space-x-8">
           {[
@@ -175,7 +206,6 @@ const MyRentalRequest = () => {
         </div>
       </div>
 
-      {/* Requests list */}
       {filteredRequests.length === 0 ? (
         <div className="text-center py-12">
           <Home className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -205,7 +235,6 @@ const MyRentalRequest = () => {
                   </div>
                   
                   <div className="flex gap-2">
-                    {/* Nút yêu cầu rút tiền cho yêu cầu đã chấp nhận */}
                     {request.status === "accepted" && (
                       <button
                         onClick={() => handleWithdrawalRequest(request)}
@@ -217,7 +246,6 @@ const MyRentalRequest = () => {
                       </button>
                     )}
                     
-                    {/* Nút rút lại cho yêu cầu đang chờ */}
                     {request.status === "pending" && (
                       <button
                         onClick={() => handleAction(request._id, "withdraw")}
@@ -227,7 +255,6 @@ const MyRentalRequest = () => {
                       </button>
                     )}
                     
-                    {/* Nút xóa cho yêu cầu bị từ chối hoặc đã rút lại */}
                     {(request.status === "rejected" || request.status === "withdrawn") && (
                       <button
                         onClick={() => handleAction(request._id, "delete")}
@@ -241,10 +268,9 @@ const MyRentalRequest = () => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Room info */}
                   <div>
                     <h3 className="font-semibold text-lg text-gray-900 mb-2">
-                      {request.room?.title || "Phòng không xác định"}
+                      {request.roomId?.name || "Phòng không xác định"}
                     </h3>
                     <div className="space-y-2 text-sm text-gray-600">
                       <div className="flex items-center gap-2">
@@ -265,10 +291,18 @@ const MyRentalRequest = () => {
                           <span>Ngày kết thúc: {formatDate(request.proposedEndDate)}</span>
                         </div>
                       )}
+                     
+                      {request.roomId?.capacity >= 2 && (
+                        <button
+                          className="mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-medium transition-colors"
+                          onClick={() => handleOpenCoTenantModal(request.roomId._id)}
+                        >
+                          Gửi yêu cầu thêm người ở cùng
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  {/* Message */}
                   <div>
                     <h4 className="font-medium text-gray-900 mb-2">Tin nhắn</h4>
                     <div className="bg-gray-50 rounded-lg p-3">
@@ -290,7 +324,6 @@ const MyRentalRequest = () => {
                       </div>
                     )}
 
-                    {/* Thông tin về withdrawal nếu có */}
                     {request.status === "accepted" && (
                       <div className="mt-3 bg-green-50 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-1">
@@ -315,7 +348,6 @@ const MyRentalRequest = () => {
         </div>
       )}
 
-      {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
@@ -348,6 +380,15 @@ const MyRentalRequest = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {showCoTenantModal && (
+        <SendCotenantRequestModal
+          roomId={selectedRoomId}
+          onClose={handleCloseCoTenantModal}
+          onSubmit={handleSubmitCoTenant}
+          isLoading={coTenantLoading}
+        />
       )}
     </div>
   );

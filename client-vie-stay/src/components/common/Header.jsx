@@ -7,6 +7,9 @@ import {
   Pencil,
   UserCog,
   FileText,
+  HotelIcon,
+  CreditCard,
+  HousePlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -57,19 +60,28 @@ const TopUpModal = ({ onClose }) => {
     }
 
     try {
+      console.log("🚀 Starting top-up for amount:", amount);
       const res = await axiosInstance.post(
         "/api/payment/create-topup-session",
         { amount }
       );
+
+      console.log("✅ Response received:", res);
+      console.log("📦 Response data:", res.data);
+
       const data = res.data;
       if (data?.checkoutUrl) {
         window.location.href = data.checkoutUrl;
       } else {
+        console.warn("⚠️ No checkoutUrl in response:", data);
         alert("Không thể tạo phiên thanh toán.");
       }
     } catch (err) {
-      console.error("Top-up error:", err);
-      alert("Đã xảy ra lỗi khi tạo thanh toán.");
+      console.error("❌ Top-up error:", err);
+      console.error("❌ Error response:", err.response);
+      console.error("❌ Error status:", err.response?.status);
+      console.error("❌ Error data:", err.response?.data);
+      alert(`Đã xảy ra lỗi: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -119,6 +131,10 @@ const Navbar = () => {
     return user?.role?.includes("landlord");
   };
 
+  const isTenant = () => {
+    return user?.role?.includes("tenant");
+  };
+
   const handlePostClick = () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
@@ -126,7 +142,6 @@ const Navbar = () => {
       navigate("/create-post");
     }
   };
-
   return (
     <div className="w-full shadow-sm border-b bg-white relative z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center p-3">
@@ -179,6 +194,16 @@ const Navbar = () => {
               >
                 <FileText size={16} /> Tin của tôi
               </div>
+
+              {/* Tenant Dashboard - Only for non-owners */}
+              {isAuthenticated && !isOwner() && (
+                <div
+                  className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+                  onClick={() => handleNavigate("/tenant/dashboard")}
+                >
+                  <HotelIcon size={16} /> Dashboard
+                </div>
+              )}
 
               {/* Owner Management - Only for owners */}
               {isOwner() && (
@@ -262,6 +287,26 @@ const Navbar = () => {
                 >
                   <UserCog size={18} /> <span>Quản lý tài khoản</span>
                 </button>
+                <button
+                  onClick={() => handleNavigate("/transaction-history")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <CreditCard size={18} /> <span>Lịch sử giao dịch</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/owner/create")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <HousePlus size={18} />
+                  <span>Tạo nhà trọ của bạn</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/my-rental-requests")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <HotelIcon size={18} /> <span>Yêu cầu thuê của tôi</span>
+                </button>
+
                 <LogoutButton className="w-full p-2 rounded-lg hover:bg-red-50 text-red-600 transition text-sm" />
               </div>
             </div>

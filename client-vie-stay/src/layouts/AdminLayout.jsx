@@ -9,7 +9,9 @@ import {
   Menu,
   X,
   Bell,
-  Search
+  Search,
+  FileText, // ✅ ADDED: Icon for posts
+  Flag // ✅ ADDED: Icon for reports
 } from "lucide-react";
 
 // Import the real data components
@@ -17,6 +19,9 @@ import AdminDashboard from "../pages/AdminPage/AdminDashboard";
 import AccommodationManagement from "../pages/AdminPage/AccommodationManagement";
 import UserManagement from "../pages/AdminPage/UserManagement";
 import RevenueReports from "../pages/AdminPage/RevenueReports";
+// ✅ FIXED: Import from the correct path
+import AdminPostManagement from "../pages/AdminPage/AdminPostManagement";
+import ReportManagement from "../components/admin/ReportManagement";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -38,12 +43,19 @@ const AdminLayout = () => {
     profileImage: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
   };
 
+  // ✅ UPDATED: Added post management menu item
   const menuItems = [
     {
       name: "Dashboard",
       icon: LayoutDashboard,
       path: "/admin/dashboard",
       description: "Overview & Statistics"
+    },
+    {
+      name: "Posts", // ✅ ADDED
+      icon: FileText,
+      path: "/admin/posts",
+      description: "Manage & Monitor Posts"
     },
     {
       name: "Accommodations",
@@ -62,6 +74,12 @@ const AdminLayout = () => {
       icon: BarChart3,
       path: "/admin/reports",
       description: "Analytics & Revenue"
+    },
+    {
+      name: "Report Management",
+      icon: Flag,
+      path: "/admin/report-management",
+      description: "Manage User Reports"
     },
     {
       name: "Settings",
@@ -94,21 +112,40 @@ const AdminLayout = () => {
     return currentPage === path.split('/').pop();
   };
 
+  // ✅ UPDATED: Added post management case
   const renderPageContent = () => {
     switch (currentPage) {
       case "dashboard":
         return <AdminDashboard />;
+      case "posts": // ✅ ADDED
+        return <AdminPostManagement />;
       case "accommodations":
         return <AccommodationManagement />;
       case "users":
         return <UserManagement />;
       case "reports":
         return <RevenueReports />;
+      case "report-management":
+        return <ReportManagement />;
       case "settings":
         return <AdminSettings />;
       default:
         return <AdminDashboard />;
     }
+  };
+
+  // ✅ UPDATED: Enhanced page title mapping
+  const getPageTitle = () => {
+    const titles = {
+      dashboard: "Dashboard",
+      posts: "Post Management", // ✅ ADDED
+      accommodations: "Accommodation Management",
+      users: "User Management",
+      reports: "Revenue Reports",
+      "report-management": "Report Management",
+      settings: "System Settings"
+    };
+    return titles[currentPage] || "Dashboard";
   };
 
   return (
@@ -187,11 +224,38 @@ const AdminLayout = () => {
                     <div className="font-medium">{item.name}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                   </div>
+                  {/* ✅ ADDED: Badge for post management */}
+                  {item.path === '/admin/posts' && (
+                    <span className="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">
+                      New
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
         </nav>
+
+        {/* ✅ ADDED: Quick Stats Section */}
+        <div className="px-3 mt-6">
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
+            <h3 className="text-sm font-medium text-blue-800 mb-2">Quick Stats</h3>
+            <div className="space-y-1 text-xs text-blue-600">
+              <div className="flex justify-between">
+                <span>Today's Posts:</span>
+                <span className="font-medium">12</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Pending Reviews:</span>
+                <span className="font-medium text-orange-600">5</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Active Users:</span>
+                <span className="font-medium text-green-600">1,234</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* Logout Button */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-gray-200">
@@ -239,9 +303,13 @@ const AdminLayout = () => {
 
             {/* Current Page Title */}
             <div className="hidden md:block">
-              <h1 className="text-lg font-semibold text-gray-800 capitalize">
-                {currentPage.replace('-', ' ')}
+              <h1 className="text-lg font-semibold text-gray-800">
+                {getPageTitle()}
               </h1>
+              {/* ✅ ADDED: Page-specific subtitle */}
+              {currentPage === 'posts' && (
+                <p className="text-xs text-gray-500">Monitor and manage all posts</p>
+              )}
             </div>
           </div>
         </header>
@@ -288,12 +356,43 @@ const AdminSettings = () => (
         </div>
       </div>
       
+      {/* ✅ ADDED: Post Management Settings */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Post Management Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Auto-approve Posts
+            </label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Manual approval required</option>
+              <option>Auto-approve from verified users</option>
+              <option>Auto-approve all posts</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Maximum Post Duration (days)
+            </label>
+            <input
+              type="number"
+              defaultValue="365"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+      
       <div>
         <h3 className="text-lg font-semibold mb-3">Notification Settings</h3>
         <div className="space-y-3">
           <label className="flex items-center">
             <input type="checkbox" defaultChecked className="rounded border-gray-300" />
             <span className="ml-2 text-sm">Email notifications for new accommodations</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" defaultChecked className="rounded border-gray-300" />
+            <span className="ml-2 text-sm">Email notifications for new posts</span>
           </label>
           <label className="flex items-center">
             <input type="checkbox" defaultChecked className="rounded border-gray-300" />

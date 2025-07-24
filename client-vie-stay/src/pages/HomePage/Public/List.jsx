@@ -1,31 +1,18 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
-import { useRoomStore } from '../../../store/owner/roomStore'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { usePostStore } from '../../../store/postStore'
 import { Button } from '../../../components/common'
-import { Item } from '../../../components/common'
 import PostItem from '../../../components/common/PostItem'
 import { sortByPackagePriority } from '../../../utils/packageStyles'
 
 const List = ({ 
-    categoryCode, 
     showPopular = false, 
     currentPage = 1, 
     resultsPerPage = 10,
-    contentType = 'all' // 'room', 'post', hoặc 'all'
 }) => {
     const [searchParams] = useSearchParams()
     const [sortBy, setSortBy] = useState('default')
-    
-    const { 
-        searchRooms, 
-        searchResults: roomResults, 
-        isLoading: roomLoading, 
-        getAllRooms, 
-        rooms,
-        getPopularRooms,
-        popularRooms = []
-    } = useRoomStore()
+    const navigate = useNavigate()
 
     const {
         searchPosts,
@@ -37,14 +24,14 @@ const List = ({
         featuredPosts = []
     } = usePostStore()
 
-    const isLoading = roomLoading || postLoading
+    const isLoading = postLoading
 
     useEffect(() => {
         let params = []
         for (let entry of searchParams.entries()) {
             params.push(entry);
         }
-        
+
         let searchParamsObject = {}
         params?.forEach(i => {
             if (Object.keys(searchParamsObject)?.some(item => item === i[0])) {
@@ -54,19 +41,8 @@ const List = ({
             }
         })
 
-        if (categoryCode) searchParamsObject.categoryCode = categoryCode
-
         if (showPopular) {
-            // Load popular data
-            if (contentType === 'room') {
-                getPopularRooms && getPopularRooms({ limit: 20 })
-            } else if (contentType === 'post') {
-                getFeaturedPosts && getFeaturedPosts({ limit: 20 })
-            } else {
-                // Load both
-                getPopularRooms && getPopularRooms({ limit: 20 })
-                getFeaturedPosts && getFeaturedPosts({ limit: 20 })
-            }
+            getFeaturedPosts && getFeaturedPosts({ limit: 20 })
         } else if (Object.keys(searchParamsObject).length > 0) {
             const apiParams = {}
             Object.keys(searchParamsObject).forEach(key => {
@@ -81,87 +57,45 @@ const List = ({
                     }
                 }
             })
-            
-            // Search based on contentType
-            if (contentType === 'room') {
-                searchRooms && searchRooms(apiParams)
-            } else if (contentType === 'post') {
-                searchPosts && searchPosts(apiParams)
-            } else {
-                // Search both
-                searchRooms && searchRooms(apiParams)
-                searchPosts && searchPosts(apiParams)
-            }
+            searchPosts && searchPosts(apiParams)
         } else {
-            // Load all data based on contentType
-            if (contentType === 'room') {
-                getAllRooms && getAllRooms()
-            } else if (contentType === 'post') {
-                getAllPosts && getAllPosts()
-            } else {
-                // Load both
-                getAllRooms && getAllRooms()
-                getAllPosts && getAllPosts()
-            }
+            getAllPosts && getAllPosts()
         }
-    }, [searchParams, categoryCode, showPopular, contentType])
+    }, [searchParams, showPopular])
 
-    // Sort items based on package priority and merge room + post data
+    // Chỉ dùng post, không merge với room
     const sortedItems = useMemo(() => {
         let allItems = []
-        
         if (showPopular) {
-            if (contentType === 'room') {
-                allItems = popularRooms || []
-            } else if (contentType === 'post') {
-                allItems = featuredPosts || []
-            } else {
-                // Merge both popular rooms and featured posts
-                const roomsWithType = (popularRooms || []).map(room => ({ ...room, itemType: 'room' }))
-                const postsWithType = (featuredPosts || []).map(post => ({ ...post, itemType: 'post' }))
-                allItems = [...roomsWithType, ...postsWithType]
-            }
+            allItems = featuredPosts || []
         } else if (searchParams.toString()) {
-            if (contentType === 'room') {
-                allItems = roomResults || []
-            } else if (contentType === 'post') {
-                allItems = postResults || []
-            } else {
-                // Merge both search results
-                const roomsWithType = (roomResults || []).map(room => ({ ...room, itemType: 'room' }))
-                const postsWithType = (postResults || []).map(post => ({ ...post, itemType: 'post' }))
-                allItems = [...roomsWithType, ...postsWithType]
-            }
+            allItems = postResults || []
         } else {
-            if (contentType === 'room') {
-                allItems = rooms || []
-            } else if (contentType === 'post') {
-                allItems = posts || []
-            } else {
-                // Merge both all data
-                const roomsWithType = (rooms || []).map(room => ({ ...room, itemType: 'room' }))
-                const postsWithType = (posts || []).map(post => ({ ...post, itemType: 'post' }))
-                allItems = [...roomsWithType, ...postsWithType]
-            }
+            allItems = posts || []
         }
 
-        // Sort by package priority (featured items first)
+        // Nếu sau này có nhiều loại bài đăng (ví dụ: post, room, news...), sort theo loại trước
+        // Hiện tại chỉ có post, nhưng vẫn giữ logic để mở rộng
+        allItems = [...allItems].sort((a, b) => {
+            // Đưa post lên đầu, các loại khác xuống dưới
+            const aType = a.itemType || 'post'
+            const bType = b.itemType || 'post'
+            if (aType === bType) return 0
+            return aType === 'post' ? -1 : 1
+        })
+
         const sortedByPriority = sortByPackagePriority(allItems)
-        
-        // Apply additional sorting based on sortBy
+
+        // Sắp xếp
         if (sortBy === 'newest') {
-            return sortedByPriority.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            return [...sortedByPriority].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         } else if (sortBy === 'price') {
-            return sortedByPriority.sort((a, b) => (a.baseRent || a.rent || 0) - (b.baseRent || b.rent || 0))
+            return [...sortedByPriority].sort((a, b) => (a.baseRent || a.rent || 0) - (b.baseRent || b.rent || 0))
         } else if (sortBy === 'area') {
-            return sortedByPriority.sort((a, b) => (b.size || b.area || 0) - (a.size || a.area || 0))
+            return [...sortedByPriority].sort((a, b) => (b.size || b.area || 0) - (a.size || a.area || 0))
         }
-        
         return sortedByPriority
-    }, [
-        showPopular, contentType, popularRooms, featuredPosts, 
-        roomResults, postResults, rooms, posts, searchParams, sortBy
-    ])
+    }, [showPopular, featuredPosts, postResults, posts, searchParams, sortBy])
 
     const startIndex = (currentPage - 1) * resultsPerPage
     const endIndex = startIndex + resultsPerPage
@@ -169,6 +103,15 @@ const List = ({
 
     const handleSort = (type) => {
         setSortBy(type)
+    }
+
+    // Khi click vào post
+    const handlePostClick = (post) => {
+        if (post.roomId) {
+            navigate(`/detail/${post?.roomId?._id}`)
+        } else {
+            navigate(`/tin-dang/${id}`)
+        }
     }
 
     if (isLoading) {
@@ -179,22 +122,11 @@ const List = ({
         )
     }
 
-    const getTitle = () => {
-        if (showPopular) {
-            return contentType === 'room' ? 'Phòng trọ nổi bật' : 
-                   contentType === 'post' ? 'Tin đăng nổi bật' : 
-                   'Nổi bật'
-        }
-        return contentType === 'room' ? 'Danh sách phòng trọ' : 
-               contentType === 'post' ? 'Danh sách tin đăng' : 
-               'Danh sách phòng trọ & tin đăng'
-    }
-
     return (
         <div className='w-full p-2 bg-white shadow-md rounded-md px-6'>
             <div className='flex items-center justify-between my-3'>
                 <h4 className='text-xl font-semibold'>
-                    {getTitle()}
+                    {showPopular ? 'Tin đăng nổi bật' : 'Danh sách tin đăng'}
                 </h4>
                 <span>Cập nhật: {new Date().toLocaleString('vi-VN')}</span>
             </div>
@@ -231,24 +163,11 @@ const List = ({
 
             <div className='items space-y-2'>
                 {currentItems?.length > 0 ? (
-                    currentItems.map(item => {
-                        // Render based on item type
-                        if (item.itemType === 'post' || (!item.itemType && item.title)) {
-                            return (
-                                <PostItem
-                                    key={item._id}
-                                    post={item}
-                                />
-                            )
-                        } else {
-                            return (
-                                <Item
-                                    key={item._id}
-                                    room={item}
-                                />
-                            )
-                        }
-                    })
+                    currentItems.map(post => (
+                        <div key={post._id} onClick={() => handlePostClick(post)} className="cursor-pointer">
+                            <PostItem post={post} />
+                        </div>
+                    ))
                 ) : (
                     <div className="text-center py-12">
                         <div className="text-gray-400 text-6xl mb-4">🏠</div>
@@ -268,7 +187,6 @@ const List = ({
                 )}
             </div>
 
-            {/* ✅ THÊM: Hiển thị thông tin tổng kết */}
             <div className='mt-4 p-2 bg-gray-50 rounded text-sm text-gray-600'>
                 Hiển thị {Math.min(startIndex + 1, sortedItems.length)} - {Math.min(endIndex, sortedItems.length)} 
                 trong tổng số {sortedItems.length} kết quả

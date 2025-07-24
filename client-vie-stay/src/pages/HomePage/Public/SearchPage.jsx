@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react'
 import { List, Pagination } from './index'
 import { ItemSidebar } from '../../../components/common'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { useRoomStore } from '../../../store/owner/roomStore'
+import { usePostStore } from '../../../store/postStore'
 import { location } from '../../../utils/Constant'
 import icons from '../../../utils/icons'
 
@@ -11,20 +11,21 @@ const { IoMdClose } = icons
 const SearchPage = () => {
     const [params] = useSearchParams()
     const navigate = useNavigate()
-    const { searchRooms, searchResults } = useRoomStore()
-    
+ 
+    const { searchPosts, searchResults: postSearchResults } = usePostStore()
+
     const [currentPage, setCurrentPage] = useState(1)
     const resultsPerPage = 5
     const prevParamsRef = useRef('')
 
     // ✅ SỬA: Categories, prices, areas definitions
     const categories = [
-        { code: 'single', value: 'Phòng trọ đơn' },
+      { code: 'single_room', value: 'Phòng trọ đơn' },
         { code: 'double', value: 'Phòng trọ đôi' },
-        { code: 'shared', value: 'Phòng chia sẻ' },
+        { code: 'shared_room', value: 'Phòng chia sẻ' },
         { code: 'studio', value: 'Phòng studio' },
         { code: 'apartment', value: 'Căn hộ mini' },
-        { code: 'dormitory', value: 'Ký túc xá' }
+        { code: 'house', value: 'Nhà nguyên căn' }
     ]
 
     const districts = [
@@ -91,10 +92,10 @@ const SearchPage = () => {
 
                 // ✅ Gọi API search với các params
                 if (Object.keys(searchParamsObject).length > 0) {
-                    await searchRooms(searchParamsObject)
+                    await searchPosts(searchParamsObject)
                 } else {
                     // Nếu không có filter, load tất cả phòng available
-                    await searchRooms({ isAvailable: true })
+                    await searchPosts({ isAvailable: true })
                 }
             } catch (error) {
                 console.error('Error searching rooms:', error)
@@ -102,7 +103,7 @@ const SearchPage = () => {
         }
 
         loadSearchData()
-    }, [params, searchRooms])
+    }, [params, searchPosts])
 
     // ✅ SỬA: Reset page khi filter thay đổi
     useEffect(() => {
@@ -124,138 +125,120 @@ const SearchPage = () => {
 
     // ✅ SỬA: Function để lấy active filters
     const getActiveFilters = () => {
-        const activeFilters = []
-        
-        // District filter
-        const selectedDistrict = params.get('district')
-        if (selectedDistrict) {
-            const districtFromProvince = location.find(loc => loc.districtCode === selectedDistrict)
-            if (districtFromProvince) {
-                activeFilters.push({
-                    type: 'district',
-                    key: 'district',
-                    label: districtFromProvince.name,
-                    value: selectedDistrict
-                })
-            } else {
-                const district = districts.find(dist => dist.code === selectedDistrict)
-                if (district) {
-                    activeFilters.push({
-                        type: 'district',
-                        key: 'district',
-                        label: district.value,
-                        value: selectedDistrict
-                    })
-                }
-            }
-        }
+    const activeFilters = []
 
-        // Features filter
-        const selectedFeatures = params.get('features')
-        if (selectedFeatures) {
-            const feature = features.find(f => f.code === selectedFeatures)
-            if (feature) {
-                activeFilters.push({
-                    type: 'feature',
-                    key: 'features',
-                    label: feature.value,
-                    value: selectedFeatures
-                })
-            }
-        }
-        
-        // Category filter
-        const selectedType = params.get('type')
-        if (selectedType) {
-            const category = categories.find(cat => cat.code === selectedType)
-            if (category) {
-                activeFilters.push({
-                    type: 'category',
-                    key: 'type',
-                    label: category.value,
-                    value: selectedType
-                })
-            }
-        }
-
-        // ✅ SỬA: Price range filter
-        const minRent = params.get('minRent')
-        const maxRent = params.get('maxRent')
-        if (minRent || maxRent) {
-            // ✅ SỬA: Check for exact match first
-            const priceRange = prices.find(price => {
-                const minMatch = price.min.toString() === minRent
-                const maxMatch = price.max === null ? !maxRent : price.max.toString() === maxRent
-                return minMatch && maxMatch
+    // District filter
+    const selectedDistrict = params.get('district')
+    if (selectedDistrict) {
+        const district = districts.find(dist => dist.code === selectedDistrict)
+        if (district) {
+            activeFilters.push({
+                type: 'district',
+                key: 'district',
+                label: district.value,
+                value: selectedDistrict
             })
-            
-            if (priceRange) {
-                activeFilters.push({
-                    type: 'price',
-                    key: ['minRent', 'maxRent'],
-                    label: priceRange.value,
-                    value: `${minRent}-${maxRent || 'max'}`
-                })
-            } else {
-                // Custom price range
-                let priceLabel = ''
-                if (minRent && maxRent) {
-                    priceLabel = `${(parseInt(minRent)/1000000).toFixed(1)} - ${(parseInt(maxRent)/1000000).toFixed(1)} triệu`
-                } else if (minRent) {
-                    priceLabel = `Từ ${(parseInt(minRent)/1000000).toFixed(1)} triệu`
-                } else if (maxRent) {
-                    priceLabel = `Dưới ${(parseInt(maxRent)/1000000).toFixed(1)} triệu`
-                }
-                
-                activeFilters.push({
-                    type: 'price',
-                    key: ['minRent', 'maxRent'],
-                    label: priceLabel,
-                    value: `${minRent || 0}-${maxRent || 'max'}`
-                })
-            }
         }
-
-        // ✅ SỬA: Area range filter
-        const minSize = params.get('minSize')
-        const maxSize = params.get('maxSize')
-        if (minSize || maxSize) {
-            // ✅ SỬA: Check for exact match first
-            const areaRange = areas.find(area => {
-                const minMatch = area.min.toString() === minSize
-                const maxMatch = area.max === null ? !maxSize : area.max.toString() === maxSize
-                return minMatch && maxMatch
-            })
-            
-            if (areaRange) {
-                activeFilters.push({
-                    type: 'area',
-                    key: ['minSize', 'maxSize'],
-                    label: areaRange.value,
-                    value: `${minSize}-${maxSize || 'max'}`
-                })
-            } else {
-                // Custom area range
-                let areaLabel = ''
-                if (minSize && maxSize) {
-                    areaLabel = `${minSize} - ${maxSize}m²`
-                } else if (minSize) {
-                    areaLabel = `Từ ${minSize}m²`
-                } else if (maxSize) {
-                    areaLabel = `Dưới ${maxSize}m²`
-                }
-                
-                activeFilters.push({
-                    type: 'area',
-                    key: ['minSize', 'maxSize'],
-                    label: areaLabel,
-                    value: `${minSize || 0}-${maxSize || 'max'}`
-                })
-            }
-        }
-
-        return activeFilters
     }
+
+    // Features filter
+    const selectedFeatures = params.get('features')
+    if (selectedFeatures) {
+        const feature = features.find(f => f.code === selectedFeatures)
+        if (feature) {
+            activeFilters.push({
+                type: 'feature',
+                key: 'features',
+                label: feature.value,
+                value: selectedFeatures
+            })
+        }
+    }
+
+    // Category filter (propertyType cho post)
+    const selectedType = params.get('propertyType')
+    if (selectedType) {
+        const category = categories.find(cat => cat.code === selectedType)
+        if (category) {
+            activeFilters.push({
+                type: 'category',
+                key: 'propertyType',
+                label: category.value,
+                value: selectedType
+            })
+        }
+    }
+
+    // Price range filter
+    const minRent = params.get('minRent')
+    const maxRent = params.get('maxRent')
+    if (minRent || maxRent) {
+        const priceRange = prices.find(price => {
+            const minMatch = price.min.toString() === minRent
+            const maxMatch = price.max === null ? !maxRent : price.max.toString() === maxRent
+            return minMatch && maxMatch
+        })
+        if (priceRange) {
+            activeFilters.push({
+                type: 'price',
+                key: ['minRent', 'maxRent'],
+                label: priceRange.value,
+                value: `${minRent}-${maxRent || 'max'}`
+            })
+        } else {
+            let priceLabel = ''
+            if (minRent && maxRent) {
+                priceLabel = `${(parseInt(minRent)/1000000).toFixed(1)} - ${(parseInt(maxRent)/1000000).toFixed(1)} triệu`
+            } else if (minRent) {
+                priceLabel = `Từ ${(parseInt(minRent)/1000000).toFixed(1)} triệu`
+            } else if (maxRent) {
+                priceLabel = `Dưới ${(parseInt(maxRent)/1000000).toFixed(1)} triệu`
+            }
+            activeFilters.push({
+                type: 'price',
+                key: ['minRent', 'maxRent'],
+                label: priceLabel,
+                value: `${minRent || 0}-${maxRent || 'max'}`
+            })
+        }
+    }
+
+    // Area range filter
+    const minSize = params.get('minSize')
+    const maxSize = params.get('maxSize')
+    if (minSize || maxSize) {
+        const areaRange = areas.find(area => {
+            const minMatch = area.min.toString() === minSize
+            const maxMatch = area.max === null ? !maxSize : area.max.toString() === maxSize
+            return minMatch && maxMatch
+        })
+        if (areaRange) {
+            activeFilters.push({
+                type: 'area',
+                key: ['minSize', 'maxSize'],
+                label: areaRange.value,
+                value: `${minSize}-${maxSize || 'max'}`
+            })
+        } else {
+            let areaLabel = ''
+            if (minSize && maxSize) {
+                areaLabel = `${minSize} - ${maxSize}m²`
+            } else if (minSize) {
+                areaLabel = `Từ ${minSize}m²`
+            } else if (maxSize) {
+                areaLabel = `Dưới ${maxSize}m²`
+            }
+            activeFilters.push({
+                type: 'area',
+                key: ['minSize', 'maxSize'],
+                label: areaLabel,
+                value: `${minSize || 0}-${maxSize || 'max'}`
+            })
+        }
+    }
+
+    return activeFilters
+}
 
     // ✅ SỬA: Function để remove filter
     const removeFilter = (filter) => {
@@ -281,7 +264,7 @@ const SearchPage = () => {
     }
 
     const activeFilters = getActiveFilters()
-    const totalResults = (searchResults || []).length
+    const totalResults = (postSearchResults || []).length
     const sortedPrices = prices?.slice().sort((a, b) => a.order - b.order)
     const sortedAreas = areas?.slice().sort((a, b) => a.order - b.order)
 

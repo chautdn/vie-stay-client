@@ -1,6 +1,6 @@
 import React, { memo, useState, useEffect, useCallback } from 'react'
 import icons from '../../utils/icons'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { formatVietnameseToString } from '../../utils/Common/formatVietnameseToString'
 import { getSavedPosts, savePost, unsavePost, isPostSaved } from '../../utils/localStorage'
 import { getPackageStyle } from '../../utils/packageStyles'
@@ -10,6 +10,7 @@ const { MdOutlineStarPurple500, IoIosHeart, IoIosHeartEmpty, BsBookmarkStarFill,
 const PostItem = ({ post }) => {
     const [isHoverHeart, setIsHoverHeart] = useState(false)
     const [isSaved, setIsSaved] = useState(false)
+    const navigate = useNavigate()
     
     // Extract data từ post object
     const {
@@ -57,27 +58,20 @@ const PostItem = ({ post }) => {
         }
     }, [id])
 
-    // Toggle save/unsave
-    const handleToggleSave = useCallback((e) => {
+    // Toggle save/unsave giống Item.jsx
+    const handleToggleSave = (e) => {
         e.preventDefault()
         e.stopPropagation()
-        
-        if (!id) return
-
-        const currentSavedStatus = isPostSaved(id)
-        
-        if (currentSavedStatus) {
-            const success = unsavePost(id)
-            if (success) {
-                setIsSaved(false)
-            }
+        if (!post._id) return
+        const postId = post._id.toString()
+        if (isPostSaved(postId)) {
+            unsavePost(postId)
+            setIsSaved(false)
         } else {
-            const success = savePost(id)
-            if (success) {
-                setIsSaved(true)
-            }
+            savePost(postId)
+            setIsSaved(true)
         }
-    }, [id])
+    }
     
     // Memoize computed values
     const displayImages = React.useMemo(() => {
@@ -125,11 +119,16 @@ const PostItem = ({ post }) => {
     const handleViewDetail = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
-        
         if (!id) return
-        
-        window.location.href = `/tin-dang/${formatVietnameseToString(title || 'tin-dang')}/${id}`
-    }, [id, title])
+
+        if (post.roomId) {
+            // Nếu có roomId, chuyển sang trang chi tiết phòng để thuê trực tiếp
+            navigate(`/detail/${post?.roomId?._id}`)
+        } else {
+            // Nếu không có roomId, chuyển sang trang chi tiết post
+            navigate(`/tin-dang/${id}`)
+        }
+    }, [id, title, post.roomId, navigate])
 
     const handlePhoneCall = useCallback((e) => {
         e.preventDefault()
@@ -165,7 +164,7 @@ const PostItem = ({ post }) => {
             )}
 
             <Link 
-                to={`/tin-dang/${formatVietnameseToString(title || 'tin-dang')}/${id}`} 
+                to={`/tin-dang/${id}`} 
                 className='w-2/5 grid grid-cols-2 gap-0.5 items-center cursor-pointer relative'
             >
                 {[0, 1, 2, 3].map((index) => (

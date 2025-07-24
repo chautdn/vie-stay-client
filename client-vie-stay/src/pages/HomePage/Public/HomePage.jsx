@@ -43,12 +43,12 @@ const HomePage = () => {
 
     // Categories cho Đà Nẵng
     const categories = [
-        { code: 'single', value: 'Phòng trọ đơn' },
+       { code: 'single_room', value: 'Phòng trọ đơn' },
         { code: 'double', value: 'Phòng trọ đôi' },
-        { code: 'shared', value: 'Phòng chia sẻ' },
+        { code: 'shared_room', value: 'Phòng chia sẻ' },
         { code: 'studio', value: 'Phòng studio' },
         { code: 'apartment', value: 'Căn hộ mini' },
-        { code: 'dormitory', value: 'Ký túc xá' }
+        { code: 'house', value: 'Nhà nguyên căn' }
     ]
 
     // Price ranges cho Đà Nẵng (VND)
@@ -74,8 +74,6 @@ const HomePage = () => {
     useEffect(() => {
         const loadInitialData = async () => {
             try {
-                // Load both rooms and posts
-                await getAllRooms()
                 await getAllPosts()
             } catch (error) {
                 console.error('Error loading data:', error)
@@ -86,18 +84,10 @@ const HomePage = () => {
     }, [params, getAllRooms, getAllPosts])
 
     // ✅ SỬA: Tính toán total results từ cả room và post
-    const getTotalResults = () => {
-        if (params.toString()) {
-            // Nếu có search params, lấy từ search results
-            const roomCount = (roomSearchResults || []).length
-            const postCount = (postSearchResults || []).length
-            return roomCount + postCount
-        } else {
-            // Nếu không có search params, lấy từ all data
-            const roomCount = (rooms || []).length
+    const getTotalResults = () => {    
             const postCount = (posts || []).length
-            return roomCount + postCount
-        }
+            return postCount
+        
     }
 
     const totalResults = getTotalResults()
@@ -116,11 +106,7 @@ const HomePage = () => {
                 <p className='text-sm text-gray-700 text-center'>
                     {text?.HOME_DESCRIPTION || 'Tìm kiếm phòng trọ, nhà trọ tại Đà Nẵng với giá cả hợp lý và đầy đủ tiện nghi'}
                 </p>
-                
-                {/* ✅ THÊM: Hiển thị tổng số kết quả */}
-                <div className='text-center text-sm text-gray-500 mt-2'>
-                    Tổng cộng: {totalResults} kết quả (rooms + posts)
-                </div>
+
             </div>
 
             {/* Main Content */}
@@ -133,7 +119,7 @@ const HomePage = () => {
                         <List 
                             currentPage={currentPage}
                             resultsPerPage={resultsPerPage}
-                            contentType="all" // ✅ THÊM: Hiển thị cả room và post
+                            contentType="post" // ✅ THÊM: Hiển thị cả room và post
                         />
                         
                         {/* ✅ SỬA: Pagination với tổng số kết quả từ cả room và post */}

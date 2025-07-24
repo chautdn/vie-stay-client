@@ -36,6 +36,9 @@ import AccommodationManagement from "./pages/OwnerPage/AccommodationManagement";
 import SavedPosts from "./pages/HomePage/Public/SavedPosts";
 import MyRentalRequest from "./pages/HomePage/Public/MyRentalRequest";
 import { ServicePrice } from "./pages/HomePage/Public";
+import TenantLayout from "./layouts/TenantLayout";
+import TenantRoute from "./components/common/TenantRoute";
+import TenantDashboard from "./pages/TenantPage/TenantDashboard";
 
 // Import Admin Pages
 import AdminDashboard from "./pages/AdminPage/AdminDashboard";
@@ -291,6 +294,61 @@ function App() {
             }
           />
         </Route>
+
+         <Route element={<TenantLayout />}>
+          <Route
+            path="/tenant/dashboard"
+            element={
+              <TenantRoute>
+                <TenantDashboard />
+              </TenantRoute>
+            }
+          />
+          <Route
+            path="/tenant/documents"
+            element={
+              <TenantRoute>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Giấy tờ của tôi</h1>
+                  <p className="text-gray-600">Tính năng đang phát triển...</p>
+                </div>
+              </TenantRoute>
+            }
+          />
+          <Route
+            path="/tenant/contracts"
+            element={
+              <TenantRoute>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Hợp đồng thuê</h1>
+                  <p className="text-gray-600">Tính năng đang phát triển...</p>
+                </div>
+              </TenantRoute>
+            }
+          />
+          <Route
+            path="/tenant/approvals"
+            element={
+              <TenantRoute>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Yêu cầu phê duyệt</h1>
+                  <p className="text-gray-600">Tính năng đang phát triển...</p>
+                </div>
+              </TenantRoute>
+            }
+          />
+          <Route
+            path="/tenant/settings"
+            element={
+              <TenantRoute>
+                <div className="p-6">
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt</h1>
+                  <p className="text-gray-600">Tính năng đang phát triển...</p>
+                </div>
+              </TenantRoute>
+            }
+          />
+          </Route>
 
         {/* Fallback route */}
         <Route path="*" element={<HomePage />} />

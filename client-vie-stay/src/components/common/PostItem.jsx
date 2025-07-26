@@ -123,7 +123,8 @@ const PostItem = ({ post }) => {
 
         if (post.roomId) {
             // Nếu có roomId, chuyển sang trang chi tiết phòng để thuê trực tiếp
-            navigate(`/detail/${post?.roomId?._id}`)
+            const detailId = (post.roomId._id || post.roomId).toString()
+            navigate(`/detail/${detailId}`)
         } else {
             // Nếu không có roomId, chuyển sang trang chi tiết post
             navigate(`/tin-dang/${id}`)

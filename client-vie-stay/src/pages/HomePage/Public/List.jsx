@@ -108,7 +108,8 @@ const List = ({
     // Khi click vào post
     const handlePostClick = (post) => {
         if (post.roomId) {
-            navigate(`/detail/${post?.roomId?._id}`)
+            const id = (post.roomId._id || post.roomId).toString()
+            navigate(`/detail/${id}`)
         } else {
             navigate(`/tin-dang/${id}`)
         }

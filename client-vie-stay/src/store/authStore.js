@@ -13,33 +13,22 @@ export const useAuthStore = create((set, get) => ({
   isCheckingAuth: true,
   message: null,
 
-  // Initialize auth state from localStorage
-  initializeAuth: () => {
+  // Initialize auth state from localStorage (chỉ kiểm tra token)
+  initializeAuth: async () => {
     set({ isCheckingAuth: true });
-
     try {
       const token = localStorage.getItem("token");
-      const userData = localStorage.getItem("user");
-
-      
-
-      if (token && userData) {
-        const user = JSON.parse(userData);
-        
-
-        // Set auth state immediately without validation
+      if (token) {
         set({
           token,
-          user,
           isAuthenticated: true,
           isCheckingAuth: false,
           error: null,
         });
-
-        // Note: Removed the background token validation since /user/profile doesn't exist
-        // If you want to validate tokens, create the appropriate endpoint first
+        // Gọi getMe để lấy thông tin user
+        await get().getMe();
       } else {
-        console.log("❌ No valid auth data found in localStorage");
+        console.log("❌ No token found in localStorage");
         set({
           isCheckingAuth: false,
           isAuthenticated: false,
@@ -64,13 +53,12 @@ export const useAuthStore = create((set, get) => ({
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`/user/signup`, {
+      const response = await axiosInstance.post(`${API_URL}/signup`, {
         name,
         email,
         password,
       });
       set({
-        user: response.data.data.user,
         isAuthenticated: false,
         isLoading: false,
         message: "Signup successful. Please verify your email.",
@@ -88,7 +76,7 @@ export const useAuthStore = create((set, get) => ({
   verifyEmail: async (email, otp) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`/user/verify-email`, {
+      const response = await axiosInstance.post(`${API_URL}/verify-email`, {
         email,
         otp,
       });
@@ -97,6 +85,7 @@ export const useAuthStore = create((set, get) => ({
         isLoading: false,
         message: "Email verified successfully",
       });
+      await get().getMe(); // Cập nhật thông tin user sau khi verify
       return response.data;
     } catch (error) {
       set({
@@ -110,9 +99,12 @@ export const useAuthStore = create((set, get) => ({
   resendVerification: async (email) => {
     set({ isLoading: true, error: null, message: null });
     try {
-      const response = await axiosInstance.post(`/user/resend-verification`, {
-        email,
-      });
+      const response = await axiosInstance.post(
+        `${API_URL}/resend-verification`,
+        {
+          email,
+        }
+      );
       set({
         isLoading: false,
         message: "Verification code resent successfully",
@@ -132,51 +124,78 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       console.log("🔐 [AUTH STORE] Attempting login for:", email);
-
-      const response = await axiosInstance.post(`/user/login`, {
+      const response = await axiosInstance.post(`${API_URL}/login`, {
         email,
         password,
       });
-
       console.log("✅ [AUTH STORE] Login response received:", response.data);
 
-      const userData = response.data.data?.user || response.data.user;
       const token = response.data.token;
-
-      if (!token || !userData) {
-        throw new Error("No token or user data received from server");
+      if (!token) {
+        throw new Error("No token received from server");
       }
 
-      // Store in localStorage
+      // Lưu token vào localStorage và Zustand
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      // Update Zustand state
       set({
+        token,
         isAuthenticated: true,
-        user: userData,
-        token: token,
         error: null,
         isLoading: false,
       });
 
-      // Dispatch event to notify React Context
+      // Gọi getMe để lấy thông tin user
+      await get().getMe();
+
+      // Dispatch event
       window.dispatchEvent(
         new CustomEvent("userLoggedIn", {
-          detail: { user: userData, token: token },
+          detail: { user: get().user, token },
         })
       );
 
-      console.log("✅ [AUTH STORE] Login successful - user:", userData.email);
-
+      console.log("✅ [AUTH STORE] Login successful");
       return response.data;
     } catch (error) {
       console.error("❌ [AUTH STORE] Login failed:", error);
       set({
-        error:
-          error.response?.data?.message || error.message || "Error logging in",
+        error: error.response?.data?.message || "Error logging in",
         isLoading: false,
       });
+      throw error;
+    }
+  },
+
+  getMe: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const response = await axiosInstance.get(`${API_URL}/me`);
+      const userData = response.data.data.user;
+      if (!userData) {
+        throw new Error("No user data received from server");
+      }
+
+      // Lưu vào localStorage (tùy chọn)
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Cập nhật Zustand state
+      set({
+        user: userData,
+        isAuthenticated: true,
+        isLoading: false,
+        error: null,
+      });
+
+      console.log("✅ [AUTH STORE] User data fetched:", userData.email);
+      return userData;
+    } catch (error) {
+      console.error("❌ [AUTH STORE] Error fetching user profile:", error);
+      set({
+        error: error.response?.data?.message || "Error fetching user profile",
+        isLoading: false,
+        user: null,
+      });
+      localStorage.removeItem("user");
       throw error;
     }
   },
@@ -184,37 +203,34 @@ export const useAuthStore = create((set, get) => ({
   googleLogin: async (credential) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`/user/google-login`, {
+      const response = await axiosInstance.post(`${API_URL}/google-login`, {
         credential,
       });
-
-      const userData = response.data.data.user;
       const token = response.data.token;
-
-      if (!token || !userData) {
-        throw new Error("Invalid response: missing token or user data");
+      if (!token) {
+        throw new Error("No token received from server");
       }
 
-      // Store in localStorage
+      // Lưu token vào localStorage và Zustand
       localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(userData));
-
-      // Update Zustand state
       set({
+        token,
         isAuthenticated: true,
-        user: userData,
-        token: token,
         error: null,
         isLoading: false,
       });
 
-      // Dispatch event to notify React Context
+      // Gọi getMe để lấy thông tin user
+      await get().getMe();
+
+      // Dispatch event
       window.dispatchEvent(
         new CustomEvent("userLoggedIn", {
-          detail: { user: userData, token: token },
+          detail: { user: get().user, token },
         })
       );
 
+      console.log("✅ [AUTH STORE] Google login successful");
       return response.data;
     } catch (error) {
       set({
@@ -228,18 +244,15 @@ export const useAuthStore = create((set, get) => ({
   logout: async () => {
     console.log("🚪 Logging out...");
     set({ isLoading: true });
-
     try {
-      await axiosInstance.post(`/user/logout`);
+      await axiosInstance.post(`${API_URL}/logout`);
     } catch (error) {
       console.error("Backend logout error:", error);
     }
 
-    // Clear localStorage
+    // Xóa localStorage và Zustand state
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-
-    // Update Zustand state
     set({
       user: null,
       token: null,
@@ -249,16 +262,14 @@ export const useAuthStore = create((set, get) => ({
       message: null,
     });
 
-    // Dispatch event to notify React Context
     window.dispatchEvent(new CustomEvent("userLogout"));
-
     console.log("✅ Logout completed");
   },
 
   forgotPassword: async (email) => {
     set({ isLoading: true, error: null });
     try {
-      const response = await axiosInstance.post(`/user/forgot-password`, {
+      const response = await axiosInstance.post(`${API_URL}/forgot-password`, {
         email,
       });
       set({
@@ -280,7 +291,7 @@ export const useAuthStore = create((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await axiosInstance.patch(
-        `/user/reset-password/${token}`,
+        `${API_URL}/reset-password/${token}`,
         {
           password,
         }
@@ -302,18 +313,14 @@ export const useAuthStore = create((set, get) => ({
   clearError: () => set({ error: null }),
   clearMessage: () => set({ message: null }),
 
-  // NEW: Manual setter for user data
+  // Manual setter for user data (vẫn giữ nhưng chỉ sử dụng khi cần)
   setUser: (userData) => {
     console.log("🔄 Updating user data:", userData);
-    
-    // Update localStorage
     localStorage.setItem("user", JSON.stringify(userData));
-    
-    // Update store
     set({ user: userData });
   },
 
-  // NEW: Update wallet balance specifically
+  // Update wallet balance
   updateWalletBalance: (newBalance) => {
     const currentUser = get().user;
     if (currentUser) {
@@ -321,26 +328,17 @@ export const useAuthStore = create((set, get) => ({
         ...currentUser,
         wallet: {
           ...currentUser.wallet,
-          balance: newBalance
-        }
+          balance: newBalance,
+        },
       };
-      
-      // Update both localStorage and store
       localStorage.setItem("user", JSON.stringify(updatedUser));
       set({ user: updatedUser });
-      
       console.log("💰 Wallet balance updated:", newBalance);
     }
   },
 
-  // FIXED: Remove the problematic refreshUser function for now
-  // You can add this back when you create the appropriate backend endpoint
+  // Sửa refreshUser để sử dụng getMe
   refreshUser: async () => {
-    console.log("⚠️ refreshUser called but /user/profile endpoint doesn't exist");
-    console.log("💡 Consider creating a user profile endpoint or removing this call");
-    
-    // For now, just return the current user data
-    const currentUser = get().user;
-    return currentUser;
+    await get().getMe();
   },
 }));

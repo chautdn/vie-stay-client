@@ -149,19 +149,6 @@ const Navbar = () => {
               <Building size={18} />
               Nhà trọ
             </a>
-
-            <a
-              href="/blog"
-              onClick={(e) => {
-                e.preventDefault();
-                handleNavigate("/blog");
-              }}
-              className="flex items-center gap-2 text-gray-700 hover:text-orange-600 font-medium transition-colors"
-            >
-              <MessageCircle size={18} />
-              Tin tức
-            </a>
-
             <a
               href="/contact"
               onClick={(e) => {

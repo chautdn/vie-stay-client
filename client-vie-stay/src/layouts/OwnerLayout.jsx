@@ -14,7 +14,8 @@ import {
   User,
   UserCheck,
   WalletIcon,
-  MessageSquare
+  MessageSquare,
+  Home
 } from 'lucide-react';
 
 const OwnerLayout = () => {
@@ -227,12 +228,7 @@ const updatedNavigation = navigation.map((item) => ({
                     className={`mr-3 flex-shrink-0 h-5 w-5 ${item.current ? "text-blue-500" : "text-gray-400 group-hover:text-gray-500"}`}
                   />
                   {item.name}
-                  {/* ✅ ADDED: Badge for post management to show it's important */}
-                  {item.href === "/owner/posts" && (
-                    <span className="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">
-                      New
-                    </span>
-                  )}
+                  
                 </button>
               ))}
             </nav>
@@ -244,6 +240,12 @@ const updatedNavigation = navigation.map((item) => ({
                   Thao tác nhanh
                 </h3>
                 <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("/home")}
+                    className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+                  >
+                    🏠 Trang chủ VieStay 
+                  </button>
                   <button
                     onClick={() => navigate("/owner/posts")}
                     className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"

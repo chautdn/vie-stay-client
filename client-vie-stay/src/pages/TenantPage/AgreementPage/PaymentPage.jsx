@@ -251,7 +251,7 @@ const PaymentPage = () => {
                 </div>
 
                 {/* ✅ THÊM: Debug info */}
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm">
+                {/* <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm">
                   <h4 className="font-medium mb-2">Debug Info:</h4>
                   <div className="space-y-1">
                     <p><strong>Confirmation ID:</strong> {confirmationId}</p>
@@ -259,7 +259,7 @@ const PaymentPage = () => {
                     <p><strong>Payment Status:</strong> {confirmation.paymentStatus}</p>
                     <p><strong>Confirmed At:</strong> {confirmation.confirmedAt ? new Date(confirmation.confirmedAt).toLocaleString() : 'Not confirmed'}</p>
                   </div>
-                </div>
+                </div> */}
 
                 {/* ✅ THÊM: Confirmation status check */}
                 {confirmation.status === 'confirmed' && confirmation.paymentStatus === 'pending' && (

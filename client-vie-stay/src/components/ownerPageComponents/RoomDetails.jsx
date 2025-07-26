@@ -544,6 +544,6 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
       </div>
     </div>
   );
-};
+};  
 
 export default RoomDetails;

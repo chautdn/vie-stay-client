@@ -14,7 +14,8 @@ import {
   User,
   UserCheck,
   WalletIcon,
-  MessageSquare
+  MessageSquare,
+  Home
 } from 'lucide-react';
 
 const OwnerLayout = () => {
@@ -239,6 +240,12 @@ const updatedNavigation = navigation.map((item) => ({
                   Thao tác nhanh
                 </h3>
                 <div className="space-y-2">
+                  <button
+                    onClick={() => navigate("/home")}
+                    className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"
+                  >
+                    🏠 Trang chủ VieStay 
+                  </button>
                   <button
                     onClick={() => navigate("/owner/posts")}
                     className="w-full text-left text-xs text-blue-600 hover:text-blue-800 py-1"

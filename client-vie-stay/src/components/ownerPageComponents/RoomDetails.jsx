@@ -299,18 +299,40 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                           </div>
                         </div>
                       </div>
+                      <div className="flex border-b border-gray-200 mb-4">
 
                       {/* National ID Image */}
-                      {tenant.nationalIdImage && (
+                      {tenant.nationalIdFrontImage && (
                         <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                          <h5 className="font-medium text-gray-900 mb-3">CCCD/CMND</h5>
+                          <h5 className="font-medium text-gray-900 mb-3">CCCD (Mặt trước)</h5>
                           <img 
-                            src={tenant.nationalIdImage} 
+                            src={tenant.nationalIdFrontImage} 
                             alt="CCCD"
                             className="max-w-xs h-32 object-cover rounded border"
+                            onClick={() => window.open(tenant.nationalIdBackImage, '_blank')}
                           />
                         </div>
                       )}
+                      {tenant.nationalIdBackImage && (
+                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                          <h5 className="font-medium text-gray-900 mb-3">CCCD (Mặt sau)</h5>
+                          <img 
+                            src={tenant.nationalIdBackImage} 
+                            alt="CCCD"
+                            className="max-w-xs h-32 object-cover rounded border"
+                            onClick={() => window.open(tenant.nationalIdBackImage, '_blank')}
+                          />
+                        </div>
+                      )}
+                      {tenant.nationalIdVerified && (
+                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                          <h5 className="font-medium text-gray-900 mb-3">Xác thực CCCD</h5>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${tenant.nationalIdVerified ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {tenant.nationalIdVerified ? 'Đã xác thực' : 'Chưa xác thực'}
+                          </span>
+                        </div>
+                      )}
+                      </div>
 
                       {/* Actions */}
                       <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
@@ -544,6 +566,6 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
       </div>
     </div>
   );
-};
+};  
 
 export default RoomDetails;

@@ -9,7 +9,7 @@ const Home = () => {
   const location = useLocation();
 
   return (
-    <div className="w-full flex gap-6 flex-col items-center h-full">
+    <div className="w-full flex  flex-col items-center h-full">
       <Header />
       <Navigation />
       {location.pathname !== "/bang-gia-dich-vu" &&

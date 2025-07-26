@@ -295,7 +295,7 @@ const RoomManagement = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* ✅ THÊM: Debug info */}
-        {renderDebugInfo()}
+        {/* {renderDebugInfo()} */}
 
         {/* Info banner for post creation */}
         {accommodation && rooms && rooms.length > 0 && (

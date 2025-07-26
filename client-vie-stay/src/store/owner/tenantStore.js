@@ -23,7 +23,9 @@ export const useTenantStore = create((set, get) => ({
           email: tenant.email,
           phoneNumber: tenant.phoneNumber,
           profileImage: tenant.profileImage,
-          nationalIdImage: tenant.nationalIdImage,
+          nationalIdFrontImage: tenant.nationalIdFrontImage,
+          nationalIdBackImage: tenant.nationalIdBackImage,
+          nationalIdVerified: tenant.nationalIdVerified,
           role: tenant.role,
           joinedAt: tenant.joinedAt,
 

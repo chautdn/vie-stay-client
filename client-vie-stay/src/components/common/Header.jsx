@@ -131,6 +131,10 @@ const Navbar = () => {
     return user?.role?.includes("landlord");
   };
 
+  const isTenant = () => {
+    return user?.role?.includes("tenant");
+  };
+
   const handlePostClick = () => {
     if (!isAuthenticated) {
       setShowLoginModal(true);
@@ -190,6 +194,16 @@ const Navbar = () => {
               >
                 <FileText size={16} /> Tin của tôi
               </div>
+
+              {/* Tenant Dashboard - Only for non-owners */}
+              {isAuthenticated && !isOwner() && (
+                <div
+                  className="flex items-center gap-1 cursor-pointer hover:text-orange-600"
+                  onClick={() => handleNavigate("/tenant/dashboard")}
+                >
+                  <HotelIcon size={16} /> Dashboard
+                </div>
+              )}
 
               {/* Owner Management - Only for owners */}
               {isOwner() && (

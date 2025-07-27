@@ -137,6 +137,7 @@ const ReportModal = ({ isOpen, onClose, reportForm, setReportForm, onSubmit }) =
                 Gửi phản ánh
               </button>
             </div>
+            <div className='h-14'></div>
           </form>
         </div>
       </div>

@@ -40,7 +40,7 @@ function CreateAccommodation() {
         type: "", 
         images: [], 
         documents: [], 
-        amenities: [],
+        amenities: [], // ✅ Đảm bảo là array
         address: { 
             street: "", 
             ward: "", 
@@ -62,7 +62,7 @@ function CreateAccommodation() {
             petsAllowed: false, 
             partiesAllowed: false, 
             quietHours: { start: "", end: "" }, 
-            additionalRules: [] 
+            additionalRules: [] // ✅ Đảm bảo là array
         },
     });
     
@@ -80,17 +80,35 @@ function CreateAccommodation() {
             const fetchAccommodationData = async () => {
                 setPageLoading(true);
                 try {
-                    // ✅ SỬA: Sử dụng relative URL với AxiosInstance
                     const response = await apiClient.get(`/api/accommodations/${id}`);
                     console.log("📝 Edit mode - fetched data:", response);
                     
-                    // ✅ SỬA: Handle response structure
                     const accommodationData = response.data || response;
-                    setForm(accommodationData);
+                    
+                    // ✅ SỬA: Merge với default values để đảm bảo không bị undefined
+                    setForm(prevForm => ({
+                        ...prevForm, // Giữ lại default values
+                        ...accommodationData, // Override với data từ API
+                        address: { 
+                            ...prevForm.address, 
+                            ...accommodationData.address 
+                        },
+                        contactInfo: { 
+                            ...prevForm.contactInfo, 
+                            ...accommodationData.contactInfo 
+                        },
+                        policies: { 
+                            ...prevForm.policies, 
+                            ...accommodationData.policies,
+                            additionalRules: accommodationData.policies?.additionalRules || []
+                        },
+                        amenities: accommodationData.amenities || [],
+                        documents: accommodationData.documents || []
+                    }));
+                    
                     setImagePreviews(accommodationData.images || []);
                     
                 } catch (error) {
-                    console.log("❌ Error fetching accommodation data:", error);
                     console.error("❌ Error fetching accommodation data:", error);
                     setErrors({ 
                         submit: error.displayMessage || 

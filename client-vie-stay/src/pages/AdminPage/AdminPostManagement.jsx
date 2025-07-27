@@ -160,30 +160,30 @@ const AdminPostManagement = () => {
 
   // Existing handler methods remain the same
   const handleDeactivatePost = async (postId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa tin đăng này?')) return;
+    if (!window.confirm('Bạn có chắc chắn muốn ẩn tin đăng này?')) return;
 
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/deactivate`, {
-        reason: 'Admin deactivation'
+      const response = await axiosInstance.patch(`/api/posts/${postId}/deactivatePost`, {
+        reason: 'Admin deactivation - Hidden from public view'
       });
       
       if (response.data.status === 'success') {
         fetchPosts();
-        alert('Tin đăng đã được vô hiệu hóa thành công');
+        alert('Tin đăng đã được ẩn thành công');
       }
     } catch (error) {
       console.error('Error deactivating post:', error);
-      alert('Có lỗi xảy ra khi vô hiệu hóa tin đăng');
+      alert('Có lỗi xảy ra khi ẩn tin đăng');
     }
   };
 
   const handleActivatePost = async (postId) => {
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/activate`);
+      const response = await axiosInstance.patch(`/api/posts/${postId}/activatePost`);
       
       if (response.data.status === 'success') {
         fetchPosts();
-        alert('Tin đăng đã được kích hoạt thành công');
+        alert('Tin đăng đã được hiển thị lại thành công');
       }
     } catch (error) {
       console.error('Error activating post:', error);
@@ -193,8 +193,7 @@ const AdminPostManagement = () => {
 
   const handleApprovePost = async (postId) => {
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/approve`);
-      
+      const response = await axiosInstance.patch(`/api/posts/${postId}/approve`);
       if (response.data.status === 'success') {
         fetchPosts();
         alert('Tin đăng đã được phê duyệt');
@@ -210,7 +209,7 @@ const AdminPostManagement = () => {
     if (!reason || reason.trim() === '') return;
 
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/reject`, { 
+      const response = await axiosInstance.patch(`/api/posts/${postId}/reject`, { 
         reason: reason.trim() 
       });
       
@@ -228,12 +227,9 @@ const AdminPostManagement = () => {
   const getStatusBadge = (post) => {
     const { status, isAvailable, adminDeactivated, isAutoApproved, approvalType } = post;
     
-    if (adminDeactivated) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Admin vô hiệu hóa</span>;
-    }
-    
-    if (!isAvailable) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Đã ẩn</span>;
+    // Priority: Admin actions first
+    if (adminDeactivated || !isAvailable) {
+      return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Đã ẩn</span>;
     }
 
     switch (status) {
@@ -609,14 +605,14 @@ const AdminPostManagement = () => {
                           </>
                         )}
 
-                        {/* Activate/Deactivate */}
-                        {post.isAvailable && !post.adminDeactivated ? (
+                        {/* Hide/Show logic - Updated */}
+                        {post.isAvailable ? (
                           <button
                             onClick={() => handleDeactivatePost(post._id)}
                             className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center"
                           >
                             <EyeOff size={14} className="mr-1" />
-                            Vô hiệu hóa
+                            Ẩn tin
                           </button>
                         ) : (
                           <button
@@ -624,7 +620,7 @@ const AdminPostManagement = () => {
                             className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center"
                           >
                             <Eye size={14} className="mr-1" />
-                            Kích hoạt
+                            Hiển thị
                           </button>
                         )}
                       </div>

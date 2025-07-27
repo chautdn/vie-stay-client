@@ -216,7 +216,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
     if (!showConfirmModal || !confirmAction) return null;
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70 p-4">
+      <div className="fixed inset-0 bg-opacity backdrop-blur-xs z-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -502,7 +502,9 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
   if (!room) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-opacity backdrop-blur-xs z-50 flex items-center justify-center p-4" 
+        >
+
       <div className="bg-white rounded-lg shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
         
         {/* Header */}

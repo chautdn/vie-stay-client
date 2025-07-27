@@ -15,40 +15,40 @@ export const useAuthStore = create((set, get) => ({
 
   // Initialize auth state from localStorage (chỉ kiểm tra token)
   initializeAuth: async () => {
-    set({ isCheckingAuth: true });
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        set({
-          token,
-          isAuthenticated: true,
-          isCheckingAuth: false,
-          error: null,
-        });
-        // Gọi getMe để lấy thông tin user
-        await get().getMe();
-      } else {
-        console.log("❌ No token found in localStorage");
-        set({
-          isCheckingAuth: false,
-          isAuthenticated: false,
-          user: null,
-          token: null,
-        });
-      }
-    } catch (error) {
-      console.error("❌ Error initializing auth:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
+  set({ isCheckingAuth: true, user: null }); // Explicitly set user to null
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      set({
+        token,
+        isAuthenticated: true,
+        error: null,
+      });
+      // Don't set isCheckingAuth to false until getMe completes
+      await get().getMe();
+      set({ isCheckingAuth: false }); // Set after getMe completes
+    } else {
+      console.log("❌ No token found in localStorage");
       set({
         isCheckingAuth: false,
         isAuthenticated: false,
         user: null,
         token: null,
-        error: "Failed to initialize authentication",
       });
     }
-  },
+  } catch (error) {
+    console.error("❌ Error initializing auth:", error);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    set({
+      isCheckingAuth: false,
+      isAuthenticated: false,
+      user: null,
+      token: null,
+      error: "Failed to initialize authentication",
+    });
+  }
+},
 
   signup: async (name, email, password) => {
     set({ isLoading: true, error: null });

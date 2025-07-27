@@ -10,17 +10,20 @@ const extractDistrict = (text) => {
 };
 
 // Hàm lấy tên khu vực (quận)
-const getRoomDistrict = (room) => {
-  return room.accommodationId?.address?.district || room.district || "Đang cập nhật";
+const getRoomDistrict = (post) => {
+  return post.address?.district || "Đang cập nhật";
 };
 
-// Thêm hàm lấy địa chỉ phòng
-const getRoomAddress = (room) => {
-  if (room.fullAddress) return room.fullAddress;
-  if (room.accommodationId?.address?.fullAddress) return room.accommodationId.address.fullAddress;
-  if (room.accommodationId?.address) {
-    const { street, ward, district, city } = room.accommodationId.address;
-    return [street, ward, district, city].filter(Boolean).join(", ");
+// Hàm lấy địa chỉ phòng
+const getRoomAddress = (post) => {
+  if (post.address?.fullAddress) return post.address.fullAddress;
+  if (post.address) {
+    const { street, ward, district, city } = post.address;
+    // Chỉ lấy các thành phần hợp lệ, bỏ qua những giá trị không phải tên (như số '2000000')
+    const validComponents = [street, ward, district, city].filter(
+      component => component && !/^\d+$/.test(component)
+    );
+    return validComponents.length > 0 ? validComponents.join(", ") : "Địa chỉ đang cập nhật";
   }
   return "Địa chỉ đang cập nhật";
 };
@@ -34,29 +37,27 @@ const ChatbotAI = () => {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
-
-
-   const API_KEY_CHATBOT = import.meta.env.VITE_OPENAI_API_KEY;
-
-
+  const API_KEY_CHATBOT = import.meta.env.VITE_OPENAI_API_KEY;
 
   // Lấy phòng trọ mới nhất
   const fetchLatestRoomsInfo = async () => {
     try {
-      const res = await fetch("http://localhost:8080/rooms");
+      const res = await fetch("http://localhost:8080/api/posts");
       const data = await res.json();
-      if (data?.data?.rooms && Array.isArray(data.data.rooms)) {
-        const info = data.data.rooms.slice(0, 5).map((room, idx) => {
-          const gia = room.baseRent ? `${room.baseRent.toLocaleString()}đ/tháng` : "Giá liên hệ";
-          const diachi = getRoomAddress(room);
-          const khuVuc = getRoomDistrict(room);
-          const dichvu = room.amenities && room.amenities.length > 0 ? room.amenities.join(", ") : "Không có thông tin";
-          return `${idx + 1}. ${room.name || "Phòng trọ"} - Giá: ${gia} - Địa chỉ: ${diachi} - Khu vực: ${khuVuc} - Dịch vụ: ${dichvu}`;
-        }).join("\n");
+      console.log("DATA ROOMS:", data);
+      if (data?.posts && Array.isArray(data.posts)) {
+        const info = data.posts.slice(0, 5).map((post, idx) => {
+          const gia = post.rent ? `${post.rent.toLocaleString()}đ/tháng` : "Giá liên hệ";
+          const diachi = getRoomAddress(post);
+          const khuVuc = getRoomDistrict(post);
+          const dichvu = post.amenities && post.amenities.length > 0 ? post.amenities.join(", ") : "Không có thông tin";
+          return { id: post._id, text: `${idx + 1}. ${post.title || "Phòng trọ"} - Giá: ${gia} - Địa chỉ: ${diachi} - Khu vực: ${khuVuc} - Dịch vụ: ${dichvu}` };
+        });
         return info;
       }
       return null;
     } catch (e) {
+      console.error("Error fetching latest rooms:", e);
       return null;
     }
   };
@@ -64,22 +65,22 @@ const ChatbotAI = () => {
   // Lấy phòng trọ theo khu vực
   const fetchRoomsByDistrict = async (district) => {
     try {
-      const res = await fetch(`http://localhost:8080/rooms/search?district=${encodeURIComponent(district)}`);
+      const res = await fetch(`http://localhost:8080/api/posts/search?district=${encodeURIComponent(district)}&isAvailable=true`);
       const data = await res.json();
-      console.log("DATA ROOMS BY DISTRICT:", data); // Thêm dòng này
-
-      if (data?.data?.rooms && Array.isArray(data.data.rooms)) {
-        const info = data.data.rooms.slice(0, 5).map((room, idx) => {
-          const gia = room.baseRent ? `${room.baseRent.toLocaleString()}đ/tháng` : "Giá liên hệ";
-          const diachi = getRoomAddress(room);
-          const khuVuc = getRoomDistrict(room);
-          const dichvu = room.amenities && room.amenities.length > 0 ? room.amenities.join(", ") : "Không có thông tin";
-          return `${idx + 1}. ${room.name || "Phòng trọ"} - Giá: ${gia} - Địa chỉ: ${diachi} - Khu vực: ${khuVuc} - Dịch vụ: ${dichvu}`;
-        }).join("\n");
+      console.log("DATA ROOMS BY DISTRICT:", data);
+      if (data?.posts && Array.isArray(data.posts)) {
+        const info = data.posts.slice(0, 5).map((post, idx) => {
+          const gia = post.rent ? `${post.rent.toLocaleString()}đ/tháng` : "Giá liên hệ";
+          const diachi = getRoomAddress(post);
+          const khuVuc = getRoomDistrict(post);
+          const dichvu = post.amenities && post.amenities.length > 0 ? post.amenities.join(", ") : "Không có thông tin";
+          return { id: post._id, text: `${idx + 1}. ${post.title || "Phòng trọ"} - Giá: ${gia} - Địa chỉ: ${diachi} - Khu vực: ${khuVuc} - Dịch vụ: ${dichvu}` };
+        });
         return info;
       }
       return null;
     } catch (e) {
+      console.error("Error fetching rooms by district:", e);
       return null;
     }
   };
@@ -89,55 +90,82 @@ const ChatbotAI = () => {
     setLoading(true);
     setMessages((prev) => [...prev, { role: "user", content: input }]);
 
-    // 1. Kiểm tra district trong câu hỏi
+    // 1. Kiểm tra district và yêu cầu chi tiết
     const district = extractDistrict(input);
+    const isDetailRequest = /chi tiết|xem thêm|thông tin chi tiết/i.test(input);
     let roomsInfo = null;
+    let roomDetails = null;
+
     if (district) {
       roomsInfo = await fetchRoomsByDistrict(district);
     } else {
       roomsInfo = await fetchLatestRoomsInfo();
     }
 
-    // 2. Ghép dữ liệu vào system message
+    // 2. Xử lý yêu cầu chi tiết phòng
+    if (isDetailRequest && roomsInfo) {
+      const roomNumberMatch = input.match(/\d+/); // Tìm số thứ tự phòng (nếu có)
+      if (roomNumberMatch) {
+        const roomIndex = parseInt(roomNumberMatch[0]) - 1;
+        if (roomsInfo[roomIndex]) {
+          roomDetails = `Chi tiết phòng: <a href="http://localhost:3000/tin-dang/${roomsInfo[roomIndex].id}" target="_blank" class="text-blue-600 underline">Xem chi tiết</a>`;
+        } else {
+          roomDetails = "Không tìm thấy phòng với số thứ tự này. Vui lòng chọn số từ danh sách.";
+        }
+      } else {
+        roomDetails = roomsInfo
+          .map(room => `${room.text}<br>Chi tiết: <a href="http://localhost:3000/tin-dang/${room.id}" target="_blank" class="text-blue-600 underline">Xem chi tiết</a>`)
+          .join("<br><br>");
+      }
+    }
+
+    // 3. Ghép dữ liệu vào system message
     let systemMsg;
     if (roomsInfo) {
+      const roomsText = roomsInfo.map(room => room.text).join("\n");
       systemMsg = {
         role: "system",
-        content: `Bạn là trợ lý cho website VietStay. Dưới đây là một số phòng trọ ${district ? `ở khu vực ${district}` : "mới nhất"} trên web (bao gồm giá, khu vực, dịch vụ):\n${roomsInfo}\nNếu khách hỏi về phòng trọ, giá cả, khu vực, dịch vụ, hãy ưu tiên trả lời dựa trên thông tin này. Nếu không đủ thông tin, hãy hướng dẫn khách sử dụng chức năng tìm kiếm trên website.`,
+        content: `Bạn là trợ lý cho website VietStay. Dưới đây là một số phòng trọ ${district ? `ở khu vực ${district}` : "mới nhất"} trên web (bao gồm giá, khu vực, dịch vụ):\n${roomsText}\nNếu khách hỏi về chi tiết phòng, cung cấp đường dẫn http://localhost:3000/tin-dang/[id] với [id] là _id của phòng, định dạng dưới dạng liên kết có thể nhấp (e.g., <a href="http://localhost:3000/tin-dang/[id]" target="_blank">Xem chi tiết</a>). Nếu không đủ thông tin, hãy hướng dẫn khách sử dụng chức năng tìm kiếm trên website.`,
       };
     } else {
       systemMsg = {
         role: "system",
-        content: `Bạn là trợ lý cho website VietStay, chuyên về cho thuê phòng trọ tại Đà Nẵng. Nếu khách hỏi về phòng trọ, giá cả, khu vực, dịch vụ, hãy trả lời dựa trên kiến thức tổng quát và hướng dẫn khách sử dụng chức năng tìm kiếm trên website.`,
+        content: `Bạn là trợ lý cho website VietStay, chuyên về cho thuê phòng trọ tại Đà Nẵng. Nếu khách hỏi về phòng trọ, giá cả, khu vực, dịch vụ, hãy trả lời dựa trên kiến thức tổng quát và hướng dẫn khách sử dụng chức năng tìm kiếm trên website. Nếu khách hỏi chi tiết phòng, gợi ý họ xem trên website.`,
       };
     }
 
-    // 3. Ghép messages
+    // 4. Ghép messages
     const newMessages = [
       systemMsg,
       ...messages.filter(m => m.role !== "system"),
       { role: "user", content: input }
     ];
 
-    // 4. Gửi lên OpenAI
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${API_KEY_CHATBOT}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: newMessages,
-        }),
-      });
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content || "Xin lỗi, tôi không hiểu.";
-      setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
-    } catch (err) {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Đã xảy ra lỗi!" }]);
+    // 5. Gửi lên OpenAI hoặc trả lời chi tiết trực tiếp
+    let reply;
+    if (isDetailRequest && roomDetails) {
+      reply = roomDetails;
+    } else {
+      try {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${API_KEY_CHATBOT}`,
+          },
+          body: JSON.stringify({
+            model: "gpt-3.5-turbo",
+            messages: newMessages,
+          }),
+        });
+        const data = await res.json();
+        reply = data.choices?.[0]?.message?.content || "Xin lỗi, tôi không hiểu.";
+      } catch (err) {
+        reply = "Đã xảy ra lỗi!";
+      }
     }
+
+    setMessages((prev) => [...prev, { role: "assistant", content: reply, isHtml: isDetailRequest && roomDetails }]);
     setLoading(false);
     setInput("");
   };
@@ -190,9 +218,18 @@ const ChatbotAI = () => {
                   )}
                 </div>
                 {/* Bubble */}
-                <div className={`px-4 py-2 rounded-2xl shadow-md ${msg.role === "user" ? "bg-blue-500 text-white" : "bg-white text-gray-900 border border-blue-100"} whitespace-pre-line break-words`}>
-                  {msg.content}
-                </div>
+                {msg.isHtml ? (
+                  <div
+                    className={`px-4 py-2 rounded-2xl shadow-md ${msg.role === "user" ? "bg-blue-500 text-white" : "bg-white text-gray-900 border border-blue-100"} whitespace-pre-line break-words`}
+                    dangerouslySetInnerHTML={{ __html: msg.content }}
+                  />
+                ) : (
+                  <div
+                    className={`px-4 py-2 rounded-2xl shadow-md ${msg.role === "user" ? "bg-blue-500 text-white" : "bg-white text-gray-900 border border-blue-100"} whitespace-pre-line break-words`}
+                  >
+                    {msg.content}
+                  </div>
+                )}
               </div>
             </div>
           ))}

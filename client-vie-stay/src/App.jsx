@@ -64,6 +64,8 @@ import OwnerPostManagement from "./pages/OwnerPage/OwnerPostManagement";
 import TopUpSuccess from "./pages/TopUpPage/TopUpSuccess";
 import TopUpCancel from "./pages/TopUpPage/TopUpCancel";
 
+import TenantBillsPage from "./pages/TenantPage/TenantBillsPage";
+
 function App() {
   const { initializeAuth, isCheckingAuth } = useAuthStore();
 
@@ -119,6 +121,7 @@ function App() {
             <Route path="/topup-cancel" element={<TopUpCancel />} />
             <Route path="*" element={<HomePage />} />
             <Route path="/owner/create" element={<AccommodationManagement />} />
+            <Route path="/bills" element={<TenantBillsPage />} />
           </Route>
 
           {/* ✅ Room Routes */}

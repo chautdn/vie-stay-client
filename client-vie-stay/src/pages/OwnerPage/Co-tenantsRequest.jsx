@@ -244,9 +244,9 @@ const CoTenantsRequest = () => {
                       <div>
                         <span className="text-gray-600">Trạng thái phòng:</span>
                         <span className={`ml-1 font-medium ${
-                          request.roomId?.isAvailable ? 'text-green-600' : 'text-red-600'
+                          request.roomId?.currentTenant?.length < request.roomId?.capacity ? 'text-green-600' : 'text-red-600'
                         }`}>
-                          {request.roomId?.isAvailable ? 'Còn chỗ' : 'Hết chỗ'}
+                          { request.roomId?.currentTenant?.length < request.roomId?.capacity ? 'Còn chỗ' : 'Hết chỗ'}
                         </span>
                       </div>
                     </div>

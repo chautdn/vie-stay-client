@@ -10,6 +10,7 @@ import {
   HotelIcon,
   CreditCard,
   HousePlus,
+  Banknote,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
@@ -292,6 +293,12 @@ const Navbar = () => {
                   className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
                 >
                   <CreditCard size={18} /> <span>Lịch sử giao dịch</span>
+                </button>
+                <button
+                  onClick={() => handleNavigate("/withdrawal/request")}
+                  className="flex items-center gap-2 w-full p-2 rounded-lg hover:bg-orange-50 transition"
+                >
+                  <Banknote size={18} /> <span>Rút tiền</span>
                 </button>
                 <button
                   onClick={() => handleNavigate("/owner/create")}

@@ -83,12 +83,6 @@ const OwnerLayout = () => {
     current: false,
   },
   {
-    name: "Rút tiền",
-    href: "/owner/withdrawals",
-    icon: WalletIcon,
-    current: location.pathname === "/owner/withdrawals",
-  },
-  {
     name: "Cài đặt",
     href: "/owner/settings",
     icon: Settings,

@@ -16,7 +16,11 @@ const Home = () => {
         location.pathname !== "/profile" &&
         location.pathname !== "/transaction-history" &&
         location.pathname !== "/owner/create" &&
-        location.pathname !== "/create-post" && (
+        location.pathname !== "/create-post" && 
+        location.pathname !== "/withdrawal/request" &&
+        location.pathname !== "/withdrawal/history" &&
+        location.pathname !== "/withdrawal/pending" &&
+        (
           <>
             <Search />
           </>

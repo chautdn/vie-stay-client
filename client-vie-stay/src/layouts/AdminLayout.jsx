@@ -10,8 +10,10 @@ import {
   X,
   Bell,
   Search,
-  FileText, // ✅ ADDED: Icon for posts
-  Flag // ✅ ADDED: Icon for reports
+  FileText,
+  Flag,
+  ArrowDownCircle,
+  CreditCard
 } from "lucide-react";
 
 // Import the real data components
@@ -19,9 +21,12 @@ import AdminDashboard from "../pages/AdminPage/AdminDashboard";
 import AccommodationManagement from "../pages/AdminPage/AccommodationManagement";
 import UserManagement from "../pages/AdminPage/UserManagement";
 import RevenueReports from "../pages/AdminPage/RevenueReports";
-// ✅ FIXED: Import from the correct path
 import AdminPostManagement from "../pages/AdminPage/AdminPostManagement";
 import ReportManagement from "../components/admin/ReportManagement";
+// ✅ ADDED: Import withdrawal management component
+import AdminWithdrawalManagement from "../pages/AdminPage/AdminWithdrawalManagement";
+// ✅ ADDED: Import bank account verification component
+import AdminBankAccountVerification from "../pages/AdminPage/AdminBankAccountVerification";
 
 const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -43,7 +48,7 @@ const AdminLayout = () => {
     profileImage: "https://cdn-icons-png.flaticon.com/512/847/847969.png"
   };
 
-  // ✅ UPDATED: Added post management menu item
+  // ✅ UPDATED: Added bank account verification menu item
   const menuItems = [
     {
       name: "Dashboard",
@@ -52,7 +57,7 @@ const AdminLayout = () => {
       description: "Overview & Statistics"
     },
     {
-      name: "Posts", // ✅ ADDED
+      name: "Posts",
       icon: FileText,
       path: "/admin/posts",
       description: "Manage & Monitor Posts"
@@ -68,6 +73,20 @@ const AdminLayout = () => {
       icon: Users,
       path: "/admin/users",
       description: "User Management"
+    },
+    {
+      name: "Withdrawals", // ✅ ADDED: Withdrawal Management
+      icon: ArrowDownCircle,
+      path: "/admin/withdrawals",
+      description: "Review Withdrawal Requests",
+      badge: "8" // Number of pending withdrawals
+    },
+    {
+      name: "Bank Accounts", // ✅ ADDED: Bank Account Verification
+      icon: CreditCard,
+      path: "/admin/bank-verification",
+      description: "Verify Bank Accounts",
+      badge: "3" // Number of pending verifications
     },
     {
       name: "Revenue Reports",
@@ -112,17 +131,21 @@ const AdminLayout = () => {
     return currentPage === path.split('/').pop();
   };
 
-  // ✅ UPDATED: Added post management case
+  // ✅ UPDATED: Added bank account verification case
   const renderPageContent = () => {
     switch (currentPage) {
       case "dashboard":
         return <AdminDashboard />;
-      case "posts": // ✅ ADDED
+      case "posts":
         return <AdminPostManagement />;
       case "accommodations":
         return <AccommodationManagement />;
       case "users":
         return <UserManagement />;
+      case "withdrawals": // ✅ ADDED: Withdrawal Management
+        return <AdminWithdrawalManagement />;
+      case "bank-verification": // ✅ ADDED: Bank Account Verification
+        return <AdminBankAccountVerification />;
       case "reports":
         return <RevenueReports />;
       case "report-management":
@@ -138,9 +161,11 @@ const AdminLayout = () => {
   const getPageTitle = () => {
     const titles = {
       dashboard: "Dashboard",
-      posts: "Post Management", // ✅ ADDED
+      posts: "Post Management",
       accommodations: "Accommodation Management",
       users: "User Management",
+      withdrawals: "Withdrawal Management", // ✅ ADDED
+      "bank-verification": "Bank Account Verification", // ✅ ADDED
       reports: "Revenue Reports",
       "report-management": "Report Management",
       settings: "System Settings"
@@ -220,13 +245,24 @@ const AdminLayout = () => {
                       isActive ? "text-blue-700" : "text-gray-400 group-hover:text-gray-600"
                     }`}
                   />
-                  <div className="text-left">
+                  <div className="text-left flex-1">
                     <div className="font-medium">{item.name}</div>
                     <div className="text-xs text-gray-500 mt-0.5">{item.description}</div>
                   </div>
-                  {/* ✅ ADDED: Badge for post management */}
-                  {item.path === '/admin/posts' && (
-                    <span className="ml-auto bg-orange-100 text-orange-600 text-xs px-2 py-0.5 rounded-full">
+                  {/* ✅ ADDED: Badge for pending items */}
+                  {item.badge && (
+                    <span className={`ml-auto px-2 py-0.5 text-xs rounded-full ${
+                      item.path === '/admin/withdrawals' 
+                        ? 'bg-orange-100 text-orange-600' 
+                        : item.path === '/admin/bank-verification'
+                        ? 'bg-blue-100 text-blue-600'
+                        : 'bg-red-100 text-red-600'
+                    }`}>
+                      {item.badge}
+                    </span>
+                  )}
+                  {item.path === '/admin/posts' && !item.badge && (
+                    <span className="ml-auto bg-green-100 text-green-600 text-xs px-2 py-0.5 rounded-full">
                       New
                     </span>
                   )}
@@ -236,23 +272,53 @@ const AdminLayout = () => {
           </div>
         </nav>
 
-        {/* ✅ ADDED: Quick Stats Section */}
-        <div className="px-3 mt-6">
+        {/* ✅ UPDATED: Enhanced Quick Stats Section */}
+        <div className="px-3 mt-6 space-y-3">
+          {/* Pending Withdrawals Card */}
+          <div className="bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg p-3">
+            <div className="flex items-center justify-between mb-2">
+              <ArrowDownCircle className="w-6 h-6 text-orange-600" />
+              <span className="text-lg font-bold text-orange-800">8</span>
+            </div>
+            <h3 className="text-sm font-medium text-orange-800 mb-1">Pending Withdrawals</h3>
+            <p className="text-xs text-orange-600 mb-2">Requiring attention</p>
+            <button
+              onClick={() => handleNavigation('/admin/withdrawals')}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white py-1.5 px-3 rounded text-xs font-medium transition-colors"
+            >
+              Review Now
+            </button>
+          </div>
+
+          {/* Bank Account Verifications Card */}
           <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-3">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Quick Stats</h3>
-            <div className="space-y-1 text-xs text-blue-600">
-              <div className="flex justify-between">
-                <span>Today's Posts:</span>
-                <span className="font-medium">12</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Pending Reviews:</span>
-                <span className="font-medium text-orange-600">5</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Active Users:</span>
-                <span className="font-medium text-green-600">1,234</span>
-              </div>
+            <div className="flex items-center justify-between mb-2">
+              <CreditCard className="w-6 h-6 text-blue-600" />
+              <span className="text-lg font-bold text-blue-800">3</span>
+            </div>
+            <h3 className="text-sm font-medium text-blue-800 mb-1">Bank Verifications</h3>
+            <p className="text-xs text-blue-600 mb-2">Pending approval</p>
+            <button
+              onClick={() => handleNavigation('/admin/bank-verification')}
+              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-1.5 px-3 rounded text-xs font-medium transition-colors"
+            >
+              Verify Now
+            </button>
+          </div>
+          
+          {/* Additional stats */}
+          <div className="mt-3 space-y-2 text-xs">
+            <div className="flex justify-between text-gray-600">
+              <span>Today's Posts:</span>
+              <span className="font-medium">12</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Pending Reviews:</span>
+              <span className="font-medium text-yellow-600">5</span>
+            </div>
+            <div className="flex justify-between text-gray-600">
+              <span>Active Users:</span>
+              <span className="font-medium text-green-600">1,234</span>
             </div>
           </div>
         </div>
@@ -298,7 +364,8 @@ const AdminLayout = () => {
             {/* Notifications */}
             <button className="relative p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              {/* ✅ ADDED: Multiple notification indicators */}
+              <span className="absolute top-1 right-1 w-2 h-2 bg-orange-500 rounded-full"></span>
             </button>
 
             {/* Current Page Title */}
@@ -306,9 +373,15 @@ const AdminLayout = () => {
               <h1 className="text-lg font-semibold text-gray-800">
                 {getPageTitle()}
               </h1>
-              {/* ✅ ADDED: Page-specific subtitle */}
+              {/* ✅ UPDATED: Page-specific subtitles */}
               {currentPage === 'posts' && (
                 <p className="text-xs text-gray-500">Monitor and manage all posts</p>
+              )}
+              {currentPage === 'withdrawals' && (
+                <p className="text-xs text-gray-500">Review and approve withdrawal requests</p>
+              )}
+              {currentPage === 'bank-verification' && (
+                <p className="text-xs text-gray-500">Verify user bank account information</p>
               )}
             </div>
           </div>
@@ -325,7 +398,7 @@ const AdminLayout = () => {
   );
 };
 
-// Admin Settings Component
+// ✅ UPDATED: Enhanced Admin Settings Component
 const AdminSettings = () => (
   <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
     <h2 className="text-xl font-bold mb-4">Admin Settings</h2>
@@ -356,7 +429,106 @@ const AdminSettings = () => (
         </div>
       </div>
       
-      {/* ✅ ADDED: Post Management Settings */}
+      {/* ✅ ADDED: Withdrawal Management Settings */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Withdrawal Settings</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Minimum Withdrawal Amount (₫)
+            </label>
+            <input
+              type="number"
+              defaultValue="50000"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Maximum Withdrawal Amount (₫)
+            </label>
+            <input
+              type="number"
+              defaultValue="10000000"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Auto-approve Bank Accounts
+            </label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Manual verification required</option>
+              <option>Auto-approve verified users</option>
+              <option>Auto-approve all accounts</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Processing Time (days)
+            </label>
+            <input
+              type="number"
+              defaultValue="7"
+              min="1"
+              max="30"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* ✅ ADDED: Bank Account Verification Settings */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Bank Account Verification</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Auto-verification for Trusted Banks
+            </label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Manual verification required</option>
+              <option>Auto-verify major banks</option>
+              <option>Auto-verify all banks</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Required Documents
+            </label>
+            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+              <option>Bank statement required</option>
+              <option>ID verification only</option>
+              <option>Both required</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Verification Timeout (days)
+            </label>
+            <input
+              type="number"
+              defaultValue="3"
+              min="1"
+              max="14"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Maximum Verification Attempts
+            </label>
+            <input
+              type="number"
+              defaultValue="3"
+              min="1"
+              max="10"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+      </div>
+      
       <div>
         <h3 className="text-lg font-semibold mb-3">Post Management Settings</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -393,6 +565,14 @@ const AdminSettings = () => (
           <label className="flex items-center">
             <input type="checkbox" defaultChecked className="rounded border-gray-300" />
             <span className="ml-2 text-sm">Email notifications for new posts</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" defaultChecked className="rounded border-gray-300" />
+            <span className="ml-2 text-sm">Email notifications for withdrawal requests</span>
+          </label>
+          <label className="flex items-center">
+            <input type="checkbox" defaultChecked className="rounded border-gray-300" />
+            <span className="ml-2 text-sm">Email notifications for bank account verifications</span>
           </label>
           <label className="flex items-center">
             <input type="checkbox" defaultChecked className="rounded border-gray-300" />

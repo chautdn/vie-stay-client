@@ -45,15 +45,17 @@ import AdminDashboard from "./pages/AdminPage/AdminDashboard";
 import UserManagement from "./pages/AdminPage/UserManagement";
 import RevenueReports from "./pages/AdminPage/RevenueReports";
 import ReportManagement from "./components/admin/ReportManagement";
+import AdminWithdrawalManagement from "./pages/AdminPage/AdminWithdrawalManagement";
+import AdminBankAccountVerification from "./pages/AdminPage/AdminBankAccountVerification";
+// ✅ IMPORT: Withdrawal Pages
+import WithdrawalRequestPage from "./pages/WithdrawalPage/WithdrawalRequestPage";
+import WithdrawalHistoryPage from "./pages/WithdrawalPage/WithdrawalHistoryPage";
+import BankAccountSetupPage from "./pages/WithdrawalPage/BankAccountSetupPage";
 
-// ✅ THÊM: Import Withdrawal Pages
-import WithdrawalRequestPage from "./pages/TenantPage/WithdrawalRequestPage";
-import WithdrawalHistoryPage from "./pages/TenantPage/WithdrawalHistoryPage";
-import PendingWithdrawalsPage from "./pages/OwnerPage/PendingWithdrawalsPage";
 import Profile from "./pages/ProfilePage/Profile";
 import ChangePassword from "./pages/ProfilePage/ChangePassword";
 
-//Transaction PAges
+//Transaction Pages
 import TransactionHistoryPage from "./pages/TransactionPage/TransactionHistoryPage";
 
 // Import Post Management Pages
@@ -119,6 +121,25 @@ function App() {
             <Route path="/topup-cancel" element={<TopUpCancel />} />
             <Route path="*" element={<HomePage />} />
             <Route path="/owner/create" element={<AccommodationManagement />} />
+            {/* ✅ ADD: Withdrawal Routes */}
+            <Route
+              path="/bank-account-setup"
+              element={<BankAccountSetupPage />}
+            />
+            <Route
+              path="/withdrawal/request"
+              element={<WithdrawalRequestPage />}
+            />
+            <Route
+              path="/withdrawal/history"
+              element={<WithdrawalHistoryPage />}
+            />
+            <Route path="/withdrawal/success" element={<PaymentSuccess />} />
+            <Route path="/withdrawal/failure" element={<PaymentSuccess />} />
+            <Route
+              path="/withdrawal/vnpay/return"
+              element={<PaymentSuccess />}
+            />
           </Route>
 
           {/* ✅ Room Routes */}
@@ -142,19 +163,6 @@ function App() {
           <Route path="/payment/failed" element={<PaymentSuccess />} />
           <Route path="/payment/failure" element={<PaymentSuccess />} />
           <Route path="/payment/vnpay/return" element={<PaymentSuccess />} />
-
-          {/* ✅ THÊM: Withdrawal Routes - ĐẶT NGOÀI Home nested routes */}
-          <Route
-            path="/withdrawal/request/:confirmationId"
-            element={<WithdrawalRequestPage />}
-          />
-          <Route
-            path="/withdrawal/history"
-            element={<WithdrawalHistoryPage />}
-          />
-          <Route path="/withdrawal/success" element={<PaymentSuccess />} />
-          <Route path="/withdrawal/failure" element={<PaymentSuccess />} />
-          <Route path="/withdrawal/vnpay/return" element={<PaymentSuccess />} />
         </Route>
 
         {/* Owner Routes */}
@@ -248,12 +256,12 @@ function App() {
             }
           />
 
-          {/* ✅ Owner withdrawal management */}
+          {/* ✅ FIXED: Owner withdrawal management - use AdminWithdrawalManagement */}
           <Route
             path="/owner/withdrawals"
             element={
               <OwnerRoute>
-                <PendingWithdrawalsPage />
+                <AdminWithdrawalManagement />
               </OwnerRoute>
             }
           />
@@ -285,6 +293,16 @@ function App() {
               </AdminRoute>
             }
           />
+
+          <Route
+            path="/admin/bank-account-verification"
+            element={
+              <AdminRoute>
+                <AdminBankAccountVerification />
+              </AdminRoute>
+            }
+          />
+
           <Route
             path="/admin/report-management"
             element={
@@ -293,9 +311,18 @@ function App() {
               </AdminRoute>
             }
           />
+          {/* ✅ ADD: Admin Withdrawal Management */}
+          <Route
+            path="/admin/withdrawals"
+            element={
+              <AdminRoute>
+                <AdminWithdrawalManagement />
+              </AdminRoute>
+            }
+          />
         </Route>
 
-         <Route element={<TenantLayout />}>
+        <Route element={<TenantLayout />}>
           <Route
             path="/tenant/dashboard"
             element={
@@ -309,7 +336,9 @@ function App() {
             element={
               <TenantRoute>
                 <div className="p-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Giấy tờ của tôi</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Giấy tờ của tôi
+                  </h1>
                   <p className="text-gray-600">Tính năng đang phát triển...</p>
                 </div>
               </TenantRoute>
@@ -320,7 +349,9 @@ function App() {
             element={
               <TenantRoute>
                 <div className="p-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Hợp đồng thuê</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Hợp đồng thuê
+                  </h1>
                   <p className="text-gray-600">Tính năng đang phát triển...</p>
                 </div>
               </TenantRoute>
@@ -331,7 +362,9 @@ function App() {
             element={
               <TenantRoute>
                 <div className="p-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Yêu cầu phê duyệt</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Yêu cầu phê duyệt
+                  </h1>
                   <p className="text-gray-600">Tính năng đang phát triển...</p>
                 </div>
               </TenantRoute>
@@ -342,13 +375,15 @@ function App() {
             element={
               <TenantRoute>
                 <div className="p-6">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-6">Cài đặt</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 mb-6">
+                    Cài đặt
+                  </h1>
                   <p className="text-gray-600">Tính năng đang phát triển...</p>
                 </div>
               </TenantRoute>
             }
           />
-          </Route>
+        </Route>
 
         {/* Fallback route */}
         <Route path="*" element={<HomePage />} />

@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import axiosInstance from '../../utils/AxiosInstance';
-import { 
-  Search, 
-  Filter, 
-  Eye, 
-  EyeOff, 
-  Trash2, 
-  User, 
-  Calendar, 
-  MapPin, 
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../../utils/AxiosInstance";
+import {
+  Search,
+  Filter,
+  Eye,
+  EyeOff,
+  Trash2,
+  User,
+  Calendar,
+  MapPin,
   DollarSign,
   CheckCircle,
   XCircle,
@@ -18,17 +18,17 @@ import {
   Building,
   Crown,
   Zap, // NEW: For auto-approval indicator
-  TrendingUp // NEW: For efficiency indicator
-} from 'lucide-react';
+  TrendingUp, // NEW: For efficiency indicator
+} from "lucide-react";
 
 const AdminPostManagement = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [featuredFilter, setFeaturedFilter] = useState('all');
-  const [approvalFilter, setApprovalFilter] = useState('all'); // NEW: Approval type filter
-  const [sortBy, setSortBy] = useState('newest');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [featuredFilter, setFeaturedFilter] = useState("all");
+  const [approvalFilter, setApprovalFilter] = useState("all"); // NEW: Approval type filter
+  const [sortBy, setSortBy] = useState("newest");
   const [currentPage, setCurrentPage] = useState(1);
   const [postsPerPage] = useState(10);
 
@@ -42,7 +42,7 @@ const AdminPostManagement = () => {
     autoApproved: 0, // NEW
     manualApproved: 0, // NEW
     totalRevenue: 0, // NEW
-    autoApprovedRevenue: 0 // NEW
+    autoApprovedRevenue: 0, // NEW
   });
 
   // Pagination info
@@ -51,70 +51,87 @@ const AdminPostManagement = () => {
     totalPages: 1,
     totalItems: 0,
     hasNext: false,
-    hasPrev: false
+    hasPrev: false,
   });
 
   useEffect(() => {
     fetchPosts();
-  }, [currentPage, statusFilter, featuredFilter, approvalFilter, searchTerm, sortBy]);
+  }, [
+    currentPage,
+    statusFilter,
+    featuredFilter,
+    approvalFilter,
+    searchTerm,
+    sortBy,
+  ]);
 
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      
+
       const params = new URLSearchParams({
         page: currentPage,
         limit: postsPerPage,
-        sortBy: 'createdAt',
-        order: sortBy === 'newest' ? 'desc' : 'asc'
+        sortBy: "createdAt",
+        order: sortBy === "newest" ? "desc" : "asc",
       });
 
-      if (statusFilter !== 'all') {
-        params.append('status', statusFilter);
+      if (statusFilter !== "all") {
+        params.append("status", statusFilter);
       }
 
-      if (featuredFilter !== 'all') {
-        params.append('featuredType', featuredFilter);
+      if (featuredFilter !== "all") {
+        params.append("featuredType", featuredFilter);
       }
 
       // NEW: Add approval type filter
-      if (approvalFilter !== 'all') {
-        params.append('approvalType', approvalFilter);
+      if (approvalFilter !== "all") {
+        params.append("approvalType", approvalFilter);
       }
 
       if (searchTerm.trim()) {
-        params.append('search', searchTerm.trim());
+        params.append("search", searchTerm.trim());
       }
 
-      console.log('Fetching posts with params:', params.toString());
+      console.log("Fetching posts with params:", params.toString());
 
-      const response = await axiosInstance.get(`/admin/posts?${params.toString()}`);
-      
-      console.log('Response:', response.data);
+      const response = await axiosInstance.get(
+        `/admin/posts?${params.toString()}`
+      );
+
+      console.log("Response:", response.data);
 
       // Handle the response structure
-      if (response.data.status === 'success') {
-        const { posts: postsData, statistics, pagination: paginationData } = response.data.data;
-        
+      if (response.data.status === "success") {
+        const {
+          posts: postsData,
+          statistics,
+          pagination: paginationData,
+        } = response.data.data;
+
         setPosts(postsData || []);
-        setStats(statistics || {
-          total: 0,
-          active: 0,
-          pending: 0,
-          rejected: 0,
-          featured: 0,
-          autoApproved: 0,
-          manualApproved: 0,
-          totalRevenue: 0,
-          autoApprovedRevenue: 0
-        });
-        setPagination(paginationData || {
-          currentPage: 1,
-          totalPages: 1,
-          totalItems: 0,
-          hasNext: false,
-          hasPrev: false
-        });
+        setStats(
+          statistics || {
+            total: 0,
+            active: 0,
+            pending: 0,
+            rejected: 0,
+            featured: 0,
+            autoApproved: 0,
+            manualApproved: 0,
+            totalRevenue: 0,
+            autoApprovedRevenue: 0,
+          }
+        );
+        setPagination(
+          paginationData || {
+            currentPage: 1,
+            totalPages: 1,
+            totalItems: 0,
+            hasNext: false,
+            hasPrev: false,
+          }
+        );
       } else {
         // Fallback for different response structure
         setPosts([]);
@@ -127,12 +144,11 @@ const AdminPostManagement = () => {
           autoApproved: 0,
           manualApproved: 0,
           totalRevenue: 0,
-          autoApprovedRevenue: 0
+          autoApprovedRevenue: 0,
         });
       }
-
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error("Error fetching posts:", error);
       // Set empty state on error
       setPosts([]);
       setStats({
@@ -144,14 +160,14 @@ const AdminPostManagement = () => {
         autoApproved: 0,
         manualApproved: 0,
         totalRevenue: 0,
-        autoApprovedRevenue: 0
+        autoApprovedRevenue: 0,
       });
       setPagination({
         currentPage: 1,
         totalPages: 1,
         totalItems: 0,
         hasNext: false,
-        hasPrev: false
+        hasPrev: false,
       });
     } finally {
       setLoading(false);
@@ -160,85 +176,101 @@ const AdminPostManagement = () => {
 
   // Existing handler methods remain the same
   const handleDeactivatePost = async (postId) => {
-    if (!window.confirm('Bạn có chắc chắn muốn vô hiệu hóa tin đăng này?')) return;
+    if (!window.confirm("Bạn có chắc chắn muốn ẩn tin đăng này?")) return;
 
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/deactivate`, {
-        reason: 'Admin deactivation'
-      });
-      
-      if (response.data.status === 'success') {
+      const response = await axiosInstance.patch(
+        `/api/posts/${postId}/deactivatePost`,
+        {
+          reason: "Admin deactivation - Hidden from public view",
+        }
+      );
+
+      if (response.data.status === "success") {
         fetchPosts();
-        alert('Tin đăng đã được vô hiệu hóa thành công');
+        alert("Tin đăng đã được ẩn thành công");
       }
     } catch (error) {
-      console.error('Error deactivating post:', error);
-      alert('Có lỗi xảy ra khi vô hiệu hóa tin đăng');
+      console.error("Error deactivating post:", error);
+      alert("Có lỗi xảy ra khi ẩn tin đăng");
     }
   };
 
   const handleActivatePost = async (postId) => {
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/activate`);
-      
-      if (response.data.status === 'success') {
+      const response = await axiosInstance.patch(
+        `/api/posts/${postId}/activatePost`
+      );
+
+      if (response.data.status === "success") {
         fetchPosts();
-        alert('Tin đăng đã được kích hoạt thành công');
+        alert("Tin đăng đã được hiển thị lại thành công");
       }
     } catch (error) {
-      console.error('Error activating post:', error);
-      alert('Có lỗi xảy ra khi kích hoạt tin đăng');
+      console.error("Error activating post:", error);
+      alert("Có lỗi xảy ra khi kích hoạt tin đăng");
     }
   };
 
   const handleApprovePost = async (postId) => {
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/approve`);
-      
-      if (response.data.status === 'success') {
+      const response = await axiosInstance.patch(
+        `/api/posts/${postId}/approve`
+      );
+      if (response.data.status === "success") {
         fetchPosts();
-        alert('Tin đăng đã được phê duyệt');
+        alert("Tin đăng đã được phê duyệt");
       }
     } catch (error) {
-      console.error('Error approving post:', error);
-      alert('Có lỗi xảy ra khi phê duyệt tin đăng');
+      console.error("Error approving post:", error);
+      alert("Có lỗi xảy ra khi phê duyệt tin đăng");
     }
   };
 
   const handleRejectPost = async (postId) => {
-    const reason = window.prompt('Lý do từ chối tin đăng:');
-    if (!reason || reason.trim() === '') return;
+    const reason = window.prompt("Lý do từ chối tin đăng:");
+    if (!reason || reason.trim() === "") return;
 
     try {
-      const response = await axiosInstance.patch(`/admin/posts/${postId}/reject`, { 
-        reason: reason.trim() 
-      });
-      
-      if (response.data.status === 'success') {
+      const response = await axiosInstance.patch(
+        `/api/posts/${postId}/reject`,
+        {
+          reason: reason.trim(),
+        }
+      );
+
+      if (response.data.status === "success") {
         fetchPosts();
-        alert('Tin đăng đã bị từ chối');
+        alert("Tin đăng đã bị từ chối");
       }
     } catch (error) {
-      console.error('Error rejecting post:', error);
-      alert('Có lỗi xảy ra khi từ chối tin đăng');
+      console.error("Error rejecting post:", error);
+      alert("Có lỗi xảy ra khi từ chối tin đăng");
     }
   };
 
   // Enhanced status badge with auto-approval indicator
   const getStatusBadge = (post) => {
-    const { status, isAvailable, adminDeactivated, isAutoApproved, approvalType } = post;
-    
-    if (adminDeactivated) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Admin vô hiệu hóa</span>;
-    }
-    
-    if (!isAvailable) {
-      return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Đã ẩn</span>;
+    const {
+      status,
+      isAvailable,
+      adminDeactivated,
+      isAutoApproved,
+      approvalType,
+    } = post;
+
+    // Priority: Admin actions first
+    if (adminDeactivated || !isAvailable) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+          Đã ẩn
+        </span>
+      );
     }
 
     switch (status) {
-      case 'approved':
-        if (isAutoApproved || approvalType === 'automatic') {
+      case "approved":
+        if (isAutoApproved || approvalType === "automatic") {
           return (
             <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800 flex items-center">
               <Zap size={10} className="mr-1" />
@@ -246,40 +278,62 @@ const AdminPostManagement = () => {
             </span>
           );
         }
-        return <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Duyệt thủ công</span>;
-      case 'pending':
-        return <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Chờ duyệt</span>;
-      case 'rejected':
-        return <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Bị từ chối</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+            Duyệt thủ công
+          </span>
+        );
+      case "pending":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+            Chờ duyệt
+          </span>
+        );
+      case "rejected":
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+            Bị từ chối
+          </span>
+        );
       default:
-        return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Bản nháp</span>;
+        return (
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+            Bản nháp
+          </span>
+        );
     }
   };
 
   const getFeaturedBadge = (featuredType, isPaid) => {
-    if (featuredType === 'THUONG') {
-      return <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">Thường</span>;
+    if (featuredType === "THUONG") {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">
+          Thường
+        </span>
+      );
     }
-    
+
     const colors = {
-      VIP_NOI_BAT: 'bg-red-100 text-red-600',
-      VIP_1: 'bg-orange-100 text-orange-600',
-      VIP_2: 'bg-yellow-100 text-yellow-600',
-      VIP_3: 'bg-blue-100 text-blue-600'
+      VIP_NOI_BAT: "bg-red-100 text-red-600",
+      VIP_1: "bg-orange-100 text-orange-600",
+      VIP_2: "bg-yellow-100 text-yellow-600",
+      VIP_3: "bg-blue-100 text-blue-600",
     };
 
     return (
-      <span className={`px-2 py-1 text-xs rounded-full ${colors[featuredType]} flex items-center`}>
+      <span
+        className={`px-2 py-1 text-xs rounded-full ${colors[featuredType]} flex items-center`}
+      >
         <Crown size={10} className="mr-1" />
-        {featuredType.replace('_', ' ')}
+        {featuredType.replace("_", " ")}
       </span>
     );
   };
 
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND'
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
@@ -309,8 +363,13 @@ const AdminPostManagement = () => {
   };
 
   // Calculate auto-approval efficiency
-  const autoApprovalRate = (stats.autoApproved + stats.manualApproved) > 0 ? 
-    Math.round((stats.autoApproved / (stats.autoApproved + stats.manualApproved)) * 100) : 0;
+  const autoApprovalRate =
+    stats.autoApproved + stats.manualApproved > 0
+      ? Math.round(
+          (stats.autoApproved / (stats.autoApproved + stats.manualApproved)) *
+            100
+        )
+      : 0;
 
   if (loading) {
     return (
@@ -327,7 +386,10 @@ const AdminPostManagement = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Quản lý tin đăng</h1>
-          <p className="text-gray-600">Tìm kiếm và quản lý tất cả tin đăng trên hệ thống với tự động duyệt VIP</p>
+          <p className="text-gray-600">
+            Tìm kiếm và quản lý tất cả tin đăng trên hệ thống với tự động duyệt
+            VIP
+          </p>
         </div>
       </div>
 
@@ -338,7 +400,9 @@ const AdminPostManagement = () => {
             <FileText className="h-8 w-8 text-blue-500" />
             <div className="ml-3">
               <p className="text-sm text-gray-500">Tổng tin đăng</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.total || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -348,7 +412,9 @@ const AdminPostManagement = () => {
             <CheckCircle className="h-8 w-8 text-green-500" />
             <div className="ml-3">
               <p className="text-sm text-gray-500">Đang hoạt động</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.active || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.active || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -358,7 +424,9 @@ const AdminPostManagement = () => {
             <Clock className="h-8 w-8 text-yellow-500" />
             <div className="ml-3">
               <p className="text-sm text-gray-500">Chờ duyệt</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.pending || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.pending || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -369,7 +437,9 @@ const AdminPostManagement = () => {
             <Zap className="h-8 w-8 text-green-600" />
             <div className="ml-3">
               <p className="text-sm text-green-600">Tự động duyệt</p>
-              <p className="text-2xl font-bold text-green-900">{stats.autoApproved || 0}</p>
+              <p className="text-2xl font-bold text-green-900">
+                {stats.autoApproved || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -380,7 +450,9 @@ const AdminPostManagement = () => {
             <CheckCircle className="h-8 w-8 text-blue-600" />
             <div className="ml-3">
               <p className="text-sm text-blue-600">Duyệt thủ công</p>
-              <p className="text-2xl font-bold text-blue-900">{stats.manualApproved || 0}</p>
+              <p className="text-2xl font-bold text-blue-900">
+                {stats.manualApproved || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -390,7 +462,9 @@ const AdminPostManagement = () => {
             <Crown className="h-8 w-8 text-purple-500" />
             <div className="ml-3">
               <p className="text-sm text-gray-500">VIP</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.featured || 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.featured || 0}
+              </p>
             </div>
           </div>
         </div>
@@ -402,7 +476,9 @@ const AdminPostManagement = () => {
           <div className="flex items-center">
             <TrendingUp className="h-6 w-6 text-green-600 mr-2" />
             <div>
-              <h3 className="font-semibold text-green-800">Hiệu quả tự động duyệt</h3>
+              <h3 className="font-semibold text-green-800">
+                Hiệu quả tự động duyệt
+              </h3>
               <p className="text-sm text-green-600">
                 {autoApprovalRate}% tin đăng được duyệt tự động
               </p>
@@ -500,8 +576,12 @@ const AdminPostManagement = () => {
         {!posts || posts.length === 0 ? (
           <div className="text-center py-12">
             <FileText size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Không tìm thấy tin đăng</h3>
-            <p className="text-gray-500">Thử thay đổi bộ lọc tìm kiếm hoặc kiểm tra lại điều kiện lọc</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Không tìm thấy tin đăng
+            </h3>
+            <p className="text-gray-500">
+              Thử thay đổi bộ lọc tìm kiếm hoặc kiểm tra lại điều kiện lọc
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-200">
@@ -521,7 +601,9 @@ const AdminPostManagement = () => {
                   <div className="flex-1">
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
-                        <h4 className="text-lg font-medium text-gray-900 mb-2">{post.title}</h4>
+                        <h4 className="text-lg font-medium text-gray-900 mb-2">
+                          {post.title}
+                        </h4>
                         <p className="text-gray-600 text-sm mb-3 line-clamp-2">
                           {post.description?.slice(0, 150)}...
                         </p>
@@ -530,7 +612,7 @@ const AdminPostManagement = () => {
                         <div className="flex flex-wrap gap-2 mb-3">
                           {getStatusBadge(post)}
                           {getFeaturedBadge(post.featuredType, post.isPaid)}
-                          
+
                           {/* NEW: Revenue indicator for VIP posts */}
                           {post.featuredCost > 0 && (
                             <span className="px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800">
@@ -547,15 +629,21 @@ const AdminPostManagement = () => {
                           </div>
                           <div className="flex items-center">
                             <MapPin size={14} className="mr-1" />
-                            <span>{post.address?.district || 'N/A'}</span>
+                            <span>{post.address?.district || "N/A"}</span>
                           </div>
                           <div className="flex items-center">
                             <User size={14} className="mr-1" />
-                            <span>{post.contactName || post.userId?.name || 'N/A'}</span>
+                            <span>
+                              {post.contactName || post.userId?.name || "N/A"}
+                            </span>
                           </div>
                           <div className="flex items-center">
                             <Calendar size={14} className="mr-1" />
-                            <span>{new Date(post.createdAt).toLocaleDateString('vi-VN')}</span>
+                            <span>
+                              {new Date(post.createdAt).toLocaleDateString(
+                                "vi-VN"
+                              )}
+                            </span>
                           </div>
                         </div>
 
@@ -563,16 +651,25 @@ const AdminPostManagement = () => {
                         <div className="mt-2 text-xs text-gray-400 flex items-center space-x-4">
                           <span>{post.viewCount || 0} lượt xem</span>
                           <span>{post.contactCount || 0} lượt liên hệ</span>
-                          
+
                           {/* NEW: Approval info */}
                           {post.approvalDate && (
                             <span className="flex items-center">
                               {post.isAutoApproved ? (
-                                <Zap size={10} className="mr-1 text-green-500" />
+                                <Zap
+                                  size={10}
+                                  className="mr-1 text-green-500"
+                                />
                               ) : (
-                                <CheckCircle size={10} className="mr-1 text-blue-500" />
+                                <CheckCircle
+                                  size={10}
+                                  className="mr-1 text-blue-500"
+                                />
                               )}
-                              Duyệt: {new Date(post.approvalDate).toLocaleDateString('vi-VN')}
+                              Duyệt:{" "}
+                              {new Date(post.approvalDate).toLocaleDateString(
+                                "vi-VN"
+                              )}
                             </span>
                           )}
                         </div>
@@ -582,7 +679,9 @@ const AdminPostManagement = () => {
                       <div className="flex flex-col space-y-2 ml-4">
                         {/* View Post */}
                         <button
-                          onClick={() => window.open(`/detail/${post._id}`, '_blank')}
+                          onClick={() =>
+                            window.open(`/detail/${post._id}`, "_blank")
+                          }
                           className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200 flex items-center"
                         >
                           <Eye size={14} className="mr-1" />
@@ -590,7 +689,7 @@ const AdminPostManagement = () => {
                         </button>
 
                         {/* Approve/Reject for pending posts */}
-                        {post.status === 'pending' && (
+                        {post.status === "pending" && (
                           <>
                             <button
                               onClick={() => handleApprovePost(post._id)}
@@ -609,14 +708,14 @@ const AdminPostManagement = () => {
                           </>
                         )}
 
-                        {/* Activate/Deactivate */}
-                        {post.isAvailable && !post.adminDeactivated ? (
+                        {/* Hide/Show logic - Updated */}
+                        {post.isAvailable ? (
                           <button
                             onClick={() => handleDeactivatePost(post._id)}
                             className="px-3 py-1 text-sm bg-red-100 text-red-700 rounded hover:bg-red-200 flex items-center"
                           >
                             <EyeOff size={14} className="mr-1" />
-                            Vô hiệu hóa
+                            Ẩn tin
                           </button>
                         ) : (
                           <button
@@ -624,7 +723,7 @@ const AdminPostManagement = () => {
                             className="px-3 py-1 text-sm bg-green-100 text-green-700 rounded hover:bg-green-200 flex items-center"
                           >
                             <Eye size={14} className="mr-1" />
-                            Kích hoạt
+                            Hiển thị
                           </button>
                         )}
                       </div>
@@ -641,8 +740,8 @@ const AdminPostManagement = () => {
           <div className="px-6 py-4 border-t border-gray-200">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-500">
-                Trang {pagination.currentPage} / {pagination.totalPages} - 
-                Tổng {pagination.totalItems} tin đăng
+                Trang {pagination.currentPage} / {pagination.totalPages} - Tổng{" "}
+                {pagination.totalItems} tin đăng
               </div>
               <div className="flex space-x-2">
                 <button

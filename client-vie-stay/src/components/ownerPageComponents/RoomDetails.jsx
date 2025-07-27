@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import axiosInstance from '../../utils/AxiosInstance'; 
-import { 
-  X, 
-  Home, 
-  Users, 
-  DollarSign, 
-  Calendar, 
+import React, { useState, useEffect } from "react";
+import axiosInstance from "../../utils/AxiosInstance";
+import {
+  X,
+  Home,
+  Users,
+  DollarSign,
+  Calendar,
   User,
   Mail,
   Phone,
@@ -25,16 +25,16 @@ import {
   RefreshCw,
   CreditCard,
   Banknote,
-  Eye
-} from 'lucide-react';
+  Eye,
+} from "lucide-react";
 
-import BillingModals from '../billing/BillingModals';
+import BillingModals from "../billing/BillingModals";
 
 const RoomDetails = ({ room, onClose, onEdit }) => {
-  const [activeTab, setActiveTab] = useState('info');
+  const [activeTab, setActiveTab] = useState("info");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState("");
+
   // State for room data
   const [roomData, setRoomData] = useState({
     tenants: [],
@@ -45,18 +45,18 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
     analytics: {
       totalRevenue: 0,
       pendingPayments: 0,
-      occupancyRate: 0
-    }
+      occupancyRate: 0,
+    },
   });
 
   // Bill creation state
   const [showCreateBill, setShowCreateBill] = useState(false);
-  const [billType, setBillType] = useState('monthly');
+  const [billType, setBillType] = useState("monthly");
   const [billForm, setBillForm] = useState({
-    billingPeriod: { from: '', to: '' },
+    billingPeriod: { from: "", to: "" },
     items: [],
-    notes: '',
-    dueDate: ''
+    notes: "",
+    dueDate: "",
   });
 
   // Bill editing state
@@ -68,68 +68,130 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
   const [confirmAction, setConfirmAction] = useState(null);
 
   const [activityLog, setActivityLog] = useState([]);
-  const [historyTab, setHistoryTab] = useState('activity'); // 'activity', 'payments', 'tenants'
+  const [historyTab, setHistoryTab] = useState("activity"); // 'activity', 'payments', 'tenants'
 
   // Fetch room data using axios
   const fetchRoomData = async () => {
     setLoading(true);
-    setError('');
-    
+    setError("");
+
     try {
       console.group(`🚀 Fetching data for room: ${room._id}`);
 
-      // Helper function to safely fetch data using axios
       const safeFetch = async (url, description) => {
         try {
           const response = await axiosInstance.get(url);
-          console.log(`✅ ${description}:`, response.data.success ? 'Success' : 'No data');
+          console.log(
+            `✅ ${description}:`,
+            response.data.success ? "Success" : "No data"
+          );
           return response.data;
         } catch (error) {
           const status = error.response?.status;
           const message = error.response?.data?.message || error.message;
-          
-          // Handle expected 404s gracefully without scary error logs
+
           if (status === 404) {
-            if (description === 'Representative') {
-              console.log(`ℹ️ ${description}: No representative set (normal)`);
-              return { success: true, data: null };
-            }
-            if (description === 'Bills' || description === 'Payments') {
-              console.log(`ℹ️ ${description}: No data found (normal)`);
-              return { success: true, data: [] };
-            }
-            if (description === 'Tenants') {
-              console.log(`ℹ️ ${description}: Room is empty (normal)`);
-              return { success: true, data: [] };
-            }
+            console.log(`ℹ️ ${description}: No data found (normal)`);
+            return { success: true, data: [] };
           }
-          
-          // Log real errors only
+
           console.error(`❌ ${description}: ${status} - ${message}`);
-          
-          return { 
-            success: false, 
-            data: [], 
-            error: `${status ? `HTTP ${status}` : 'Network Error'}: ${message}`
+          return {
+            success: false,
+            data: [],
+            error: `${status ? `HTTP ${status}` : "Network Error"}: ${message}`,
           };
         }
       };
 
-      // Fetch all data concurrently
-      const [tenantsData, repData, billsData, paymentsData, tenantHistoryData] = await Promise.all([
-        safeFetch(`/api/room-occupancy/room/${room._id}/tenants`, 'Tenants'),
-        safeFetch(`/api/room-occupancy/room/${room._id}/representative`, 'Representative'),
-        safeFetch(`/api/bills/room/${room._id}`, 'Bills'),
-        safeFetch(`/api/bill-payments/landlord/history?roomId=${room._id}`, 'Payments'),
-        safeFetch(`/api/room-occupancy/tenant/history?roomId=${room._id}`, 'Tenant History')
-      ]);
+      // First try to fetch from RoomOccupancy
+      const occupancyData = await safeFetch(
+        `/api/room-occupancy/room/${room._id}/tenants`,
+        "Occupancy Tenants"
+      );
+
+      // If no occupancy data but room has currentTenant, fetch tenant details directly
+      let tenantsData = occupancyData;
+
+      if (
+        (!occupancyData.success || occupancyData.data.length === 0) &&
+        room.currentTenant &&
+        room.currentTenant.length > 0
+      ) {
+        console.log(
+          "📋 No occupancy records found, fetching tenant details directly..."
+        );
+
+        // Fetch tenant details directly from User collection
+        const tenantPromises = room.currentTenant.map(async (tenantId) => {
+          try {
+            const response = await axiosInstance.get(`/user/${tenantId}`);
+            if (response.data.success) {
+              return {
+                _id: `temp_${tenantId}_${Date.now()}`, // Temporary occupancy ID
+                tenantId: response.data.data,
+                moveInDate: new Date(), // Default to current date
+                isRepresentative: false, // Default to false
+                status: "active",
+                monthlyRent: room.baseRent, // Default to room base rent
+              };
+            }
+          } catch (error) {
+            console.error(`Failed to fetch tenant ${tenantId}:`, error);
+            return null;
+          }
+        });
+
+        const tenantDetails = await Promise.all(tenantPromises);
+        const validTenants = tenantDetails.filter((tenant) => tenant !== null);
+
+        if (validTenants.length > 0) {
+          // Set first tenant as representative if none exists
+          if (validTenants.length > 0) {
+            validTenants[0].isRepresentative = true;
+          }
+
+          tenantsData = { success: true, data: validTenants };
+          console.log(
+            "✅ Fallback tenant data created:",
+            validTenants.length,
+            "tenants"
+          );
+        }
+      }
+
+      // Continue with other data fetching...
+      const [repData, billsData, paymentsData, tenantHistoryData] =
+        await Promise.all([
+          safeFetch(
+            `/api/room-occupancy/room/${room._id}/representative`,
+            "Representative"
+          ),
+          safeFetch(`/api/bills/room/${room._id}`, "Bills"),
+          safeFetch(
+            `/api/bill-payments/landlord/history?roomId=${room._id}`,
+            "Payments"
+          ),
+          safeFetch(
+            `/api/room-occupancy/room/${room._id}/history`,
+            "Tenant History"
+          ),
+        ]);
 
       // Process results
       const tenants = tenantsData.success ? tenantsData.data : [];
       const representative = repData.success ? repData.data : null;
       const bills = billsData.success ? billsData.data : [];
       const payments = paymentsData.success ? paymentsData.data : [];
-      const tenantHistory = tenantHistoryData.success ? tenantHistoryData.data : [];
+      const tenantHistory = tenantHistoryData.success
+        ? tenantHistoryData.data
+        : [];
+
+      console.log("📊 Final tenant data:", {
+        tenantsCount: tenants.length,
+        roomCurrentTenant: room.currentTenant?.length || 0,
+        hasRepresentative: !!representative,
+      });
 
       setRoomData({
         tenants,
@@ -137,73 +199,109 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
         bills,
         payments,
         tenantHistory,
-        analytics: calculateAnalytics(bills, payments)
+        analytics: calculateAnalytics(bills, payments),
       });
 
       generateActivityLog(tenants, bills, payments);
-
-      // Show warnings only for actual errors (not normal 404s)
-      const realErrors = [
-        { name: 'Tenants', data: tenantsData },
-        { name: 'Representative', data: repData },
-        { name: 'Bills', data: billsData },
-        { name: 'Payments', data: paymentsData },
-        { name: 'Tenant History', data: tenantHistoryData }
-      ].filter(req => !req.data.success && req.data.error && !req.data.error.includes('HTTP 404'));
-
-      if (realErrors.length > 0) {
-        const failedNames = realErrors.map(req => req.name).join(', ');
-        const errors = realErrors.map(req => req.data.error).filter(Boolean);
-        setError(`Một số dữ liệu không tải được: ${failedNames}. ${errors.length > 0 ? 'Lỗi: ' + errors.join(', ') : 'Vui lòng kiểm tra kết nối API.'}`);
-      }
-
       console.groupEnd();
-
     } catch (error) {
-      console.error('💥 Error fetching room data:', error);
+      console.error("💥 Error fetching room data:", error);
       setError(`Lỗi khi tải dữ liệu: ${error.message}`);
       console.groupEnd();
     }
-    
+
     setLoading(false);
+  };
+
+  // Add a function to create proper occupancy records for existing tenants
+  const createOccupancyRecords = async () => {
+    if (!room.currentTenant || room.currentTenant.length === 0) {
+      alert("Không có người thuê nào để tạo record");
+      return;
+    }
+
+    try {
+      console.log("🔄 Creating occupancy records for existing tenants...");
+
+      for (let i = 0; i < room.currentTenant.length; i++) {
+        const tenantId = room.currentTenant[i];
+        const isRepresentative = i === 0; // Make first tenant representative
+
+        try {
+          const response = await axiosInstance.post(
+            `/api/room-occupancy/room/${room._id}/tenants`,
+            {
+              tenantId: tenantId,
+              monthlyRent: room.baseRent,
+              moveInDate: new Date(),
+              isRepresentative: isRepresentative,
+            }
+          );
+
+          if (response.data.success) {
+            console.log(`✅ Created occupancy record for tenant ${tenantId}`);
+          }
+        } catch (error) {
+          if (
+            error.response?.status === 400 &&
+            error.response?.data?.message?.includes("already in this room")
+          ) {
+            console.log(`ℹ️ Tenant ${tenantId} already has occupancy record`);
+          } else {
+            console.error(
+              `❌ Failed to create occupancy for tenant ${tenantId}:`,
+              error
+            );
+          }
+        }
+      }
+
+      // Refresh data after creating records
+      fetchRoomData();
+      alert("Đã tạo records cho các tenant hiện tại");
+    } catch (error) {
+      console.error("Error creating occupancy records:", error);
+      alert("Lỗi khi tạo records: " + error.message);
+    }
   };
 
   const calculateAnalytics = (bills, payments) => {
     const totalRevenue = payments
-      .filter(p => p.status === 'completed')
+      .filter((p) => p.status === "completed")
       .reduce((sum, p) => sum + p.amount, 0);
-    
+
     const pendingPayments = bills
-      .filter(b => b.status !== 'paid')
+      .filter((b) => b.status !== "paid")
       .reduce((sum, b) => sum + (b.remainingBalance || 0), 0);
-    
-    const occupancyRate = (roomData.tenants.length / (room.capacity || 1)) * 100;
+
+    const occupancyRate =
+      (roomData.tenants.length / (room.capacity || 1)) * 100;
 
     return { totalRevenue, pendingPayments, occupancyRate };
   };
 
   const generateActivityLog = (tenants, bills, payments) => {
     const activities = [];
-    
-    bills.forEach(bill => {
+
+    bills.forEach((bill) => {
       activities.push({
         id: `bill-${bill._id}`,
-        type: 'bill_created',
+        type: "bill_created",
         date: bill.createdAt,
         description: `Hóa đơn ${bill.billNumber} được tạo`,
         amount: bill.totalAmount,
-        icon: Receipt
+        icon: Receipt,
       });
     });
 
-    payments.forEach(payment => {
+    payments.forEach((payment) => {
       activities.push({
         id: `payment-${payment._id}`,
-        type: 'payment_received',
+        type: "payment_received",
         date: payment.paidAt || payment.createdAt,
         description: `Nhận thanh toán ${payment.paymentMethod}`,
         amount: payment.amount,
-        icon: DollarSign
+        icon: DollarSign,
       });
     });
 
@@ -220,7 +318,9 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
         <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Xác nhận thanh toán</h3>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Xác nhận thanh toán
+              </h3>
               <button
                 onClick={() => setShowConfirmModal(false)}
                 className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
@@ -236,17 +336,22 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                 <AlertCircle size={24} className="text-yellow-600" />
               </div>
             </div>
-            
+
             <div className="text-center mb-6">
               <h4 className="text-lg font-medium text-gray-900 mb-2">
                 Xác nhận đánh dấu đã thanh toán
               </h4>
               <p className="text-gray-600">
-                Bạn có chắc chắn muốn đánh dấu hóa đơn <strong>{selectedBill?.billNumber}</strong> là đã thanh toán đầy đủ?
+                Bạn có chắc chắn muốn đánh dấu hóa đơn{" "}
+                <strong>{selectedBill?.billNumber}</strong> là đã thanh toán đầy
+                đủ?
               </p>
               <div className="mt-4 p-3 bg-gray-50 rounded-lg">
                 <p className="text-sm text-gray-700">
-                  <strong>Số tiền:</strong> {formatPrice(selectedBill?.remainingBalance || selectedBill?.totalAmount)}
+                  <strong>Số tiền:</strong>{" "}
+                  {formatPrice(
+                    selectedBill?.remainingBalance || selectedBill?.totalAmount
+                  )}
                 </p>
               </div>
             </div>
@@ -277,20 +382,28 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
   // API functions using axios
   const createCustomBill = async () => {
     try {
-      console.log('📄 Creating custom bill...');
-      const response = await axiosInstance.post(`/api/bills/room/${room._id}/custom`, billForm);
+      console.log("📄 Creating custom bill...");
+      const response = await axiosInstance.post(
+        `/api/bills/room/${room._id}/create`,
+        billForm
+      );
 
       if (response.data.success) {
         setShowCreateBill(false);
-        setBillForm({ billingPeriod: { from: '', to: '' }, items: [], notes: '', dueDate: '' });
+        setBillForm({
+          billingPeriod: { from: "", to: "" },
+          items: [],
+          notes: "",
+          dueDate: "",
+        });
         fetchRoomData();
-        alert('Hóa đơn tùy chỉnh đã được tạo');
+        alert("Hóa đơn đã được tạo thành công");
       } else {
-        alert(response.data.message || 'Không thể tạo hóa đơn');
+        alert(response.data.message || "Không thể tạo hóa đơn");
       }
     } catch (error) {
-      console.error('❌ Error creating custom bill:', error);
-      alert(error.response?.data?.message || 'Lỗi khi tạo hóa đơn tùy chỉnh');
+      console.error("❌ Error creating custom bill:", error);
+      alert(error.response?.data?.message || "Lỗi khi tạo hóa đơn");
     }
   };
 
@@ -298,40 +411,48 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
     if (!editingBill) return;
 
     try {
-      console.log('📝 Updating bill...');
-      const response = await axiosInstance.put(`/api/bills/${editingBill._id}`, billForm);
+      console.log("📝 Updating bill...");
+      const response = await axiosInstance.put(
+        `/api/bills/${editingBill._id}`,
+        billForm
+      );
 
       if (response.data.success) {
         setShowEditBill(false);
         setEditingBill(null);
-        setBillForm({ billingPeriod: { from: '', to: '' }, items: [], notes: '', dueDate: '' });
+        setBillForm({
+          billingPeriod: { from: "", to: "" },
+          items: [],
+          notes: "",
+          dueDate: "",
+        });
         fetchRoomData();
-        alert('Hóa đơn đã được cập nhật');
+        alert("Hóa đơn đã được cập nhật");
       } else {
-        alert(response.data.message || 'Không thể cập nhật hóa đơn');
+        alert(response.data.message || "Không thể cập nhật hóa đơn");
       }
     } catch (error) {
-      console.error('❌ Error updating bill:', error);
-      alert(error.response?.data?.message || 'Lỗi khi cập nhật hóa đơn');
+      console.error("❌ Error updating bill:", error);
+      alert(error.response?.data?.message || "Lỗi khi cập nhật hóa đơn");
     }
   };
 
   const deleteBill = async (billId) => {
-    if (!confirm('Bạn có chắc chắn muốn xóa hóa đơn này?')) return;
+    if (!confirm("Bạn có chắc chắn muốn xóa hóa đơn này?")) return;
 
     try {
-      console.log('🗑️ Deleting bill...');
+      console.log("🗑️ Deleting bill...");
       const response = await axiosInstance.delete(`/api/bills/${billId}`);
 
       if (response.data.success) {
         fetchRoomData();
-        alert('Hóa đơn đã được xóa');
+        alert("Hóa đơn đã được xóa");
       } else {
-        alert(response.data.message || 'Không thể xóa hóa đơn');
+        alert(response.data.message || "Không thể xóa hóa đơn");
       }
     } catch (error) {
-      console.error('❌ Error deleting bill:', error);
-      alert(error.response?.data?.message || 'Lỗi khi xóa hóa đơn');
+      console.error("❌ Error deleting bill:", error);
+      alert(error.response?.data?.message || "Lỗi khi xóa hóa đơn");
     }
   };
 
@@ -339,12 +460,12 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
     setEditingBill(bill);
     setBillForm({
       billingPeriod: {
-        from: bill.billingPeriod.from.split('T')[0], // Convert to YYYY-MM-DD format
-        to: bill.billingPeriod.to.split('T')[0]
+        from: bill.billingPeriod.from.split("T")[0], // Convert to YYYY-MM-DD format
+        to: bill.billingPeriod.to.split("T")[0],
       },
       items: bill.items || [],
-      notes: bill.notes || '',
-      dueDate: bill.dueDate ? bill.dueDate.split('T')[0] : ''
+      notes: bill.notes || "",
+      dueDate: bill.dueDate ? bill.dueDate.split("T")[0] : "",
     });
     setShowEditBill(true);
   };
@@ -354,83 +475,96 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
     if (!selectedBill) return;
 
     try {
-      console.log('✅ Marking bill as paid...');
-      
+      console.log("✅ Marking bill as paid...");
+
       // Record full payment
       const paymentData = {
         amount: selectedBill.remainingBalance || selectedBill.totalAmount,
-        paymentMethod: 'cash',
-        notes: 'Đánh dấu thanh toán đầy đủ bởi chủ trọ',
-        referenceNumber: `MANUAL_${Date.now()}`
+        paymentMethod: "cash",
+        notes: "Đánh dấu thanh toán đầy đủ bởi chủ trọ",
+        referenceNumber: `MANUAL_${Date.now()}`,
       };
 
-      const response = await axiosInstance.post(`/api/bill-payments/bill/${selectedBill._id}/cash`, paymentData);
+      const response = await axiosInstance.post(
+        `/api/bill-payments/bill/${selectedBill._id}/cash`,
+        paymentData
+      );
 
       if (response.data.success) {
         setSelectedBill(null);
         fetchRoomData();
-        alert('Hóa đơn đã được đánh dấu là đã thanh toán');
+        alert("Hóa đơn đã được đánh dấu là đã thanh toán");
       } else {
-        alert(response.data.message || 'Không thể đánh dấu hóa đơn đã thanh toán');
+        alert(
+          response.data.message || "Không thể đánh dấu hóa đơn đã thanh toán"
+        );
       }
     } catch (error) {
-      console.error('❌ Error marking bill as paid:', error);
-      alert(error.response?.data?.message || 'Lỗi khi đánh dấu hóa đơn đã thanh toán');
+      console.error("❌ Error marking bill as paid:", error);
+      alert(
+        error.response?.data?.message ||
+          "Lỗi khi đánh dấu hóa đơn đã thanh toán"
+      );
     }
   };
 
   const removeTenant = async (tenantId) => {
-    if (!confirm('Bạn có chắc muốn xóa người thuê này khỏi phòng?')) return;
+    if (!confirm("Bạn có chắc muốn xóa người thuê này khỏi phòng?")) return;
 
     try {
-      console.log('👤 Removing tenant...');
-      const response = await axiosInstance.delete(`/api/room-occupancy/room/${room._id}/tenants/${tenantId}`, {
-        data: { terminationReason: 'Removed by landlord' }
-      });
+      console.log("👤 Removing tenant...");
+      const response = await axiosInstance.delete(
+        `/api/room-occupancy/room/${room._id}/tenants/${tenantId}`,
+        {
+          data: { terminationReason: "Removed by landlord" },
+        }
+      );
 
       if (response.data.success) {
         fetchRoomData();
-        alert('Đã xóa người thuê khỏi phòng');
+        alert("Đã xóa người thuê khỏi phòng");
       } else {
-        alert(response.data.message || 'Không thể xóa người thuê');
+        alert(response.data.message || "Không thể xóa người thuê");
       }
     } catch (error) {
-      console.error('❌ Error removing tenant:', error);
-      alert(error.response?.data?.message || 'Lỗi khi xóa người thuê');
+      console.error("❌ Error removing tenant:", error);
+      alert(error.response?.data?.message || "Lỗi khi xóa người thuê");
     }
   };
 
   const setRepresentative = async (tenantId) => {
     try {
-      console.log('⭐ Setting representative...');
-      const response = await axiosInstance.put(`/api/room-occupancy/room/${room._id}/representative/${tenantId}`);
+      console.log("⭐ Setting representative...");
+      const response = await axiosInstance.put(
+        `/api/room-occupancy/room/${room._id}/representative/${tenantId}`
+      );
 
       if (response.data.success) {
         fetchRoomData();
-        alert('Đã đặt làm người đại diện');
+        alert("Đã đặt làm người đại diện");
       } else {
-        alert(response.data.message || 'Không thể đặt người đại diện');
+        alert(response.data.message || "Không thể đặt người đại diện");
       }
     } catch (error) {
-      console.error('❌ Error setting representative:', error);
-      alert(error.response?.data?.message || 'Lỗi khi đặt người đại diện');
+      console.error("❌ Error setting representative:", error);
+      alert(error.response?.data?.message || "Lỗi khi đặt người đại diện");
     }
   };
 
   const sendBill = async (billId) => {
     try {
-      console.log('📮 Sending bill...');
+      console.log("📮 Sending bill...");
       const response = await axiosInstance.post(`/api/bills/${billId}/send`);
 
       if (response.data.success) {
         fetchRoomData();
-        alert('Hóa đơn đã được gửi');
+        alert("Hóa đơn đã được gửi");
       } else {
-        alert(response.data.message || 'Không thể gửi hóa đơn');
+        alert(response.data.message || "Không thể gửi hóa đơn");
       }
     } catch (error) {
-      console.error('❌ Error sending bill:', error);
-      alert(error.response?.data?.message || 'Lỗi khi gửi hóa đơn');
+      console.error("❌ Error sending bill:", error);
+      alert(error.response?.data?.message || "Lỗi khi gửi hóa đơn");
     }
   };
 
@@ -442,59 +576,59 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
 
   // Utility functions
   const formatPrice = (price) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(price);
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+    return new Date(dateString).toLocaleDateString("vi-VN");
   };
 
   const getStatusColor = (status) => {
     const colors = {
-      'available': 'border-green-200 text-green-800 bg-green-50',
-      'occupied': 'border-blue-200 text-blue-800 bg-blue-50',
-      'maintenance': 'border-yellow-200 text-yellow-800 bg-yellow-50',
-      'unavailable': 'border-red-200 text-red-800 bg-red-50',
-      'draft': 'border-gray-200 text-gray-800 bg-gray-50',
-      'sent': 'border-blue-200 text-blue-800 bg-blue-50',
-      'viewed': 'border-yellow-200 text-yellow-800 bg-yellow-50',
-      'paid': 'border-green-200 text-green-800 bg-green-50',
-      'overdue': 'border-red-200 text-red-800 bg-red-50',
-      'completed': 'border-green-200 text-green-800 bg-green-50',
-      'pending': 'border-yellow-200 text-yellow-800 bg-yellow-50'
+      available: "border-green-200 text-green-800 bg-green-50",
+      occupied: "border-blue-200 text-blue-800 bg-blue-50",
+      maintenance: "border-yellow-200 text-yellow-800 bg-yellow-50",
+      unavailable: "border-red-200 text-red-800 bg-red-50",
+      draft: "border-gray-200 text-gray-800 bg-gray-50",
+      sent: "border-blue-200 text-blue-800 bg-blue-50",
+      viewed: "border-yellow-200 text-yellow-800 bg-yellow-50",
+      paid: "border-green-200 text-green-800 bg-green-50",
+      overdue: "border-red-200 text-red-800 bg-red-50",
+      completed: "border-green-200 text-green-800 bg-green-50",
+      pending: "border-yellow-200 text-yellow-800 bg-yellow-50",
     };
-    return colors[status] || 'border-gray-200 text-gray-800 bg-gray-50';
+    return colors[status] || "border-gray-200 text-gray-800 bg-gray-50";
   };
 
   const getBillStatusText = (status) => {
     const statusText = {
-      'draft': 'Bản nháp',
-      'sent': 'Đã gửi',
-      'viewed': 'Đã xem',
-      'paid': 'Đã thanh toán',
-      'overdue': 'Quá hạn'
+      draft: "Bản nháp",
+      sent: "Đã gửi",
+      viewed: "Đã xem",
+      paid: "Đã thanh toán",
+      overdue: "Quá hạn",
     };
     return statusText[status] || status;
   };
 
   const getPaymentMethodText = (method) => {
     const methodText = {
-      'cash': 'Tiền mặt',
-      'bank_transfer': 'Chuyển khoản',
-      'wallet': 'Ví điện tử',
-      'online': 'Thanh toán online'
+      cash: "Tiền mặt",
+      bank_transfer: "Chuyển khoản",
+      wallet: "Ví điện tử",
+      online: "Thanh toán online",
     };
     return methodText[method] || method;
   };
 
   const getTenantStatusText = (status) => {
     const statusText = {
-      'active': 'Đang ở',
-      'moved_out': 'Đã chuyển đi',
-      'terminated': 'Chấm dứt hợp đồng'
+      active: "Đang ở",
+      moved_out: "Đã chuyển đi",
+      terminated: "Chấm dứt hợp đồng",
     };
     return statusText[status] || status;
   };
@@ -502,11 +636,8 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
   if (!room) return null;
 
   return (
-    <div className="fixed inset-0 bg-opacity backdrop-blur-xs z-50 flex items-center justify-center p-4" 
-        >
-
+    <div className="fixed inset-0 bg-opacity backdrop-blur-xs z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-lg shadow-2xl max-w-7xl w-full max-h-[90vh] overflow-y-auto">
-        
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-4">
@@ -522,12 +653,18 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-3">
-            <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(room.status)}`}>
-              {room.status === 'available' ? 'Sẵn sàng' : 
-               room.status === 'occupied' ? 'Đã thuê' : 
-               room.status === 'maintenance' ? 'Bảo trì' : 'Không khả dụng'}
+            <div
+              className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(room.status)}`}
+            >
+              {room.status === "available"
+                ? "Sẵn sàng"
+                : room.status === "occupied"
+                  ? "Đã thuê"
+                  : room.status === "maintenance"
+                    ? "Bảo trì"
+                    : "Không khả dụng"}
             </div>
             <button
               onClick={onEdit}
@@ -558,7 +695,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                 <TrendingUp className="text-green-600" size={32} />
               </div>
             </div>
-            
+
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -570,7 +707,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                 <Clock className="text-yellow-600" size={32} />
               </div>
             </div>
-            
+
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -589,19 +726,27 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
         <div className="border-b border-gray-200 px-6">
           <nav className="flex space-x-8">
             {[
-              { id: 'info', label: 'Thông tin phòng', icon: Home },
-              { id: 'tenants', label: `Người thuê (${roomData.tenants.length})`, icon: Users },
-              { id: 'billing', label: `Thanh toán (${roomData.bills.length})`, icon: DollarSign },
-              { id: 'history', label: 'Lịch sử', icon: Activity },
-              { id: 'reports', label: 'Báo cáo', icon: TrendingUp }
+              { id: "info", label: "Thông tin phòng", icon: Home },
+              {
+                id: "tenants",
+                label: `Người thuê (${roomData.tenants.length})`,
+                icon: Users,
+              },
+              {
+                id: "billing",
+                label: `Thanh toán (${roomData.bills.length})`,
+                icon: DollarSign,
+              },
+              { id: "history", label: "Lịch sử", icon: Activity },
+              { id: "reports", label: "Báo cáo", icon: TrendingUp },
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={`py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <tab.icon size={16} />
@@ -635,7 +780,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                     Thử lại
                   </button>
                   <button
-                    onClick={() => setError('')}
+                    onClick={() => setError("")}
                     className="px-3 py-1 border border-red-300 text-red-700 text-sm rounded hover:bg-red-50 transition-colors"
                   >
                     Ẩn lỗi
@@ -646,11 +791,13 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           )}
 
           {/* Info Tab */}
-          {activeTab === 'info' && (
+          {activeTab === "info" && (
             <div className="space-y-6">
               {room.images && room.images.length > 0 && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Hình ảnh phòng</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Hình ảnh phòng
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {room.images.map((image, index) => (
                       <img
@@ -666,7 +813,9 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Thông tin cơ bản</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Thông tin cơ bản
+                  </h3>
                   <div className="space-y-3">
                     <div className="flex justify-between">
                       <span className="text-gray-500">Số phòng:</span>
@@ -678,17 +827,23 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Diện tích:</span>
-                      <span className="font-medium">{room.area || 'N/A'} m²</span>
+                      <span className="font-medium">
+                        {room.area || "N/A"} m²
+                      </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Giá thuê:</span>
-                      <span className="font-medium text-green-600">{formatPrice(room.baseRent)}</span>
+                      <span className="font-medium text-green-600">
+                        {formatPrice(room.baseRent)}
+                      </span>
                     </div>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Tiện nghi</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Tiện nghi
+                  </h3>
                   {room.amenities && room.amenities.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {room.amenities.map((amenity, index) => (
@@ -708,7 +863,9 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
 
               {room.description && (
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Mô tả</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                    Mô tả
+                  </h3>
                   <p className="text-gray-700">{room.description}</p>
                 </div>
               )}
@@ -716,36 +873,83 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           )}
 
           {/* Tenants Tab */}
-          {activeTab === 'tenants' && (
+          {activeTab === "tenants" && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
                   Người đang thuê ({roomData.tenants.length}/{room.capacity})
                 </h3>
-                {roomData.representative && (
-                  <div className="flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                    <Star size={14} />
-                    Đại diện: {roomData.representative.tenantId?.name}
-                  </div>
-                )}
+                <div className="flex gap-2">
+                  {/* Show fix button if room has currentTenant but no occupancy records */}
+                  {room.currentTenant &&
+                    room.currentTenant.length > 0 &&
+                    roomData.tenants.length === 0 && (
+                      <button
+                        onClick={createOccupancyRecords}
+                        className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors flex items-center gap-2"
+                        title="Tạo records cho các tenant hiện tại"
+                      >
+                        <RefreshCw size={16} />
+                        Sửa dữ liệu
+                      </button>
+                    )}
+                  <button
+                    onClick={() => setShowAddTenant(true)}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Thêm người thuê
+                  </button>
+                </div>
               </div>
 
-              {roomData.tenants.length === 0 ? (
-                <div className="text-center py-12">
-                  <UserX size={48} className="mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Phòng trống</h3>
-                  <p className="text-gray-500">Phòng này hiện tại chưa có ai thuê</p>
-                </div>
-              ) : (
+              {/* Show info about data mismatch */}
+              {room.currentTenant &&
+                room.currentTenant.length > 0 &&
+                roomData.tenants.length === 0 && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <div className="flex items-center">
+                      <AlertCircle className="text-yellow-600 mr-2" size={20} />
+                      <div>
+                        <h4 className="text-yellow-800 font-medium">
+                          Dữ liệu không đồng bộ
+                        </h4>
+                        <p className="text-yellow-700 text-sm">
+                          Phòng có {room.currentTenant.length} người thuê nhưng
+                          không có records quản lý. Nhấn "Sửa dữ liệu" để tạo
+                          records.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              {roomData.tenants.length === 0 &&
+                (!room.currentTenant || room.currentTenant.length === 0) && (
+                  <div className="text-center py-12">
+                    <UserX size={48} className="mx-auto text-gray-400 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Phòng trống
+                    </h3>
+                    <p className="text-gray-500">
+                      Phòng này hiện tại chưa có ai thuê
+                    </p>
+                  </div>
+                )}
+
+              {roomData.tenants.length > 0 && (
                 <div className="space-y-4">
                   {roomData.tenants.map((tenant, index) => (
-                    <div key={tenant._id || index} className="border rounded-lg p-6 bg-white shadow-sm">
+                    <div
+                      key={tenant._id || index}
+                      className="border rounded-lg p-6 bg-white shadow-sm"
+                    >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start space-x-4">
                           <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
                             {tenant.tenantId?.profileImage ? (
-                              <img 
-                                src={tenant.tenantId.profileImage} 
+                              <img
+                                src={tenant.tenantId.profileImage}
                                 alt={tenant.tenantId.name}
                                 className="w-12 h-12 rounded-full object-cover"
                               />
@@ -753,21 +957,27 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                               <User size={24} className="text-blue-600" />
                             )}
                           </div>
-                          
+
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h4 className="text-lg font-semibold text-gray-900">
-                                {tenant.tenantId?.name || 'Tên không xác định'}
+                                {tenant.tenantId?.name || "Tên không xác định"}
                               </h4>
-                              
+
                               {tenant.isRepresentative && (
                                 <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium flex items-center gap-1">
                                   <Star size={12} />
                                   Người đại diện
                                 </span>
                               )}
+
+                              {tenant._id?.toString().startsWith("temp_") && (
+                                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs font-medium">
+                                  Dữ liệu tạm
+                                </span>
+                              )}
                             </div>
-                            
+
                             <div className="space-y-1 text-sm text-gray-600">
                               {tenant.tenantId?.email && (
                                 <div className="flex items-center gap-2">
@@ -783,8 +993,19 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                               )}
                               <div className="flex items-center gap-2">
                                 <Calendar size={14} />
-                                <span>Dọn vào: {formatDate(tenant.moveInDate)}</span>
+                                <span>
+                                  Dọn vào: {formatDate(tenant.moveInDate)}
+                                </span>
                               </div>
+                              {tenant.monthlyRent && (
+                                <div className="flex items-center gap-2">
+                                  <DollarSign size={14} />
+                                  <span>
+                                    Tiền thuê: {formatPrice(tenant.monthlyRent)}
+                                    /tháng
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -792,15 +1013,17 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
 
                       <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
                         {!tenant.isRepresentative && (
-                          <button 
-                            onClick={() => setRepresentative(tenant.tenantId._id)}
+                          <button
+                            onClick={() =>
+                              setRepresentative(tenant.tenantId._id)
+                            }
                             className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                           >
                             <UserCheck size={16} />
                             Đặt làm đại diện
                           </button>
                         )}
-                        <button 
+                        <button
                           onClick={() => removeTenant(tenant.tenantId._id)}
                           className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
                         >
@@ -816,7 +1039,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           )}
 
           {/* Billing Tab */}
-          {activeTab === 'billing' && (
+          {activeTab === "billing" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">
@@ -835,46 +1058,65 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                 {roomData.bills.length === 0 ? (
                   <div className="text-center py-12">
                     <Receipt size={48} className="mx-auto text-gray-400 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có hóa đơn</h3>
-                    <p className="text-gray-500">Tạo hóa đơn đầu tiên cho phòng này</p>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Chưa có hóa đơn
+                    </h3>
+                    <p className="text-gray-500">
+                      Tạo hóa đơn đầu tiên cho phòng này
+                    </p>
                   </div>
                 ) : (
                   roomData.bills.map((bill, index) => (
-                    <div key={bill._id} className="border rounded-lg p-6 bg-white shadow-sm">
+                    <div
+                      key={bill._id}
+                      className="border rounded-lg p-6 bg-white shadow-sm"
+                    >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-start space-x-4">
                           <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                             <Receipt size={24} className="text-green-600" />
                           </div>
-                          
+
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <h4 className="text-lg font-semibold text-gray-900">
                                 {bill.billNumber}
                               </h4>
-                              
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bill.status)}`}>
+
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(bill.status)}`}
+                              >
                                 {getBillStatusText(bill.status)}
                               </span>
                             </div>
-                            
+
                             <div className="space-y-1 text-sm text-gray-600">
                               <div className="flex items-center gap-2">
                                 <Calendar size={14} />
-                                <span>Kỳ: {formatDate(bill.billingPeriod.from)} - {formatDate(bill.billingPeriod.to)}</span>
+                                <span>
+                                  Kỳ: {formatDate(bill.billingPeriod.from)} -{" "}
+                                  {formatDate(bill.billingPeriod.to)}
+                                </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <DollarSign size={14} />
-                                <span>Tổng tiền: {formatPrice(bill.totalAmount)}</span>
+                                <span>
+                                  Tổng tiền: {formatPrice(bill.totalAmount)}
+                                </span>
                               </div>
                               <div className="flex items-center gap-2">
                                 <Clock size={14} />
-                                <span>Hạn thanh toán: {formatDate(bill.dueDate)}</span>
+                                <span>
+                                  Hạn thanh toán: {formatDate(bill.dueDate)}
+                                </span>
                               </div>
                               {bill.paidAmount > 0 && (
                                 <div className="flex items-center gap-2">
                                   <CheckCircle size={14} />
-                                  <span>Đã thanh toán: {formatPrice(bill.paidAmount)}</span>
+                                  <span>
+                                    Đã thanh toán:{" "}
+                                    {formatPrice(bill.paidAmount)}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -883,10 +1125,15 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                       </div>
 
                       <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <h5 className="font-medium text-gray-900 mb-3">Chi tiết hóa đơn</h5>
+                        <h5 className="font-medium text-gray-900 mb-3">
+                          Chi tiết hóa đơn
+                        </h5>
                         <div className="space-y-2">
                           {bill.items?.map((item, idx) => (
-                            <div key={idx} className="flex justify-between text-sm">
+                            <div
+                              key={idx}
+                              className="flex justify-between text-sm"
+                            >
                               <span>{item.name}</span>
                               <span>{formatPrice(item.amount)}</span>
                             </div>
@@ -895,23 +1142,23 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                       </div>
 
                       <div className="flex justify-end space-x-2 pt-4 border-t border-gray-200">
-                        {bill.status === 'draft' && (
+                        {bill.status === "draft" && (
                           <>
-                            <button 
+                            <button
                               onClick={() => startEditBill(bill)}
                               className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors flex items-center gap-2"
                             >
                               <Edit size={16} />
                               Chỉnh sửa
                             </button>
-                            <button 
+                            <button
                               onClick={() => deleteBill(bill._id)}
                               className="px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
                             >
                               <Trash2 size={16} />
                               Xóa
                             </button>
-                            <button 
+                            <button
                               onClick={() => sendBill(bill._id)}
                               className="px-4 py-2 text-sm text-green-600 hover:bg-green-50 rounded-lg transition-colors flex items-center gap-2"
                             >
@@ -920,8 +1167,8 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                             </button>
                           </>
                         )}
-                        {bill.status !== 'paid' && bill.status !== 'draft' && (
-                          <button 
+                        {bill.status !== "paid" && bill.status !== "draft" && (
+                          <button
                             onClick={() => {
                               setSelectedBill(bill);
                               setConfirmAction(() => markBillAsPaid);
@@ -944,28 +1191,47 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               </div>
 
               <div className="mt-8">
-                <h4 className="text-lg font-semibold text-gray-900 mb-4">Thanh toán gần đây</h4>
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                  Thanh toán gần đây
+                </h4>
                 <div className="space-y-3">
                   {roomData.payments.slice(0, 5).map((payment, index) => (
-                    <div key={payment._id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    <div
+                      key={payment._id}
+                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+                    >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          payment.paymentMethod === 'cash' ? 'bg-green-100' : 'bg-blue-100'
-                        }`}>
-                          {payment.paymentMethod === 'cash' ? 
-                            <Banknote size={16} className="text-green-600" /> :
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            payment.paymentMethod === "cash"
+                              ? "bg-green-100"
+                              : "bg-blue-100"
+                          }`}
+                        >
+                          {payment.paymentMethod === "cash" ? (
+                            <Banknote size={16} className="text-green-600" />
+                          ) : (
                             <CreditCard size={16} className="text-blue-600" />
-                          }
+                          )}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{formatPrice(payment.amount)}</p>
+                          <p className="font-medium text-gray-900">
+                            {formatPrice(payment.amount)}
+                          </p>
                           <p className="text-sm text-gray-500">
-                            {payment.paymentMethod === 'cash' ? 'Tiền mặt' : 'Chuyển khoản'} • {formatDate(payment.paidAt || payment.createdAt)}
+                            {payment.paymentMethod === "cash"
+                              ? "Tiền mặt"
+                              : "Chuyển khoản"}{" "}
+                            • {formatDate(payment.paidAt || payment.createdAt)}
                           </p>
                         </div>
                       </div>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                        {payment.status === 'completed' ? 'Hoàn thành' : 'Đang xử lý'}
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
+                      >
+                        {payment.status === "completed"
+                          ? "Hoàn thành"
+                          : "Đang xử lý"}
                       </span>
                     </div>
                   ))}
@@ -975,7 +1241,7 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           )}
 
           {/* History Tab */}
-          {activeTab === 'history' && (
+          {activeTab === "history" && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Lịch sử</h3>
@@ -985,17 +1251,25 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               <div className="border-b border-gray-200">
                 <nav className="flex space-x-8">
                   {[
-                    { id: 'activity', label: 'Hoạt động chung', icon: Activity },
-                    { id: 'payments', label: 'Lịch sử thanh toán', icon: DollarSign },
-                    { id: 'tenants', label: 'Lịch sử người ở', icon: Users }
+                    {
+                      id: "activity",
+                      label: "Hoạt động chung",
+                      icon: Activity,
+                    },
+                    {
+                      id: "payments",
+                      label: "Lịch sử thanh toán",
+                      icon: DollarSign,
+                    },
+                    { id: "tenants", label: "Lịch sử người ở", icon: Users },
                   ].map((tab) => (
                     <button
                       key={tab.id}
                       onClick={() => setHistoryTab(tab.id)}
                       className={`py-2 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                         historyTab === tab.id
-                          ? 'border-blue-500 text-blue-600'
-                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                          ? "border-blue-500 text-blue-600"
+                          : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                       }`}
                     >
                       <tab.icon size={14} />
@@ -1006,23 +1280,37 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               </div>
 
               {/* Activity History */}
-              {historyTab === 'activity' && (
+              {historyTab === "activity" && (
                 <div className="space-y-4">
                   {activityLog.length === 0 ? (
                     <div className="text-center py-12">
-                      <Activity size={48} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có hoạt động</h3>
-                      <p className="text-gray-500">Hoạt động sẽ được hiển thị ở đây</p>
+                      <Activity
+                        size={48}
+                        className="mx-auto text-gray-400 mb-4"
+                      />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Chưa có hoạt động
+                      </h3>
+                      <p className="text-gray-500">
+                        Hoạt động sẽ được hiển thị ở đây
+                      </p>
                     </div>
                   ) : (
                     activityLog.map((activity, index) => (
-                      <div key={activity.id} className="flex items-start space-x-4 p-4 border rounded-lg">
+                      <div
+                        key={activity.id}
+                        className="flex items-start space-x-4 p-4 border rounded-lg"
+                      >
                         <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                           <activity.icon size={20} className="text-blue-600" />
                         </div>
                         <div className="flex-1">
-                          <p className="font-medium text-gray-900">{activity.description}</p>
-                          <p className="text-sm text-gray-500">{formatDate(activity.date)}</p>
+                          <p className="font-medium text-gray-900">
+                            {activity.description}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {formatDate(activity.date)}
+                          </p>
                           {activity.amount && (
                             <p className="text-sm font-medium text-green-600">
                               {formatPrice(activity.amount)}
@@ -1036,63 +1324,110 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               )}
 
               {/* Payment History */}
-              {historyTab === 'payments' && (
+              {historyTab === "payments" && (
                 <div className="space-y-4">
                   {roomData.payments.length === 0 ? (
                     <div className="text-center py-12">
-                      <DollarSign size={48} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có thanh toán</h3>
-                      <p className="text-gray-500">Lịch sử thanh toán sẽ được hiển thị ở đây</p>
+                      <DollarSign
+                        size={48}
+                        className="mx-auto text-gray-400 mb-4"
+                      />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Chưa có thanh toán
+                      </h3>
+                      <p className="text-gray-500">
+                        Lịch sử thanh toán sẽ được hiển thị ở đây
+                      </p>
                     </div>
                   ) : (
                     roomData.payments.map((payment, index) => (
-                      <div key={payment._id} className="border rounded-lg p-6 bg-white shadow-sm">
+                      <div
+                        key={payment._id}
+                        className="border rounded-lg p-6 bg-white shadow-sm"
+                      >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start space-x-4">
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-                              payment.paymentMethod === 'cash' ? 'bg-green-100' : 
-                              payment.paymentMethod === 'bank_transfer' ? 'bg-blue-100' : 'bg-purple-100'
-                            }`}>
-                              {payment.paymentMethod === 'cash' ? 
-                                <Banknote size={24} className="text-green-600" /> :
-                                payment.paymentMethod === 'bank_transfer' ? 
-                                <CreditCard size={24} className="text-blue-600" /> :
-                                <DollarSign size={24} className="text-purple-600" />
-                              }
+                            <div
+                              className={`w-12 h-12 rounded-full flex items-center justify-center ${
+                                payment.paymentMethod === "cash"
+                                  ? "bg-green-100"
+                                  : payment.paymentMethod === "bank_transfer"
+                                    ? "bg-blue-100"
+                                    : "bg-purple-100"
+                              }`}
+                            >
+                              {payment.paymentMethod === "cash" ? (
+                                <Banknote
+                                  size={24}
+                                  className="text-green-600"
+                                />
+                              ) : payment.paymentMethod === "bank_transfer" ? (
+                                <CreditCard
+                                  size={24}
+                                  className="text-blue-600"
+                                />
+                              ) : (
+                                <DollarSign
+                                  size={24}
+                                  className="text-purple-600"
+                                />
+                              )}
                             </div>
-                            
+
                             <div className="flex-1">
                               <div className="flex items-center gap-3 mb-2">
                                 <h4 className="text-lg font-semibold text-gray-900">
                                   {formatPrice(payment.amount)}
                                 </h4>
-                                
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
-                                  {payment.status === 'completed' ? 'Hoàn thành' : 
-                                   payment.status === 'pending' ? 'Đang xử lý' : 
-                                   payment.status === 'failed' ? 'Thất bại' : 'Đã hoàn tiền'}
+
+                                <span
+                                  className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
+                                >
+                                  {payment.status === "completed"
+                                    ? "Hoàn thành"
+                                    : payment.status === "pending"
+                                      ? "Đang xử lý"
+                                      : payment.status === "failed"
+                                        ? "Thất bại"
+                                        : "Đã hoàn tiền"}
                                 </span>
                               </div>
-                              
+
                               <div className="space-y-1 text-sm text-gray-600">
                                 <div className="flex items-center gap-2">
                                   <CreditCard size={14} />
-                                  <span>Phương thức: {getPaymentMethodText(payment.paymentMethod)}</span>
+                                  <span>
+                                    Phương thức:{" "}
+                                    {getPaymentMethodText(
+                                      payment.paymentMethod
+                                    )}
+                                  </span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <Calendar size={14} />
-                                  <span>Ngày thanh toán: {formatDate(payment.paidAt || payment.createdAt)}</span>
+                                  <span>
+                                    Ngày thanh toán:{" "}
+                                    {formatDate(
+                                      payment.paidAt || payment.createdAt
+                                    )}
+                                  </span>
                                 </div>
                                 {payment.referenceNumber && (
                                   <div className="flex items-center gap-2">
                                     <Receipt size={14} />
-                                    <span>Mã tham chiếu: {payment.referenceNumber}</span>
+                                    <span>
+                                      Mã tham chiếu: {payment.referenceNumber}
+                                    </span>
                                   </div>
                                 )}
                                 {payment.notes && (
                                   <div className="flex items-start gap-2 mt-2">
-                                    <span className="text-xs text-gray-500">Ghi chú:</span>
-                                    <span className="text-xs text-gray-600">{payment.notes}</span>
+                                    <span className="text-xs text-gray-500">
+                                      Ghi chú:
+                                    </span>
+                                    <span className="text-xs text-gray-600">
+                                      {payment.notes}
+                                    </span>
                                   </div>
                                 )}
                               </div>
@@ -1106,13 +1441,18 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
               )}
 
               {/* Tenant History */}
-              {historyTab === 'tenants' && (
+              {historyTab === "tenants" && (
                 <div className="space-y-4">
-                  {roomData.tenantHistory && roomData.tenantHistory.length === 0 ? (
+                  {roomData.tenantHistory &&
+                  roomData.tenantHistory.length === 0 ? (
                     <div className="text-center py-12">
                       <Users size={48} className="mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có lịch sử người ở</h3>
-                      <p className="text-gray-500">Lịch sử người thuê sẽ được hiển thị ở đây</p>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        Chưa có lịch sử người ở
+                      </h3>
+                      <p className="text-gray-500">
+                        Lịch sử người thuê sẽ được hiển thị ở đây
+                      </p>
                     </div>
                   ) : (
                     <>
@@ -1125,32 +1465,45 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                           </h4>
                           <div className="space-y-3">
                             {roomData.tenants.map((tenant) => (
-                              <div key={tenant._id} className="border rounded-lg p-4 bg-green-50 border-green-200">
+                              <div
+                                key={tenant._id}
+                                className="border rounded-lg p-4 bg-green-50 border-green-200"
+                              >
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-3">
                                     <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                                       {tenant.tenantId?.profileImage ? (
-                                        <img 
-                                          src={tenant.tenantId.profileImage} 
+                                        <img
+                                          src={tenant.tenantId.profileImage}
                                           alt={tenant.tenantId.name}
                                           className="w-10 h-10 rounded-full object-cover"
                                         />
                                       ) : (
-                                        <User size={20} className="text-green-600" />
+                                        <User
+                                          size={20}
+                                          className="text-green-600"
+                                        />
                                       )}
                                     </div>
-                                    
+
                                     <div>
                                       <div className="flex items-center gap-2">
                                         <h5 className="font-semibold text-gray-900">
-                                          {tenant.tenantId?.name || 'Tên không xác định'}
+                                          {tenant.tenantId?.name ||
+                                            "Tên không xác định"}
                                         </h5>
                                         {tenant.isRepresentative && (
-                                          <Star size={14} className="text-yellow-500" />
+                                          <Star
+                                            size={14}
+                                            className="text-yellow-500"
+                                          />
                                         )}
                                       </div>
                                       <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <span>Dọn vào: {formatDate(tenant.moveInDate)}</span>
+                                        <span>
+                                          Dọn vào:{" "}
+                                          {formatDate(tenant.moveInDate)}
+                                        </span>
                                         <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
                                           {getTenantStatusText(tenant.status)}
                                         </span>
@@ -1165,63 +1518,85 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                       )}
 
                       {/* Past Tenants */}
-                      {roomData.tenantHistory && roomData.tenantHistory.length > 0 && (
-                        <div>
-                          <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                            <Clock size={16} className="text-gray-600" />
-                            Người đã ở trước đây ({roomData.tenantHistory.length})
-                          </h4>
-                          <div className="space-y-3">
-                            {roomData.tenantHistory.map((tenant, index) => (
-                              <div key={tenant._id || index} className="border rounded-lg p-4 bg-gray-50">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-3">
-                                    <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
-                                      {tenant.tenantId?.profileImage ? (
-                                        <img 
-                                          src={tenant.tenantId.profileImage} 
-                                          alt={tenant.tenantId.name}
-                                          className="w-10 h-10 rounded-full object-cover"
-                                        />
-                                      ) : (
-                                        <User size={20} className="text-gray-600" />
-                                      )}
-                                    </div>
-                                    
-                                    <div>
-                                      <h5 className="font-semibold text-gray-900">
-                                        {tenant.tenantId?.name || 'Tên không xác định'}
-                                      </h5>
-                                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                                        <span>Ở từ: {formatDate(tenant.moveInDate)}</span>
-                                        {tenant.moveOutDate && (
-                                          <span>đến: {formatDate(tenant.moveOutDate)}</span>
+                      {roomData.tenantHistory &&
+                        roomData.tenantHistory.length > 0 && (
+                          <div>
+                            <h4 className="text-md font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                              <Clock size={16} className="text-gray-600" />
+                              Người đã ở trước đây (
+                              {roomData.tenantHistory.length})
+                            </h4>
+                            <div className="space-y-3">
+                              {roomData.tenantHistory.map((tenant, index) => (
+                                <div
+                                  key={tenant._id || index}
+                                  className="border rounded-lg p-4 bg-gray-50"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center">
+                                        {tenant.tenantId?.profileImage ? (
+                                          <img
+                                            src={tenant.tenantId.profileImage}
+                                            alt={tenant.tenantId.name}
+                                            className="w-10 h-10 rounded-full object-cover"
+                                          />
+                                        ) : (
+                                          <User
+                                            size={20}
+                                            className="text-gray-600"
+                                          />
                                         )}
-                                        <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
-                                          {getTenantStatusText(tenant.status)}
-                                        </span>
                                       </div>
-                                      {tenant.terminationReason && (
-                                        <p className="text-xs text-gray-500 mt-1">
-                                          Lý do: {tenant.terminationReason}
-                                        </p>
-                                      )}
+
+                                      <div>
+                                        <h5 className="font-semibold text-gray-900">
+                                          {tenant.tenantId?.name ||
+                                            "Tên không xác định"}
+                                        </h5>
+                                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                                          <span>
+                                            Ở từ:{" "}
+                                            {formatDate(tenant.moveInDate)}
+                                          </span>
+                                          {tenant.moveOutDate && (
+                                            <span>
+                                              đến:{" "}
+                                              {formatDate(tenant.moveOutDate)}
+                                            </span>
+                                          )}
+                                          <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">
+                                            {getTenantStatusText(tenant.status)}
+                                          </span>
+                                        </div>
+                                        {tenant.terminationReason && (
+                                          <p className="text-xs text-gray-500 mt-1">
+                                            Lý do: {tenant.terminationReason}
+                                          </p>
+                                        )}
+                                      </div>
                                     </div>
-                                  </div>
-                                  
-                                  <div className="text-right text-sm text-gray-500">
-                                    {tenant.moveOutDate && tenant.moveInDate && (
-                                      <span>
-                                        Thời gian ở: {Math.ceil((new Date(tenant.moveOutDate) - new Date(tenant.moveInDate)) / (1000 * 60 * 60 * 24))} ngày
-                                      </span>
-                                    )}
+
+                                    <div className="text-right text-sm text-gray-500">
+                                      {tenant.moveOutDate &&
+                                        tenant.moveInDate && (
+                                          <span>
+                                            Thời gian ở:{" "}
+                                            {Math.ceil(
+                                              (new Date(tenant.moveOutDate) -
+                                                new Date(tenant.moveInDate)) /
+                                                (1000 * 60 * 60 * 24)
+                                            )}{" "}
+                                            ngày
+                                          </span>
+                                        )}
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </>
                   )}
                 </div>
@@ -1230,14 +1605,20 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
           )}
 
           {/* Reports Tab */}
-          {activeTab === 'reports' && (
+          {activeTab === "reports" && (
             <div className="space-y-6">
-              <h3 className="text-lg font-semibold text-gray-900">Báo cáo doanh thu</h3>
-              
+              <h3 className="text-lg font-semibold text-gray-900">
+                Báo cáo doanh thu
+              </h3>
+
               <div className="bg-gray-100 rounded-lg p-8 text-center">
                 <TrendingUp size={48} className="mx-auto text-gray-400 mb-4" />
-                <h4 className="text-lg font-medium text-gray-900 mb-2">Biểu đồ doanh thu</h4>
-                <p className="text-gray-500">Tính năng biểu đồ sẽ được cập nhật</p>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">
+                  Biểu đồ doanh thu
+                </h4>
+                <p className="text-gray-500">
+                  Tính năng biểu đồ sẽ được cập nhật
+                </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1245,7 +1626,9 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Tổng hóa đơn</p>
-                      <p className="text-2xl font-bold text-gray-900">{roomData.bills.length}</p>
+                      <p className="text-2xl font-bold text-gray-900">
+                        {roomData.bills.length}
+                      </p>
                     </div>
                     <Receipt size={24} className="text-gray-400" />
                   </div>
@@ -1256,7 +1639,10 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                     <div>
                       <p className="text-sm text-gray-600">Đã thanh toán</p>
                       <p className="text-2xl font-bold text-green-600">
-                        {roomData.bills.filter(b => b.status === 'paid').length}
+                        {
+                          roomData.bills.filter((b) => b.status === "paid")
+                            .length
+                        }
                       </p>
                     </div>
                     <CheckCircle size={24} className="text-green-400" />
@@ -1268,7 +1654,10 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                     <div>
                       <p className="text-sm text-gray-600">Chưa thanh toán</p>
                       <p className="text-2xl font-bold text-yellow-600">
-                        {roomData.bills.filter(b => b.status !== 'paid').length}
+                        {
+                          roomData.bills.filter((b) => b.status !== "paid")
+                            .length
+                        }
                       </p>
                     </div>
                     <Clock size={24} className="text-yellow-400" />
@@ -1280,7 +1669,10 @@ const RoomDetails = ({ room, onClose, onEdit }) => {
                     <div>
                       <p className="text-sm text-gray-600">Quá hạn</p>
                       <p className="text-2xl font-bold text-red-600">
-                        {roomData.bills.filter(b => b.status === 'overdue').length}
+                        {
+                          roomData.bills.filter((b) => b.status === "overdue")
+                            .length
+                        }
                       </p>
                     </div>
                     <AlertCircle size={24} className="text-red-400" />
